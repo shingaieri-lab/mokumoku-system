@@ -1433,7 +1433,7 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
           <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={S.btnSec}>
             📥 CSVインポート
           </button>
-          <button onClick={() => { setEditing(null); setShowForm(true); }} style={S.btnP}>＋ 新規追加</button>
+          <button onClick={() => { setEditing(null); setShowForm(true); }} style={{...S.btnP, background:"linear-gradient(135deg,#f97316,#ea580c)"}}>＋ 新規追加</button>
         </div>
       </Header>
 
