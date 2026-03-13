@@ -241,7 +241,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const inpStyle = {width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#f8fffe"};
   const lblStyle = {fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3};
   return (
-    <div style={{padding:"24px 28px",maxWidth:1000}}>
+    <div style={{padding:"24px 28px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
         <div style={{fontSize:17,fontWeight:900,color:"#174f35"}}>📧 メールテンプレート</div>
         <button onClick={addTpl} style={{padding:"7px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>＋ テンプレート追加</button>
@@ -626,7 +626,7 @@ function SettingsPage({ aiConfig, onSave }) {
   const addRow = { display:"flex", gap:8, marginBottom:12 };
 
   return (
-    <div style={{padding:"24px 28px", maxWidth:800}}>
+    <div style={{padding:"24px 28px"}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ マスタ管理</div>
       <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>ポータルサイト・プラン・営業担当・APIキーを管理できます。</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
@@ -805,7 +805,7 @@ function Trend({ leads }) {
     return <span style={{fontSize:11,fontWeight:700,marginLeft:6,color:d>0?"#10b981":d<0?"#ef4444":"#9ca3af"}}>{d>0?"+":""}{d}件</span>;
   };
   return (
-    <div style={{padding:"24px 28px",maxWidth:1100}}>
+    <div style={{padding:"24px 28px"}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:20}}>📈 月別推移レポート</div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:20}}>
         <div style={{background:"#fff",borderRadius:14,padding:"18px 20px",border:"1px solid #e2f0e8"}}>
