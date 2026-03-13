@@ -291,6 +291,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig }) {
   const analyze=async()=>{
     if(!memo.trim()) return;
     if(!apiKey){setError("APIキーが未設定です。設定画面（⚙️）の「APIキー設定」タブから入力してください。");return;}
+    if(window.location.protocol==="file:"){setError("このアプリをファイルとして直接開いているため、APIリクエストがブラウザのCORSセキュリティにブロックされています。ローカルサーバー経由（例: http://localhost）でアクセスしてください。");return;}
     setLoading(true);setError("");setResult(null);setSaved(false);
     const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ${lead.status}`:"";
     try{
@@ -300,7 +301,10 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig }) {
       const text=(data.content||[]).map(i=>i.text||"").join("");
       const parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
       setResult(parsed);setEditEmail({subject:parsed.email_subject||"",body:parsed.email_body||""});setActiveTab("action");
-    }catch(e){setError("解析失敗: "+e.message);}
+    }catch(e){
+      if(e.message==="Failed to fetch"){setError("APIへの接続に失敗しました。ネットワーク接続を確認するか、ブラウザのCORSエラーが原因の場合はローカルサーバー経由（http://localhost）でアクセスしてください。");}
+      else{setError("解析失敗: "+e.message);}
+    }
     setLoading(false);
   };
 
