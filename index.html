@@ -2429,7 +2429,7 @@ function ActionForm({ onSave, onClose, initial }) {
       </div>
       <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
         <button onClick={onClose} style={S.btnSec}>キャンセル</button>
-        <button onClick={() => { if (!summary.trim()) return alert("メモを入力してください");
+        <button onClick={() => { if (!summary.trim() && !nextDate) return alert("メモまたは次回追客日を入力してください");
           onSave({ id: initial?.id || uid(), type, result, summary, date, time, next: nextLabel, nextDate, nextTime, ts: initial?.ts || Date.now() }); }}
           style={S.btnP}>{isEdit ? "更新する" : "記録する"}</button>
       </div>
@@ -2454,7 +2454,7 @@ function ActEntry({ a, onEdit, onDelete }) {
           <button onClick={onEdit} style={S.btnEditAct} title="編集">✏️</button>
           <button onClick={onDelete} style={{...S.btnEditAct,color:"#ef444466"}} title="削除">✕</button>
         </div>
-        <p style={{margin:0,fontSize:13,color:"#174f35", lineHeight:1.6}}>{a.summary}</p>
+        <p style={{margin:0,fontSize:13,color:"#174f35", lineHeight:1.6, whiteSpace:"pre-wrap"}}>{a.summary}</p>
         {(a.nextDate||a.next) && <div style={{fontSize:12,color:"#059669", marginTop:3}}>→ 次回：{a.nextDate||""}{a.nextTime ? " "+a.nextTime : ""}{a.next ? " "+a.next : ""}</div>}
       </div>
     </div>
