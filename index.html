@@ -45,11 +45,23 @@ const PORTAL_PRICE = (site, type) => {
   if (type === "一括請求") return 10000;
   return 0;
 };
-const STATUSES = ["新規", "架電済", "日程調整中", "商談確定", "育成対象外", "ナーチャリング"];
-const STATUS_COLORS = {
-  "新規": "#0ea5e9", "架電済": "#8b5cf6", "日程調整中": "#0d9488",
-  "商談確定": "#d97706", "育成対象外": "#dc2626", "ナーチャリング": "#ea580c"
-};
+const DEFAULT_STATUSES_DATA = [
+  { label: "新規",      color: "#0ea5e9" },
+  { label: "架電済",    color: "#8b5cf6" },
+  { label: "日程調整中", color: "#0d9488" },
+  { label: "商談確定",  color: "#d97706" },
+  { label: "育成対象外", color: "#dc2626" },
+  { label: "ナーチャリング", color: "#ea580c" },
+];
+function getStatuses() {
+  const m = getMaster();
+  return (m.statuses || DEFAULT_STATUSES_DATA).map(s => s.label);
+}
+function getStatusColor(label) {
+  const m = getMaster();
+  const s = (m.statuses || DEFAULT_STATUSES_DATA).find(s => s.label === label);
+  return s ? s.color : "#6a9a7a";
+}
 const MQL_OPTIONS = ["MQL", "非MQL"];
 const ACTION_TYPES = [
   { v: "call",    label: "電話",  icon: "📞", color: "#10b981" },
@@ -79,8 +91,9 @@ function getMaster() {
     salesMembers: DEFAULT_SALES_MEMBERS,
     portalSites: DEFAULT_PORTAL_SITES,
     portalTypes: DEFAULT_PORTAL_TYPES,
+    statuses: DEFAULT_STATUSES_DATA,
   };
-  return s;
+  return { ...s, statuses: s.statuses || DEFAULT_STATUSES_DATA };
 }
 // 動的取得関数
 function getSalesMembers() { return getMaster().salesMembers; }
@@ -793,7 +806,7 @@ ${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),20
 
 function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
   const [master, setMaster] = React.useState(() => getMaster());
-  const [tab, setTab] = React.useState(currentUser?.role === "admin" ? "portal" : "sales");
+  const [tab, setTab] = React.useState(currentUser?.role === "admin" ? "leadmgmt" : "sales");
   const [msg, setMsg] = React.useState("");
   const [profileForm, setProfileForm] = React.useState({ name: currentUser?.name||"", password: currentUser?.password||"", email: currentUser?.email||"", color: currentUser?.color||PALETTE[0], id: currentUser?.id||"", signature: currentUser?.signature||"" });
   const [profileMsg, setProfileMsg] = React.useState("");
@@ -806,7 +819,10 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
 
   const save = (next) => { setMaster(next); saveMasterSettings(next); setMsg("保存しました ✓"); setTimeout(()=>setMsg(""),2000); };
 
+  // ポータルサイト
   const [newSite, setNewSite] = React.useState("");
+  const [editSite, setEditSite] = React.useState(null);
+  const [editSiteName, setEditSiteName] = React.useState("");
   const addSite = () => {
     const s = newSite.trim(); if (!s) return;
     if (master.portalSites.includes(s)) { alert("既に存在します"); return; }
@@ -819,6 +835,20 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
     const sites = master.portalSites.filter(x=>x!==s);
     const pt = { ...master.portalTypes }; delete pt[s];
     save({ ...master, portalSites: sites, portalTypes: pt });
+  };
+  const renameSite = (oldName) => {
+    const newName = editSiteName.trim(); if (!newName) return;
+    if (newName !== oldName && master.portalSites.includes(newName)) { alert("既に存在します"); return; }
+    const sites = master.portalSites.map(s => s === oldName ? newName : s);
+    const pt = {}; Object.keys(master.portalTypes).forEach(k => { pt[k === oldName ? newName : k] = master.portalTypes[k]; });
+    save({ ...master, portalSites: sites, portalTypes: pt });
+    setEditSite(null); setEditSiteName("");
+  };
+  const moveSite = (site, dir) => {
+    const idx = master.portalSites.indexOf(site); const sites = [...master.portalSites];
+    if (dir==="up" && idx>0) { [sites[idx-1],sites[idx]]=[sites[idx],sites[idx-1]]; }
+    else if (dir==="down" && idx<sites.length-1) { [sites[idx+1],sites[idx]]=[sites[idx],sites[idx+1]]; }
+    else return; save({ ...master, portalSites: sites });
   };
   const [selSite, setSelSite] = React.useState(master.portalSites[0]||"");
   const [newPlan, setNewPlan] = React.useState({ label:"", price:"" });
@@ -837,7 +867,16 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
     const plans = (master.portalTypes[site]||[]).map((p,i)=>i===idx?{...p,price:parseInt(price)||0}:p);
     save({ ...master, portalTypes: { ...master.portalTypes, [site]: plans } });
   };
+  const updatePlanLabel = (site, idx, label) => {
+    if (!label.trim()) return;
+    const plans = (master.portalTypes[site]||[]).map((p,i)=>i===idx?{...p,label:label.trim()}:p);
+    save({ ...master, portalTypes: { ...master.portalTypes, [site]: plans } });
+  };
+
+  // 営業担当
   const [newSales, setNewSales] = React.useState("");
+  const [editSalesIdx, setEditSalesIdx] = React.useState(null);
+  const [editSalesName, setEditSalesName] = React.useState("");
   const addSales = () => {
     const s = newSales.trim(); if (!s) return;
     if (master.salesMembers.includes(s)) { alert("既に存在します"); return; }
@@ -845,6 +884,41 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
     setNewSales("");
   };
   const removeSales = (m) => { save({ ...master, salesMembers: master.salesMembers.filter(x=>x!==m) }); };
+  const renameSales = (idx) => {
+    const newName = editSalesName.trim(); if (!newName) return;
+    if (master.salesMembers.some((m,i) => m===newName && i!==idx)) { alert("既に存在します"); return; }
+    save({ ...master, salesMembers: master.salesMembers.map((m,i) => i===idx ? newName : m) });
+    setEditSalesIdx(null); setEditSalesName("");
+  };
+
+  // リード管理（ステータス）
+  const getStatusData = () => master.statuses || DEFAULT_STATUSES_DATA;
+  const [editStatusIdx, setEditStatusIdx] = React.useState(null);
+  const [editStatusForm, setEditStatusForm] = React.useState({ label:"", color:"" });
+  const [newStatusForm, setNewStatusForm] = React.useState({ label:"", color:"#0ea5e9" });
+  const addStatus = () => {
+    const l = newStatusForm.label.trim(); if (!l) return;
+    if (getStatusData().some(s=>s.label===l)) { alert("既に存在します"); return; }
+    save({ ...master, statuses: [...getStatusData(), { label:l, color:newStatusForm.color }] });
+    setNewStatusForm({ label:"", color:"#0ea5e9" });
+  };
+  const removeStatus = (idx) => {
+    if (!window.confirm("削除しますか？")) return;
+    save({ ...master, statuses: getStatusData().filter((_,i)=>i!==idx) });
+  };
+  const startEditStatus = (idx) => { const s=getStatusData()[idx]; setEditStatusForm({label:s.label,color:s.color}); setEditStatusIdx(idx); };
+  const saveStatus = () => {
+    const l = editStatusForm.label.trim(); if (!l) return;
+    if (getStatusData().some((s,i)=>s.label===l && i!==editStatusIdx)) { alert("既に存在します"); return; }
+    save({ ...master, statuses: getStatusData().map((s,i)=>i===editStatusIdx?{...s,...editStatusForm,label:l}:s) });
+    setEditStatusIdx(null);
+  };
+  const moveStatus = (idx, dir) => {
+    const data = [...getStatusData()];
+    if (dir==="up" && idx>0) { [data[idx-1],data[idx]]=[data[idx],data[idx-1]]; }
+    else if (dir==="down" && idx<data.length-1) { [data[idx+1],data[idx]]=[data[idx],data[idx+1]]; }
+    else return; save({ ...master, statuses: data });
+  };
 
   const tabBtn = (key, label) => (
     <button onClick={()=>setTab(key)} style={{padding:"7px 18px",borderRadius:"8px 8px 0 0",border:"1px solid #d8ede1",borderBottom: tab===key ? "1px solid #fff" : "1px solid #d8ede1", background: tab===key ? "#fff" : "#f0f5f2", color: tab===key ? "#174f35" : "#6a9a7a", fontWeight: tab===key ? 700 : 400, fontSize:12, cursor:"pointer", fontFamily:"inherit", marginRight:4, marginBottom:-1}}>
@@ -857,9 +931,10 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
   return (
     <div style={{padding:"24px 28px", maxWidth:900}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ 設定</div>
-      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "ポータルサイト・プラン・営業担当・API設定・アカウントを管理できます。" : "営業設定・アカウントを管理できます。"}</div>
+      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "営業設定・アカウントを管理できます。"}</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
       <div style={{marginBottom:0}}>
+        {currentUser?.role==="admin" && tabBtn("leadmgmt","📋 リード管理")}
         {currentUser?.role==="admin" && tabBtn("portal","🏢 ポータルサイト")}
         {currentUser?.role==="admin" ? tabBtn("sales","👤 営業担当") : tabBtn("sales","👤 営業設定")}
         {currentUser?.role==="admin" && tabBtn("apikey","🔑 API設定")}
@@ -874,17 +949,32 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
               <input value={newSite} onChange={e=>setNewSite(e.target.value)} placeholder="新しいポータルサイト名" style={{...inp, flex:1}} onKeyDown={e=>e.key==="Enter"&&addSite()} />
               <button onClick={addSite} style={{padding:"7px 16px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>追加</button>
             </div>
-            {master.portalSites.map(site => (
+            {master.portalSites.map((site, siteIdx) => (
               <div key={site} style={{background:"#f8fbf9",borderRadius:10,border:"1px solid #e2f0e8",marginBottom:12,overflow:"hidden"}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8"}}>
-                  <span style={{fontWeight:700,color:"#174f35",fontSize:13}}>🏢 {site}</span>
-                  <button onClick={()=>removeSite(site)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit"}}>削除</button>
+                <div style={{display:"flex",alignItems:"center",gap:6,padding:"10px 14px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8"}}>
+                  <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                    <button onClick={()=>moveSite(site,"up")} disabled={siteIdx===0} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:siteIdx===0?"#f5f5f5":"#fff",color:siteIdx===0?"#ccc":"#6a9a7a",cursor:siteIdx===0?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▲</button>
+                    <button onClick={()=>moveSite(site,"down")} disabled={siteIdx===master.portalSites.length-1} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:siteIdx===master.portalSites.length-1?"#f5f5f5":"#fff",color:siteIdx===master.portalSites.length-1?"#ccc":"#6a9a7a",cursor:siteIdx===master.portalSites.length-1?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▼</button>
+                  </div>
+                  {editSite===site ? (
+                    <div style={{display:"flex",alignItems:"center",gap:6,flex:1}}>
+                      <input value={editSiteName} onChange={e=>setEditSiteName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&renameSite(site)} style={{...inp,flex:1,padding:"4px 8px"}} autoFocus />
+                      <button onClick={()=>renameSite(site)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:"none",background:"#10b981",color:"#fff",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>保存</button>
+                      <button onClick={()=>setEditSite(null)} style={{fontSize:11,padding:"3px 8px",borderRadius:6,border:"1px solid #c0dece",background:"#fff",color:"#6a9a7a",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span style={{fontWeight:700,color:"#174f35",fontSize:13,flex:1}}>🏢 {site}</span>
+                      <button onClick={()=>{setEditSite(site);setEditSiteName(site)}} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#eef8f2",color:"#059669",border:"1px solid #c0dece",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>編集</button>
+                      <button onClick={()=>removeSite(site)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>削除</button>
+                    </>
+                  )}
                 </div>
                 <div style={{padding:"12px 14px"}}>
                   <div style={{fontSize:11,color:"#6a9a7a",marginBottom:8,fontWeight:600}}>プラン・金額</div>
                   {(master.portalTypes[site]||[]).map((plan,idx)=>(
                     <div key={idx} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{fontSize:12,color:"#174f35",fontWeight:600,minWidth:120}}>{plan.label}</span>
+                      <input value={plan.label} onChange={e=>updatePlanLabel(site,idx,e.target.value)} style={{...inp,flex:1,padding:"4px 8px"}} />
                       <span style={{fontSize:11,color:"#6a9a7a"}}>¥</span>
                       <input type="number" value={plan.price} onChange={e=>updatePlanPrice(site,idx,e.target.value)} style={{...inp,width:100,padding:"4px 8px"}} />
                       <button onClick={()=>removePlan(site,idx)} style={{fontSize:11,padding:"3px 8px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit"}}>✕</button>
@@ -902,16 +992,27 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
         )}
         {tab === "sales" && (
           <div>
-            <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:8}}>営業担当一覧</div>
+            <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:8}}>{currentUser?.role==="admin" ? "営業担当一覧" : "営業設定"}</div>
             <div style={addRow}>
               <input value={newSales} onChange={e=>setNewSales(e.target.value)} placeholder="担当者名" style={{...inp,flex:1}} onKeyDown={e=>e.key==="Enter"&&addSales()} />
               <button onClick={addSales} style={{padding:"7px 16px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>追加</button>
             </div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-              {master.salesMembers.map(m=>(
-                <div key={m} style={{display:"flex",alignItems:"center",gap:4,background:"#f0f5f2",border:"1px solid #d8ede1",borderRadius:8,padding:"5px 10px"}}>
-                  <span style={{fontSize:12,color:"#174f35",fontWeight:600}}>{m}</span>
-                  <button onClick={()=>removeSales(m)} style={{fontSize:11,color:"#dc2626",background:"none",border:"none",cursor:"pointer",padding:0,lineHeight:1}}>✕</button>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {master.salesMembers.map((m, idx)=>(
+                <div key={m} style={{display:"flex",alignItems:"center",gap:6,background:"#f0f5f2",border:"1px solid #d8ede1",borderRadius:8,padding:"6px 10px"}}>
+                  {editSalesIdx===idx ? (
+                    <>
+                      <input value={editSalesName} onChange={e=>setEditSalesName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&renameSales(idx)} style={{...inp,flex:1,padding:"4px 8px"}} autoFocus />
+                      <button onClick={()=>renameSales(idx)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:"none",background:"#10b981",color:"#fff",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>保存</button>
+                      <button onClick={()=>setEditSalesIdx(null)} style={{fontSize:11,padding:"3px 8px",borderRadius:6,border:"1px solid #c0dece",background:"#fff",color:"#6a9a7a",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>✕</button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{fontSize:12,color:"#174f35",fontWeight:600,flex:1}}>{m}</span>
+                      <button onClick={()=>{setEditSalesIdx(idx);setEditSalesName(m)}} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#eef8f2",color:"#059669",border:"1px solid #c0dece",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>編集</button>
+                      <button onClick={()=>removeSales(m)} style={{fontSize:11,padding:"3px 8px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>✕</button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -1023,6 +1124,55 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
               <div><b>⑦ クライアント ID をコピーして貼り付け</b></div>
               <div style={{paddingLeft:16,color:"#5a8a6a",lineHeight:1.6}}>
                 作成完了画面に表示される <code style={{background:"#d8ede1",padding:"1px 5px",borderRadius:3,fontFamily:"monospace"}}>xxxxxxxxxx.apps.googleusercontent.com</code> 形式のクライアント ID をコピーし、上記フィールドに貼り付けてフォーカスを外すと保存されます。
+              </div>
+            </div>
+          </div>
+        )}
+        {tab === "leadmgmt" && currentUser?.role==="admin" && (
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:12}}>ステータス管理</div>
+            <div style={{marginBottom:12}}>
+              {getStatusData().map((s, idx) => (
+                <div key={idx} style={{display:"flex",alignItems:"center",gap:8,background:"#f8fbf9",borderRadius:8,border:"1px solid #e2f0e8",padding:"8px 12px",marginBottom:6}}>
+                  {editStatusIdx===idx ? (
+                    <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
+                      <input value={editStatusForm.label} onChange={e=>setEditStatusForm(p=>({...p,label:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&saveStatus()} style={{...inp,flex:1,minWidth:100,padding:"4px 8px"}} autoFocus />
+                      <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+                        {PALETTE.map(c=>(
+                          <button key={c} onClick={()=>setEditStatusForm(p=>({...p,color:c}))} style={{width:18,height:18,borderRadius:"50%",background:c,border:editStatusForm.color===c?"3px solid #174f35":"2px solid #fff",cursor:"pointer",flexShrink:0}} />
+                        ))}
+                      </div>
+                      <button onClick={saveStatus} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:"none",background:"#10b981",color:"#fff",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>保存</button>
+                      <button onClick={()=>setEditStatusIdx(null)} style={{fontSize:11,padding:"3px 8px",borderRadius:6,border:"1px solid #c0dece",background:"#fff",color:"#6a9a7a",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>✕</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
+                        <button onClick={()=>moveStatus(idx,"up")} disabled={idx===0} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:idx===0?"#f5f5f5":"#fff",color:idx===0?"#ccc":"#6a9a7a",cursor:idx===0?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▲</button>
+                        <button onClick={()=>moveStatus(idx,"down")} disabled={idx===getStatusData().length-1} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:idx===getStatusData().length-1?"#f5f5f5":"#fff",color:idx===getStatusData().length-1?"#ccc":"#6a9a7a",cursor:idx===getStatusData().length-1?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▼</button>
+                      </div>
+                      <div style={{width:14,height:14,borderRadius:"50%",background:s.color,flexShrink:0,boxShadow:"0 1px 3px #0003"}} />
+                      <span style={{flex:1,fontSize:13,fontWeight:600,color:"#174f35"}}>{s.label}</span>
+                      <button onClick={()=>startEditStatus(idx)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#eef8f2",color:"#059669",border:"1px solid #c0dece",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>編集</button>
+                      <button onClick={()=>removeStatus(idx)} style={{fontSize:11,padding:"3px 8px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>削除</button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{background:"#f0f5f2",borderRadius:10,padding:"14px 16px",border:"1px solid #d8ede1"}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:10}}>＋ ステータス追加</div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <input value={newStatusForm.label} onChange={e=>setNewStatusForm(p=>({...p,label:e.target.value}))} placeholder="ステータス名" style={{...inp,flex:"1 1 120px",minWidth:120}} onKeyDown={e=>e.key==="Enter"&&addStatus()} />
+                <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+                  {PALETTE.map(c=>(
+                    <button key={c} onClick={()=>setNewStatusForm(p=>({...p,color:c}))} style={{width:18,height:18,borderRadius:"50%",background:c,border:newStatusForm.color===c?"3px solid #174f35":"2px solid #fff",cursor:"pointer",flexShrink:0}} />
+                  ))}
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{width:16,height:16,borderRadius:"50%",background:newStatusForm.color,boxShadow:"0 1px 3px #0003"}} />
+                  <button onClick={addStatus} style={{padding:"6px 18px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>追加</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1519,9 +1669,9 @@ function Dashboard({ leads, currentUser, onNavigate }) {
             ステータス分布
           </div>
           <div style={{display:"flex",flexWrap:"wrap", gap:8}}>
-            {STATUSES.map(s => {
+            {getStatuses().map(s => {
               const n = fl.filter(l=>l.status===s).length;
-              const c = STATUS_COLORS[s];
+              const c = getStatusColor(s);
               const pct = fl.length ? Math.round(n/fl.length*100) : 0;
               return (
                 <div key={s} style={{flex:"1 1 calc(50% - 4px)",background:c+"0d", border:`1px solid ${c}33`,borderRadius:10,padding:"7px 10px", display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -1644,7 +1794,7 @@ function parseCSV(text) {
       if (!row.company) continue;
       row.id = uid(); row.actions = [];
       row.charge_applied = row.charge_applied === "TRUE" || row.charge_applied === "true";
-      if (!STATUSES.includes(row.status)) row.status = "新規";
+      if (!getStatuses().includes(row.status)) row.status = getStatuses()[0] || "新規";
       if (!MQL_OPTIONS.includes(row.mql)) row.mql = "非MQL";
       row.date = normalizeDate(row.date);
       row.next_action_date = normalizeDate(row.next_action_date);
@@ -1663,7 +1813,7 @@ function parseCSV(text) {
     if (!row.company) { errors.push(`${i+1}行目: 会社名が空のためスキップ`); continue; }
     row.id = uid(); row.actions = [];
     row.charge_applied = row.charge_applied === "TRUE" || row.charge_applied === "true";
-    if (!STATUSES.includes(row.status)) row.status = "新規";
+    if (!getStatuses().includes(row.status)) row.status = getStatuses()[0] || "新規";
     if (!MQL_OPTIONS.includes(row.mql)) row.mql = "非MQL";
     row.date = normalizeDate(row.date);
     row.next_action_date = normalizeDate(row.next_action_date);
@@ -1773,7 +1923,7 @@ function CSVImport({ onImport, onClose, result }) {
                     <td style={{...S.td,fontSize:12}}>{l.date||"—"}</td>
                     <td style={{...S.td,fontSize:12}}>{l.source||"—"}</td>
                     <td style={{...S.td,fontSize:12}}>
-                      <span style={{color:STATUS_COLORS[l.status]||"#6a9a7a",fontWeight:600}}>{l.status}</span>
+                      <span style={{color:getStatusColor(l.status),fontWeight:600}}>{l.status}</span>
                     </td>
                     <td style={{...S.td,fontSize:12}}>{l.is_member||"—"}</td>
                   </tr>
@@ -1826,7 +1976,7 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
     onFilterConsumed && onFilterConsumed();
   }, [initialFilter]);
 
-  const STATUS_ORDER_FIXED = {"新規":0,"架電済":1,"日程調整中":2,"ナーチャリング":3,"商談確定":4,"育成対象外":5};
+  const STATUS_ORDER_FIXED = Object.fromEntries(getStatuses().map((s,i) => [s, i]));
 
   const list = leads
     .filter(l => fStatuses.size === 0 || fStatuses.has(l.status))
@@ -1919,9 +2069,9 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
         <button onClick={()=>setFNextAction(v=>v==="today"?"":"today")} style={{fontSize:11,padding:"3px 9px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",flexShrink:0, background:fNextAction==="today"?"#ea580c33":"transparent", color:fNextAction==="today"?"#ea580c":"#3d7a5e", border:`1px solid ${fNextAction==="today"?"#ea580c66":"#c0dece"}`, fontWeight:fNextAction==="today"?700:400}}>🔥 本日追客</button>
         <span style={{fontSize:11,color:"#c0dece",flexShrink:0, margin:"0 4px"}}>|</span>
         <span style={{fontSize:11,color:"#6a9a7a",flexShrink:0}}>ステータス:</span>
-        {STATUSES.map(s => {
+        {getStatuses().map(s => {
           const active = fStatuses.has(s);
-          const c = STATUS_COLORS[s]||"#6a9a7a";
+          const c = getStatusColor(s);
           return (
             <button key={s} onClick={() => setFStatuses(prev => {
               const n = new Set(prev); active ? n.delete(s) : n.add(s); return n;
@@ -2055,7 +2205,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
 
   const HP_ICON = <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHJ4PSI4IiBmaWxsPSIjMTBiOTgxIi8+CiAgPHBvbHlnb24gcG9pbnRzPSIyMCw4IDgsMjAgMTIsMjAgMTIsMzIgMTgsMzIgMTgsMjUgMjIsMjUgMjIsMzIgMjgsMzIgMjgsMjAgMzIsMjAiIGZpbGw9IndoaXRlIi8+Cjwvc3ZnPg==" style={{width:28,height:28,objectFit:"contain"}} alt="HP" />;
   const srcIcon = lead.source==="HP"?HP_ICON:lead.source==="ポータルサイト"?<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB4PSIyIiB5PSI0IiB3aWR0aD0iMzAiIGhlaWdodD0iMjYiIHJ4PSI1IiBmaWxsPSIjOGI1Y2Y2Ii8+CiAgPHJlY3QgeD0iMiIgeT0iNCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjgiIHJ4PSI1IiBmaWxsPSIjN2MzYWVkIi8+CiAgPGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjIiIGZpbGw9IiNmYmJmMjQiLz4KICA8Y2lyY2xlIGN4PSIxNCIgY3k9IjgiIHI9IjIiIGZpbGw9IiNhNzhiZmEiIG9wYWNpdHk9IjAuNyIvPgogIDxjaXJjbGUgY3g9IjIwIiBjeT0iOCIgcj0iMiIgZmlsbD0iI2M0YjVmZCIgb3BhY2l0eT0iMC41Ii8+CiAgPGNpcmNsZSBjeD0iMTYiIGN5PSIyMSIgcj0iNiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KICA8bGluZSB4MT0iMjEiIHkxPSIyNiIgeDI9IjI2IiB5Mj0iMzEiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMi41IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+" style={{width:28,height:28,objectFit:"contain"}} alt="ポータル" />:lead.source==="電話"?<img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iMzYiIGhlaWdodD0iMzYiIHJ4PSI4IiBmaWxsPSIjZjU5ZTBiIi8+CiAgPHBhdGggZD0iTTEyIDEwIEMxMSAxMCA5IDExIDkgMTMgQzkgMjAgMjAgMzEgMjcgMzEgQzI5IDMxIDMwIDI5IDMwIDI4IEwyOCAyNCBDMjggMjMgMjcgMjMgMjYgMjMgTDIzIDI0IEMyMiAyNCAyMSAyNCAyMSAyMyBDMTkgMjAgMTggMTggMTcgMTYgQzE2IDE1IDE3IDE0IDE3IDEzIEwxOCAxMCBDMTggOSAxNyA4IDE2IDggWiIgZmlsbD0id2hpdGUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC41Ii8+Cjwvc3ZnPg==" style={{width:28,height:28,objectFit:"contain"}} alt="電話" />:"📋";
-  const sc = STATUS_COLORS[lead.status] || "#6a9a7a";
+  const sc = getStatusColor(lead.status);
   const nad = lead.next_action_date;
   const subParts = [
     lead.contact,
@@ -2113,7 +2263,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
           <select value={lead.status||"新規"}
             onChange={e=>{ e.stopPropagation(); onStatusChange(e.target.value); }}
             style={{fontSize:11,fontWeight:700,color:sc, background:sc+"15",border:`1px solid ${sc}44`, borderRadius:8,padding:"3px 8px",cursor:"pointer", fontFamily:"inherit", outline:"none", whiteSpace:"nowrap"}}>
-            {STATUSES.map(s=><option key={s}>{s}</option>)}
+            {getStatuses().map(s=><option key={s}>{s}</option>)}
           </select>
 
           {/* 編集・削除ボタン */}
@@ -2303,7 +2453,7 @@ function LeadForm({ initial, onSave, onClose }) {
             <div>
               <label style={S.lbl}>ステータス *</label>
               <select value={d.status} onChange={e=>set("status",e.target.value)} style={S.inp}>
-                {STATUSES.map(s=><option key={s}>{s}</option>)}
+                {getStatuses().map(s=><option key={s}>{s}</option>)}
               </select>
             </div>
             <div />
@@ -2481,7 +2631,7 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
   const [editingAction, setEditingAction] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const actions = lead.actions || [];
-  const sc = STATUS_COLORS[lead.status] || "#6a9a7a";
+  const sc = getStatusColor(lead.status);
   const nad = lead.next_action_date;
   const overdue = isOverdue(nad);
   const today   = isDueToday(nad);
