@@ -847,7 +847,7 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
   const addRow = { display:"flex", gap:8, marginBottom:12 };
 
   return (
-    <div style={{padding:"24px 28px"}}>
+    <div style={{padding:"24px 28px", maxWidth:"50%"}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ マスタ管理</div>
       <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>ポータルサイト・プラン・営業担当・APIキーを管理できます。</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
