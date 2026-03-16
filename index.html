@@ -376,13 +376,6 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                       {leads.map(l=><option key={l.id} value={l.id}>{l.company}（{l.contact}）</option>)}
                     </select>
                   </div>
-                  {/* 宛先メールアドレス */}
-                  <div><label style={lblStyle}>宛先メールアドレス <span style={{color:"#10b981",fontSize:10,fontWeight:600}}>自動入力</span></label>
-                    <div style={{display:"flex",gap:4}}>
-                      <input type="email" value={toEmail} onChange={e=>setToEmail(e.target.value)} placeholder="例：yamada@example.com" style={{...inpStyle,flex:1}} />
-                      {toEmail && <button onClick={()=>{navigator.clipboard?.writeText(toEmail);setCopiedTo(true);setTimeout(()=>setCopiedTo(false),2000);}} style={{padding:"0 8px",borderRadius:7,border:"1px solid #c0dece",background:copiedTo?"#059669":"#f0f5f2",color:copiedTo?"#fff":"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0,whiteSpace:"nowrap"}}>{copiedTo?"✅":"📋"}</button>}
-                    </div>
-                  </div>
                   {/* 担当者苗字（自動抽出） */}
                   <div><label style={lblStyle}>{"{{"+"担当者苗字"+"}}"} <span style={{color:"#10b981",fontSize:10,fontWeight:600}}>苗字のみ自動</span></label>
                     <input value={vars.担当者苗字||""} onChange={e=>setVars(v=>({...v,担当者苗字:e.target.value}))} style={inpStyle} placeholder="例：山田" />
@@ -460,6 +453,14 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                       <button onClick={()=>{setPreviewSubj(subj);setPreviewBody(body);}} style={{padding:"5px 12px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>↩ リセット</button>
                       <button onClick={saveGmailDraft} disabled={gmailSaving} style={{padding:"5px 14px",borderRadius:7,border:"none",background:gmailSaved?"#2563eb":gmailSaving?"#93c5fd":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontSize:12,fontWeight:700,cursor:gmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:gmailSaving?0.7:1}}>{gmailSaving?"保存中...":gmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
                       <button onClick={()=>copy(previewSubj+"\n\n"+previewBody)} style={{padding:"5px 14px",borderRadius:7,border:"none",background:copied?"#059669":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copied?"✅ コピー済み":"📋 全文コピー"}</button>
+                    </div>
+                  </div>
+                  {/* 宛先 */}
+                  <div style={{marginBottom:8}}>
+                    <label style={{fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3}}>宛先</label>
+                    <div style={{display:"flex",gap:4}}>
+                      <input type="email" value={toEmail} onChange={e=>setToEmail(e.target.value)} placeholder="メールアドレスが自動入力されます" style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:toEmail?"#f0fdf4":"#f8fffe",color:"#174f35"}} />
+                      {toEmail && <button onClick={()=>{navigator.clipboard?.writeText(toEmail);setCopiedTo(true);setTimeout(()=>setCopiedTo(false),2000);}} style={{padding:"0 10px",borderRadius:7,border:"1px solid #c0dece",background:copiedTo?"#059669":"#f0f5f2",color:copiedTo?"#fff":"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0,whiteSpace:"nowrap"}}>{copiedTo?"✅ コピー済み":"📋 コピー"}</button>}
                     </div>
                   </div>
                   <div style={{marginBottom:8}}>
