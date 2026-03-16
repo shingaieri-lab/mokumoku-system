@@ -2607,12 +2607,12 @@ function AccountManager({ currentUser, onClose, inline }) {
         <div style={{background:"#f0f5f2",borderRadius:10,padding:"16px",border:"1px solid #d8ede1"}}>
           <div style={{fontSize:13,fontWeight:700,color:"#174f35",marginBottom:12}}>{editingId ? "✏️ アカウント編集" : "＋ アカウント追加"}</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
-            {[["ユーザーID","id","例：tanaka"],["表示名","name","例：新谷"],["パスワード","password","パスワード"],["メールアドレス","email","例：tanaka@example.com"]].map(([lbl,key,ph])=>(
+            {[["ユーザーID","id","例：tanaka"],["表示名","name","例：田中"],["パスワード","password","パスワード"],["メールアドレス","email","例：tanaka@example.com"]].map(([lbl,key,ph])=>(
               <div key={key}>
                 <label style={{fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3}}>{lbl}</label>
                 <input value={form[key]||""} onChange={e=>setForm(p=>({...p,[key]:e.target.value}))}
-                  disabled={key==="id"&&editingId!==null} placeholder={ph} type={key==="email"?"email":"text"}
-                  style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",background:key==="id"&&editingId?"#e8f5ee":"#fff",fontSize:12,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}} />
+                  placeholder={ph} type={key==="email"?"email":"text"}
+                  style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",background:"#fff",fontSize:12,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}} />
               </div>
             ))}
             <div>
