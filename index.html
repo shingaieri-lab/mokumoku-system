@@ -177,7 +177,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const [tpls, setTpls] = React.useState(loadTpls);
   const [selTpl, setSelTpl] = React.useState(tpls[0]?.id||"");
   const [selLead, setSelLead] = React.useState("");
-  const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:""});
+  const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
   const [previewSubj, setPreviewSubj] = React.useState("");
   const [previewBody, setPreviewBody] = React.useState("");
   const [editMode, setEditMode] = React.useState(false);
@@ -248,7 +248,70 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const showSlots = tpl ? (tpl.useSlots !== undefined ? tpl.useSlots : tpl.body.includes("{{候補日時}}")) : false;
   // プレビューを変数・テンプレート変更に追従
   React.useEffect(()=>{ setPreviewSubj(subj); setPreviewBody(body); },[body,subj]);
+  const [gmailToken, setGmailToken] = React.useState(null);
+  const [gmailSaving, setGmailSaving] = React.useState(false);
+  const [gmailSaved, setGmailSaved] = React.useState(false);
+
   const copy=(txt)=>{ navigator.clipboard?.writeText(txt); setCopied(true); setTimeout(()=>setCopied(false),2000); };
+
+  const saveGmailDraft = async () => {
+    const cfg = (() => { try { return JSON.parse(localStorage.getItem("ai_config")||"{}"); } catch { return {}; } })();
+    const clientId = cfg.gmailClientId;
+    if (!clientId) { alert("設定 > APIキー設定 で Gmail Client ID を入力してください"); return; }
+    setGmailSaving(true);
+    try {
+      let token = gmailToken;
+      if (!token) {
+        if (!window.google?.accounts?.oauth2) {
+          await new Promise((res, rej) => {
+            if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) { res(); return; }
+            const s = document.createElement('script');
+            s.src = 'https://accounts.google.com/gsi/client';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+          });
+          await new Promise(r => setTimeout(r, 500));
+        }
+        token = await new Promise((res, rej) => {
+          const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/gmail.compose',
+            callback: (resp) => resp.error ? rej(new Error(resp.error)) : res(resp.access_token)
+          });
+          client.requestAccessToken();
+        });
+        setGmailToken(token);
+      }
+      const utf8B64 = (str) => { const b = new TextEncoder().encode(str); let s=''; for(let c of b) s+=String.fromCharCode(c); return btoa(s); };
+      const to = vars.宛先メール||'';
+      const lines = [];
+      if (to) lines.push(`To: ${to}`);
+      lines.push(`Subject: =?UTF-8?B?${utf8B64(previewSubj)}?=`);
+      lines.push('MIME-Version: 1.0');
+      lines.push('Content-Type: text/plain; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: base64');
+      lines.push('');
+      lines.push(utf8B64(previewBody));
+      const raw = btoa(lines.join('\r\n')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/drafts', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: { raw } })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setGmailToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
+        throw new Error(err.error?.message || '保存に失敗しました');
+      }
+      setGmailSaved(true);
+      setTimeout(() => setGmailSaved(false), 3000);
+    } catch(e) {
+      alert('Gmail下書き保存エラー: ' + e.message);
+    } finally {
+      setGmailSaving(false);
+    }
+  };
+
   const saveEdit=()=>{ const u=tpls.map(t=>t.id===editTpl.id?editTpl:t); setTpls(u); saveTpls(u); setEditMode(false); };
   const deleteTpl=(id)=>{ if(!window.confirm("削除しますか？")) return; const u=tpls.filter(t=>t.id!==id); setTpls(u); saveTpls(u); if(selTpl===id) setSelTpl(u[0]?.id||""); };
   const addTpl=()=>{ const n={id:"t"+Date.now(),name:"新テンプレート",useSlots:false,subject:"件名",body:"本文"}; const u=[...tpls,n]; setTpls(u); saveTpls(u); setSelTpl(n.id); setEditTpl(n); setEditMode(true); };
@@ -292,7 +355,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                 <label style={{fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3}}>本文</label>
                 <textarea value={editTpl.body} onChange={e=>setEditTpl(p=>({...p,body:e.target.value}))} style={{flex:1,width:"100%",minHeight:320,padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",resize:"none",lineHeight:1.7}} />
               </div>
-              <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>使用可能な変数：{"{{"+"担当者名"+"}}"}　{"{{"+"担当者苗字"+"}}"}　{"{{"+"会社名"+"}}"}　{"{{"+"送信者名"+"}}"}　{"{{"+"候補日時"+"}}"}（useSlots ON時）　{"{{"+"商談月"+"}}"}　{"{{"+"商談日"+"}}"}　{"{{"+"商談曜日"+"}}"}　{"{{"+"商談時"+"}}"}　{"{{"+"商談分"+"}}"}</div>
+              <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>使用可能な変数：{"{{"+"担当者名"+"}}"}　{"{{"+"担当者苗字"+"}}"}　{"{{"+"会社名"+"}}"}　{"{{"+"送信者名"+"}}"}　{"{{"+"商談担当"+"}}"}　{"{{"+"候補日時"+"}}"}（useSlots ON時）　{"{{"+"商談月"+"}}"}　{"{{"+"商談日"+"}}"}　{"{{"+"商談曜日"+"}}"}　{"{{"+"商談時"+"}}"}　{"{{"+"商談分"+"}}"}</div>
               <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                 <button onClick={()=>setEditMode(false)} style={{padding:"7px 16px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#6a9a7a",fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>キャンセル</button>
                 <button onClick={saveEdit} style={{padding:"7px 16px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>保存</button>
@@ -325,6 +388,17 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                   {/* 送信者名（ログインユーザー自動入力） */}
                   <div><label style={lblStyle}>{"{{"+"送信者名"+"}}"} <span style={{color:"#10b981",fontSize:10,fontWeight:600}}>自動入力</span></label>
                     <input value={vars.送信者名||""} onChange={e=>setVars(v=>({...v,送信者名:e.target.value}))} style={inpStyle} />
+                  </div>
+                  {/* 商談担当 */}
+                  <div><label style={lblStyle}>{"{{"+"商談担当"+"}}"}</label>
+                    <select value={vars.商談担当||""} onChange={e=>setVars(v=>({...v,商談担当:e.target.value}))} style={inpStyle}>
+                      <option value="">選択してください</option>
+                      {getSalesMembers().map(m=><option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+                  {/* 宛先メール */}
+                  <div style={{gridColumn:"1/-1"}}><label style={lblStyle}>宛先メールアドレス <span style={{color:"#9ca3af",fontSize:10}}>（Gmail下書き保存時のTo欄・任意）</span></label>
+                    <input value={vars.宛先メール||""} onChange={e=>setVars(v=>({...v,宛先メール:e.target.value}))} style={inpStyle} placeholder="例：yamada@example.com" type="email" />
                   </div>
                 </div>
                 {/* 商談日時 */}
@@ -374,6 +448,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                     <div style={{fontSize:12,fontWeight:700,color:"#174f35"}}>📝 メール本文（直接編集可）</div>
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={()=>{setPreviewSubj(subj);setPreviewBody(body);}} style={{padding:"5px 12px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>↩ リセット</button>
+                      <button onClick={saveGmailDraft} disabled={gmailSaving} style={{padding:"5px 14px",borderRadius:7,border:"none",background:gmailSaved?"#2563eb":gmailSaving?"#93c5fd":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontSize:12,fontWeight:700,cursor:gmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:gmailSaving?0.7:1}}>{gmailSaving?"保存中...":gmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
                       <button onClick={()=>copy(previewSubj+"\n\n"+previewBody)} style={{padding:"5px 14px",borderRadius:7,border:"none",background:copied?"#059669":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copied?"✅ コピー済み":"📋 全文コピー"}</button>
                     </div>
                   </div>
@@ -759,6 +834,30 @@ function SettingsPage({ aiConfig, onSave }) {
               <div>① Google AI StudioでAPIキーを発行</div>
               <div>② 上記フィールドに貼り付けてフォーカスを外す</div>
               <div>③ AIアシスタント画面でリードを選択して使用</div>
+            </div>
+            <div style={{marginTop:20,marginBottom:16}}>
+              <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>📨 Gmail OAuth Client ID</label>
+              <input type="text"
+                defaultValue={(() => { try { return JSON.parse(localStorage.getItem("ai_config")||"{}").gmailClientId||""; } catch { return ""; } })()}
+                onBlur={e => {
+                  try {
+                    const cfg = JSON.parse(localStorage.getItem("ai_config")||"{}");
+                    cfg.gmailClientId = e.target.value.trim();
+                    localStorage.setItem("ai_config", JSON.stringify(cfg));
+                    if (onSave) onSave(cfg);
+                    setMsg("保存しました ✓");
+                    setTimeout(()=>setMsg(""),2000);
+                  } catch {}
+                }}
+                placeholder="xxxxxxxxxx.apps.googleusercontent.com"
+                style={{...inp, fontFamily:"monospace"}}
+              />
+              <div style={{fontSize:11,color:"#9ca3af",marginTop:6,lineHeight:1.7}}>
+                ※ フォームからフォーカスを外すと自動保存されます<br/>
+                ① <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a> でOAuthクライアントID（ウェブアプリ）を作成<br/>
+                ② 承認済みJavaScriptオリジンにこのアプリのURLを追加<br/>
+                ③ Gmail APIを有効化してClient IDを上記に貼り付け
+              </div>
             </div>
           </div>
         )}
