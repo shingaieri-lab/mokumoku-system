@@ -2361,9 +2361,9 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
 
       {/* Always-visible: メモ */}
       {lead.memo && (
-        <div style={{display:"flex",alignItems:"flex-start",gap:6,padding:"5px 14px",borderTop:"1px solid #e8f5ee",background:"#fffdf0"}} onClick={e=>e.stopPropagation()}>
-          <span style={{fontSize:12,color:"#b45309",flexShrink:0,marginTop:1}}>📝</span>
-          <span style={{fontSize:12,color:"#78350f",lineHeight:1.5,wordBreak:"break-word"}}>{lead.memo}</span>
+        <div style={{display:"flex",alignItems:"flex-start",gap:6,padding:"5px 14px",borderTop:"1px solid #bae6fd",background:"#e0f2fe"}} onClick={e=>e.stopPropagation()}>
+          <span style={{fontSize:12,color:"#0369a1",flexShrink:0,marginTop:1}}>📝</span>
+          <span style={{fontSize:12,color:"#1e3a5f",lineHeight:1.5,wordBreak:"break-word"}}>{lead.memo}</span>
         </div>
       )}
 
@@ -2737,9 +2737,9 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
 
       {/* メモ */}
       {lead.memo && (
-        <div style={{padding:"8px 16px", borderBottom:"1px solid #e2f0e8", background:"#fffdf0", display:"flex", alignItems:"flex-start", gap:6}}>
-          <span style={{fontSize:12, color:"#b45309", flexShrink:0, marginTop:1}}>📝</span>
-          <span style={{fontSize:12, color:"#78350f", lineHeight:1.6, wordBreak:"break-word"}}>{lead.memo}</span>
+        <div style={{padding:"8px 16px", borderBottom:"1px solid #bae6fd", background:"#e0f2fe", display:"flex", alignItems:"flex-start", gap:6}}>
+          <span style={{fontSize:12, color:"#0369a1", flexShrink:0, marginTop:1}}>📝</span>
+          <span style={{fontSize:12, color:"#1e3a5f", lineHeight:1.6, wordBreak:"break-word"}}>{lead.memo}</span>
         </div>
       )}
 
