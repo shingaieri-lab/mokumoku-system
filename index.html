@@ -1933,7 +1933,7 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
 
       <div style={{display:"flex", gap:12, marginTop:16, height:"calc(100vh - 178px)"}}>
         {/* 左側：リード一覧 */}
-        <div style={{flex:"0 0 460px", width:460, overflowY:"auto"}}>
+        <div style={{flex:"0 0 50%", width:"50%", overflowY:"auto"}}>
           <div style={{display:"flex", flexDirection:"column", gap:6}}>
             {list.length === 0 && <div style={{...S.empty,padding:"32px"}}>リードがありません</div>}
             {list.map(lead => (
