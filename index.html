@@ -1023,7 +1023,7 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile }) {
 function SVGBarChart({ data, keys, colors, height=200 }) {
   const [tooltip, setTooltip] = React.useState(null);
   if (!data.length) return null;
-  const maxVal = Math.max(...data.flatMap(d => keys.map(k => d[k]||0)), 1);
+  const maxVal = Math.ceil(Math.max(...data.flatMap(d => keys.map(k => d[k]||0)), 1) * 1.2);
   const padL=36,padR=12,padT=16,padB=28,W=560,H=height;
   const chartW=W-padL-padR, chartH=H-padT-padB;
   const groupW=chartW/data.length;
