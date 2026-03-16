@@ -1072,13 +1072,14 @@ function App() {
     try { localStorage.removeItem("current_user_v2"); } catch {}
   };
   const updateMyProfile = (profile) => {
+    const originalId = currentUser.id;
     const updated = { ...currentUser, ...profile };
     setCurrentUser(updated);
     USER_COLORS[updated.name] = updated.color;
     IS_COLORS[updated.name] = { bg: updated.color, text: updated.color, border: updated.color + "55" };
     try { localStorage.setItem("current_user_v2", JSON.stringify(updated)); } catch {}
     const accounts = loadAccounts();
-    const newAccounts = accounts.map(a => a.id === updated.id ? { ...a, ...profile } : a);
+    const newAccounts = accounts.map(a => a.id === originalId ? { ...a, ...profile } : a);
     saveAccounts(newAccounts);
   };
   const [candidateSlots, setCandidateSlots] = useState([]);
@@ -1128,11 +1129,11 @@ function App() {
 function Nav({ page, setPage, count, currentUser, onLogout, onUpdateProfile }) {
   const [tooltip, setTooltip] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name:"", password:"", email:"", color:"" });
+  const [profileForm, setProfileForm] = useState({ name:"", password:"", email:"", color:"", id:"" });
   const [profileMsg, setProfileMsg] = useState("");
   const openUserMenu = () => {
     if (!showUserMenu) {
-      setProfileForm({ name: currentUser?.name||"", password: currentUser?.password||"", email: currentUser?.email||"", color: currentUser?.color||PALETTE[0] });
+      setProfileForm({ name: currentUser?.name||"", password: currentUser?.password||"", email: currentUser?.email||"", color: currentUser?.color||PALETTE[0], id: currentUser?.id||"" });
       setProfileMsg("");
     }
     setShowUserMenu(v => !v);
@@ -1214,7 +1215,7 @@ function Nav({ page, setPage, count, currentUser, onLogout, onUpdateProfile }) {
               {[["表示名","name","text"],["パスワード","password","password"],["メールアドレス","email","email"]].map(([lbl,key,type])=>(
                 <div key={key} style={{marginBottom:7}}>
                   <div style={{fontSize:10,color:"#6a9a7a",marginBottom:2}}>{lbl}</div>
-                  <input type={type} value={profileForm[key]||""} onChange={e=>setProfileForm(p=>({...p,[key]:e.target.value}))}
+                  <input type={type} value={profileForm[key]||""} onChange={e=>{ const v=e.target.value; if(key==="email"){ const prefix=v.includes("@")?v.split("@")[0]:v; setProfileForm(p=>({...p,email:v,id:prefix})); } else { setProfileForm(p=>({...p,[key]:v})); } }}
                     style={{width:"100%",padding:"5px 8px",borderRadius:6,border:"1px solid #c0dece",fontSize:11,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff"}} />
                 </div>
               ))}
@@ -2479,17 +2480,12 @@ function LoginScreen({ onLogin }) {
         ) : (
           <>
             <div style={{ marginBottom:12 }}>
-              <label style={{ ...S.lbl, display:"block", marginBottom:2 }}>ID（ログイン用）<span style={{ color:"#ef4444" }}>*</span></label>
-              <div style={{ fontSize:11, color:"#6a9a7a", marginBottom:3 }}>メールアドレスの＠左側</div>
-              <input value={sForm.id} onChange={e=>setSForm(p=>({...p,id:e.target.value}))} style={inp2} />
-            </div>
-            <div style={{ marginBottom:12 }}>
               <label style={{ ...S.lbl, display:"block", marginBottom:2 }}>表示名<span style={{ color:"#ef4444" }}>*</span></label>
               <input value={sForm.name} onChange={e=>setSForm(p=>({...p,name:e.target.value}))} style={inp2} />
             </div>
             <div style={{ marginBottom:12 }}>
               <label style={{ ...S.lbl, display:"block", marginBottom:2 }}>メールアドレス<span style={{ color:"#ef4444" }}>*</span></label>
-              <input value={sForm.email||""} onChange={e=>setSForm(p=>({...p,email:e.target.value}))} style={inp2} />
+              <input value={sForm.email||""} onChange={e=>{ const v=e.target.value; const prefix=v.includes("@")?v.split("@")[0]:v; setSForm(p=>({...p,email:v,id:prefix})); }} style={inp2} />
             </div>
             <div style={{ marginBottom:12 }}>
               <label style={{ ...S.lbl, display:"block", marginBottom:2 }}>パスワード<span style={{ color:"#ef4444" }}>*</span></label>
@@ -2610,7 +2606,7 @@ function AccountManager({ currentUser, onClose, inline }) {
             {[["ユーザーID","id","例：tanaka"],["表示名","name","例：田中"],["パスワード","password","パスワード"],["メールアドレス","email","例：tanaka@example.com"]].map(([lbl,key,ph])=>(
               <div key={key}>
                 <label style={{fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3}}>{lbl}</label>
-                <input value={form[key]||""} onChange={e=>setForm(p=>({...p,[key]:e.target.value}))}
+                <input value={form[key]||""} onChange={e=>{ const v=e.target.value; if(key==="email"){ const prefix=v.includes("@")?v.split("@")[0]:v; setForm(p=>({...p,email:v,id:prefix})); } else { setForm(p=>({...p,[key]:v})); } }}
                   placeholder={ph} type={key==="email"?"email":"text"}
                   style={{width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",background:"#fff",fontSize:12,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}} />
               </div>
