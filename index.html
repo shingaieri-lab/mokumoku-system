@@ -177,6 +177,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const [tpls, setTpls] = React.useState(loadTpls);
   const [selTpl, setSelTpl] = React.useState(tpls[0]?.id||"");
   const [selLead, setSelLead] = React.useState("");
+  const [leadSearch, setLeadSearch] = React.useState("");
   const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
   const [previewSubj, setPreviewSubj] = React.useState("");
   const [previewBody, setPreviewBody] = React.useState("");
@@ -424,9 +425,10 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                   {/* リード選択 */}
                   <div><label style={lblStyle}>リード選択</label>
-                    <select value={selLead} onChange={e=>setSelLead(e.target.value)} style={{...inpStyle}}>
+                    <input value={leadSearch} onChange={e=>setLeadSearch(e.target.value)} placeholder="会社名・担当者名で検索" style={{...inpStyle,marginBottom:4}} />
+                    <select value={selLead} onChange={e=>{setSelLead(e.target.value);setLeadSearch("");}} style={{...inpStyle}}>
                       <option value="">選択してください</option>
-                      {leads.map(l=><option key={l.id} value={l.id}>{l.company}（{l.contact}）</option>)}
+                      {leads.filter(l=>{const q=leadSearch.trim().toLowerCase();return !q||(l.company||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q);}).map(l=><option key={l.id} value={l.id}>{l.company}（{l.contact}）</option>)}
                     </select>
                   </div>
                   {/* 担当者苗字（自動抽出） */}
@@ -530,6 +532,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
 function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, currentUser }) {
   const apiKey = (aiConfig||{}).geminiKey||"";
   const [selLead, setSelLead] = React.useState("");
+  const [leadSearch, setLeadSearch] = React.useState("");
   const [memo, setMemo] = React.useState("");
   const [actionDate, setActionDate] = React.useState(new Date().toISOString().split("T")[0]);
   const [actionTime, setActionTime] = React.useState(()=>{ const n=new Date(); const m=Math.floor(n.getMinutes()/30)*30; return `${String(n.getHours()).padStart(2,"0")}:${String(m).padStart(2,"0")}`; });
@@ -601,9 +604,10 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
           <div style={{flex:1,padding:"18px 20px",display:"flex",flexDirection:"column",gap:14}}>
             <div>
               <label style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>🏢 リード選択</label>
-              <select value={selLead} onChange={e=>{setSelLead(e.target.value);setResult(null);setSaved(false);}} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none"}}>
+              <input value={leadSearch} onChange={e=>setLeadSearch(e.target.value)} placeholder="会社名・担当者名で検索" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",marginBottom:4}} />
+              <select value={selLead} onChange={e=>{setSelLead(e.target.value);setResult(null);setSaved(false);setLeadSearch("");}} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none"}}>
                 <option value="">-- リードを選択 --</option>
-                {leads.map(l=><option key={l.id} value={l.id}>{l.company}{l.contact?`（${l.contact}）`:""} [{l.status}]</option>)}
+                {leads.filter(l=>{const q=leadSearch.trim().toLowerCase();return !q||(l.company||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q);}).map(l=><option key={l.id} value={l.id}>{l.company}{l.contact?`（${l.contact}）`:""} [{l.status}]</option>)}
               </select>
               {lead&&(lead.actions||[]).length>0&&(
                 <div style={{marginTop:8,background:"#1e293b",borderRadius:8,padding:"10px 12px",border:"1px solid #334155"}}>
