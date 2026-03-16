@@ -1586,18 +1586,20 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
         />
       )}
 
-      <div style={{display:"flex", gap:12, marginTop:16, height:"calc(100vh - 178px)", overflow:"hidden"}}>
+      <div style={{display:"flex", gap:12, marginTop:16, height:"calc(100vh - 178px)"}}>
         {/* 左側：リード一覧 */}
-        <div style={{flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6, overflowY:"auto", height:"100%"}}>
-          {list.length === 0 && <div style={{...S.empty,padding:"32px"}}>リードがありません</div>}
-          {list.map(lead => (
-            <LeadRow key={lead.id} lead={lead} openId={openId} setOpenId={setOpenId}
-              onEdit={() => { setEditing(lead); setShowForm(true); }}
-              onDelete={() => onDelete(lead.id)}
-              onStatusChange={s => onUpdate(lead.id, { status: s })}
-              onUpdate={p => onUpdate(lead.id, p)}
-            />
-          ))}
+        <div style={{flex:1, minWidth:0, overflowY:"auto"}}>
+          <div style={{display:"flex", flexDirection:"column", gap:6}}>
+            {list.length === 0 && <div style={{...S.empty,padding:"32px"}}>リードがありません</div>}
+            {list.map(lead => (
+              <LeadRow key={lead.id} lead={lead} openId={openId} setOpenId={setOpenId}
+                onEdit={() => { setEditing(lead); setShowForm(true); }}
+                onDelete={() => onDelete(lead.id)}
+                onStatusChange={s => onUpdate(lead.id, { status: s })}
+                onUpdate={p => onUpdate(lead.id, p)}
+              />
+            ))}
+          </div>
         </div>
 
         {/* 右パネル：アクション履歴 */}
