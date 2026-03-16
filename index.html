@@ -164,6 +164,53 @@ const AI_SYSTEM_PROMPT = `あなたはダンドリワーク（建築施工管理
 
 必ずJSONのみ返してください。`;
 
+function LeadCombobox({ leads, value, onChange, placeholder, inputStyle, darkMode }) {
+  const [inputVal, setInputVal] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(()=>{
+    if(!value){setInputVal("");return;}
+    const l=leads.find(l=>l.id===value);
+    if(l) setInputVal(l.company+(l.contact?`（${l.contact}）`:""));
+  },[value,leads]);
+  React.useEffect(()=>{
+    const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};
+    document.addEventListener("mousedown",h);
+    return()=>document.removeEventListener("mousedown",h);
+  },[]);
+  const q=inputVal.trim().toLowerCase();
+  const filtered=value?leads:leads.filter(l=>!q||(l.company||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q));
+  const select=l=>{onChange(l.id);setInputVal(l.company+(l.contact?`（${l.contact}）`:""));setOpen(false);};
+  const handleChange=e=>{setInputVal(e.target.value);if(value)onChange("");setOpen(true);};
+  const handleClear=e=>{e.stopPropagation();onChange("");setInputVal("");setOpen(false);};
+  const bg=darkMode?"#1e293b":"#fff";
+  const border=darkMode?"#334155":"#c0dece";
+  const textColor=darkMode?"#e2e8f0":"#174f35";
+  const hoverBg=darkMode?"#334155":"#f0f9f5";
+  const rowBorder=darkMode?"#334155":"#e2f0e8";
+  return (
+    <div ref={ref} style={{position:"relative"}}>
+      <div style={{position:"relative"}}>
+        <input value={inputVal} onChange={handleChange} onFocus={()=>{if(!value)setOpen(true);}} placeholder={placeholder} style={{...inputStyle,paddingRight:inputVal?"28px":undefined}} />
+        {inputVal&&<button onMouseDown={handleClear} style={{position:"absolute",right:7,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#9ca3af",fontSize:13,padding:"0 2px",lineHeight:1}}>✕</button>}
+      </div>
+      {open&&filtered.length>0&&(
+        <div style={{position:"absolute",top:"100%",left:0,right:0,zIndex:9999,background:bg,border:`1px solid ${border}`,borderRadius:8,boxShadow:"0 4px 16px rgba(0,0,0,0.18)",maxHeight:240,overflowY:"auto",marginTop:2}}>
+          {filtered.map(l=>(
+            <div key={l.id} onMouseDown={()=>select(l)}
+              style={{padding:"9px 12px",cursor:"pointer",fontSize:13,color:textColor,borderBottom:`1px solid ${rowBorder}`}}
+              onMouseEnter={e=>e.currentTarget.style.background=hoverBg}
+              onMouseLeave={e=>e.currentTarget.style.background="none"}>
+              {l.company}{l.contact?`（${l.contact}）`:""}
+              {darkMode&&l.status?<span style={{marginLeft:6,fontSize:11,color:"#64748b"}}>[{l.status}]</span>:null}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const DEFAULT_EMAIL_TEMPLATES = [
     { id:"t1", name:"初回フォロー", useSlots:false, subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者苗字}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
@@ -177,7 +224,6 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const [tpls, setTpls] = React.useState(loadTpls);
   const [selTpl, setSelTpl] = React.useState(tpls[0]?.id||"");
   const [selLead, setSelLead] = React.useState("");
-  const [leadSearch, setLeadSearch] = React.useState("");
   const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
   const [previewSubj, setPreviewSubj] = React.useState("");
   const [previewBody, setPreviewBody] = React.useState("");
@@ -425,11 +471,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:10}}>
                   {/* リード選択 */}
                   <div><label style={lblStyle}>リード選択</label>
-                    <input value={leadSearch} onChange={e=>setLeadSearch(e.target.value)} placeholder="会社名・担当者名で検索" style={{...inpStyle,marginBottom:4}} />
-                    <select value={selLead} onChange={e=>{setSelLead(e.target.value);setLeadSearch("");}} style={{...inpStyle}}>
-                      <option value="">選択してください</option>
-                      {leads.filter(l=>{const q=leadSearch.trim().toLowerCase();return !q||(l.company||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q);}).map(l=><option key={l.id} value={l.id}>{l.company}（{l.contact}）</option>)}
-                    </select>
+                    <LeadCombobox leads={leads} value={selLead} onChange={setSelLead} placeholder="会社名・担当者名で検索" inputStyle={inpStyle} darkMode={false} />
                   </div>
                   {/* 担当者苗字（自動抽出） */}
                   <div><label style={lblStyle}>{"{{"+"担当者苗字"+"}}"} <span style={{color:"#10b981",fontSize:10,fontWeight:600}}>苗字のみ自動</span></label>
@@ -532,7 +574,6 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
 function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, currentUser }) {
   const apiKey = (aiConfig||{}).geminiKey||"";
   const [selLead, setSelLead] = React.useState("");
-  const [leadSearch, setLeadSearch] = React.useState("");
   const [memo, setMemo] = React.useState("");
   const [actionDate, setActionDate] = React.useState(new Date().toISOString().split("T")[0]);
   const [actionTime, setActionTime] = React.useState(()=>{ const n=new Date(); const m=Math.floor(n.getMinutes()/30)*30; return `${String(n.getHours()).padStart(2,"0")}:${String(m).padStart(2,"0")}`; });
@@ -604,11 +645,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
           <div style={{flex:1,padding:"18px 20px",display:"flex",flexDirection:"column",gap:14}}>
             <div>
               <label style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>🏢 リード選択</label>
-              <input value={leadSearch} onChange={e=>setLeadSearch(e.target.value)} placeholder="会社名・担当者名で検索" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box",marginBottom:4}} />
-              <select value={selLead} onChange={e=>{setSelLead(e.target.value);setResult(null);setSaved(false);setLeadSearch("");}} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none"}}>
-                <option value="">-- リードを選択 --</option>
-                {leads.filter(l=>{const q=leadSearch.trim().toLowerCase();return !q||(l.company||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q);}).map(l=><option key={l.id} value={l.id}>{l.company}{l.contact?`（${l.contact}）`:""} [{l.status}]</option>)}
-              </select>
+              <LeadCombobox leads={leads} value={selLead} onChange={id=>{setSelLead(id);setResult(null);setSaved(false);}} placeholder="会社名・担当者名で検索" inputStyle={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} darkMode={true} />
               {lead&&(lead.actions||[]).length>0&&(
                 <div style={{marginTop:8,background:"#1e293b",borderRadius:8,padding:"10px 12px",border:"1px solid #334155"}}>
                   <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>直近のアクション</div>
