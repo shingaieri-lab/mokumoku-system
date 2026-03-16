@@ -1998,6 +1998,8 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
               lead={selectedLead}
               onClose={() => setOpenId(null)}
               onUpdate={p => onUpdate(selectedLead.id, p)}
+              onEdit={() => { setEditing(selectedLead); setShowForm(true); }}
+              onDelete={() => { onDelete(selectedLead.id); setOpenId(null); }}
               currentUser={currentUser}
               onEditAction={(aid, updated) => {
                 const newActions = (selectedLead.actions||[]).map(a => a.id === aid ? { ...a, ...updated } : a);
@@ -2496,9 +2498,10 @@ function ActEntry({ a, onEdit, onDelete }) {
   );
 }
 
-function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, currentUser }) {
+function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser }) {
   const [showAF, setShowAF] = useState(false);
   const [editingAction, setEditingAction] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const actions = lead.actions || [];
   const sc = STATUS_COLORS[lead.status] || "#6a9a7a";
   const nad = lead.next_action_date;
@@ -2516,7 +2519,17 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
             {lead.contact && <div style={{fontSize:11, color:"#6a9a7a", marginTop:2}}>{lead.contact}</div>}
             {lead.email && <div style={{fontSize:11, color:"#0ea5e9", marginTop:2}}><a href={`mailto:${lead.email}`} style={{color:"#0ea5e9", textDecoration:"none"}}>✉️ {lead.email}</a></div>}
           </div>
-          <button onClick={onClose} style={{background:"none", border:"none", cursor:"pointer", color:"#6a9a7a", fontSize:16, flexShrink:0, lineHeight:1, padding:0}}>✕</button>
+          <div style={{display:"flex", alignItems:"center", gap:4, flexShrink:0}}>
+            <button onClick={onEdit} style={{background:"none", border:"1px solid #10b98166", borderRadius:6, cursor:"pointer", color:"#059669", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>✏️ 編集</button>
+            {confirmDelete
+              ? <>
+                  <button onClick={() => { onDelete(); onClose(); }} style={{background:"#ef4444", border:"none", borderRadius:6, cursor:"pointer", color:"#fff", fontSize:12, padding:"2px 8px", lineHeight:1.4, fontWeight:700}}>削除確認</button>
+                  <button onClick={() => setConfirmDelete(false)} style={{background:"none", border:"1px solid #6a9a7a66", borderRadius:6, cursor:"pointer", color:"#6a9a7a", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>キャンセル</button>
+                </>
+              : <button onClick={() => setConfirmDelete(true)} style={{background:"none", border:"1px solid #ef444466", borderRadius:6, cursor:"pointer", color:"#ef4444", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>🗑 削除</button>
+            }
+            <button onClick={onClose} style={{background:"none", border:"none", cursor:"pointer", color:"#6a9a7a", fontSize:16, flexShrink:0, lineHeight:1, padding:0, marginLeft:2}}>✕</button>
+          </div>
         </div>
         {/* ステータス・情報チップ */}
         <div style={{display:"flex", gap:6, flexWrap:"wrap", marginTop:8, alignItems:"center"}}>
