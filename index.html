@@ -479,7 +479,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   );
 }
 
-function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig }) {
+function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, currentUser }) {
   const apiKey = (aiConfig||{}).geminiKey||"";
   const [selLead, setSelLead] = React.useState("");
   const [memo, setMemo] = React.useState("");
@@ -529,7 +529,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig }) {
   const saveToLead=()=>{
     if(!result||!selLead) return;
     const nextDate=result.next_action_date_offset?addBizDays(actionDate,result.next_action_date_offset):"";
-    const newAct={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),type:result.action_type||manualType,result:result.action_result||manualResult,summary:result.action_summary||memo,date:actionDate,time:actionTime,nextDate,nextTime:result.next_action_time||"",next:result.next_action_memo||"",ts:new Date().toISOString(),recorded_by:(()=>{try{return JSON.parse(localStorage.getItem("current_user_v2")||"{}").name||"";}catch{return "";}})()};
+    const newAct={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),type:result.action_type||manualType,result:result.action_result||manualResult,summary:result.action_summary||memo,date:actionDate,time:actionTime,nextDate,nextTime:result.next_action_time||"",next:result.next_action_memo||"",ts:new Date().toISOString(),recorded_by:currentUser?.name||""};
     onUpdate(lead.id,{actions:[...(lead.actions||[]),newAct],next_action_date:nextDate,next_action_time:result.next_action_time||lead.next_action_time||"",next_action:result.next_action_memo||lead.next_action||""});
     setSaved(true);setTimeout(()=>setSaved(false),3000);
   };
@@ -1057,30 +1057,43 @@ function App() {
   const [loaded, setLoaded] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem("current_user_v2") || "null");
-      if (saved) { USER_COLORS[saved.name] = saved.color; return saved; }
+      // current_user_id のみ保存し、アカウント情報は is_accounts から取得
+      let savedId = localStorage.getItem("current_user_id");
+      // 旧形式 (current_user_v2) からの移行
+      if (!savedId) {
+        const legacy = JSON.parse(localStorage.getItem("current_user_v2") || "null");
+        if (legacy?.id) {
+          savedId = legacy.id;
+          localStorage.setItem("current_user_id", savedId);
+          localStorage.removeItem("current_user_v2");
+        }
+      }
+      if (!savedId) return null;
+      const accounts = loadAccounts();
+      const user = accounts.find(a => a.id === savedId);
+      if (user) { USER_COLORS[user.name] = user.color; return user; }
       return null;
     } catch { return null; }
   });
   const selectUser = (account) => {
     setCurrentUser(account);
     USER_COLORS[account.name] = account.color;
-    try { localStorage.setItem("current_user_v2", JSON.stringify(account)); } catch {}
+    try { localStorage.setItem("current_user_id", account.id); } catch {}
   };
   const logout = () => {
     setCurrentUser(null);
-    try { localStorage.removeItem("current_user_v2"); } catch {}
+    try { localStorage.removeItem("current_user_id"); } catch {}
   };
   const updateMyProfile = (profile) => {
     const originalId = currentUser.id;
-    const updated = { ...currentUser, ...profile };
-    setCurrentUser(updated);
-    USER_COLORS[updated.name] = updated.color;
-    IS_COLORS[updated.name] = { bg: updated.color, text: updated.color, border: updated.color + "55" };
-    try { localStorage.setItem("current_user_v2", JSON.stringify(updated)); } catch {}
     const accounts = loadAccounts();
     const newAccounts = accounts.map(a => a.id === originalId ? { ...a, ...profile } : a);
     saveAccounts(newAccounts);
+    const updated = newAccounts.find(a => a.id === (profile.id || originalId)) || { ...currentUser, ...profile };
+    setCurrentUser(updated);
+    USER_COLORS[updated.name] = updated.color;
+    IS_COLORS[updated.name] = { bg: updated.color, text: updated.color, border: updated.color + "55" };
+    try { localStorage.setItem("current_user_id", updated.id); } catch {}
   };
   const [candidateSlots, setCandidateSlots] = useState([]);
   const [aiConfig, setAiConfig] = useState(() => {
@@ -1117,7 +1130,7 @@ function App() {
         {page === "trend"     && <Trend leads={leads} />}
         {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction}
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }} />}
-        {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => setPage("leads")} goCalendar={() => setPage("calendar")} aiConfig={aiConfig} />}
+        {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => setPage("leads")} goCalendar={() => setPage("calendar")} aiConfig={aiConfig} currentUser={currentUser} />}
         {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>setPage("email")} />}
         {page === "settings"  && <SettingsPage aiConfig={aiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} />}
         {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} />}
@@ -2461,7 +2474,7 @@ function LoginScreen({ onLogin }) {
     if (!found) { setErr("IDまたはパスワードが違います"); return; }
     USER_COLORS[found.name] = found.color;
     IS_COLORS[found.name] = { bg:found.color, text:found.color, border:found.color+"55" };
-    try { localStorage.setItem("current_user_v2", JSON.stringify(found)); } catch {}
+    try { localStorage.setItem("current_user_id", found.id); } catch {}
     onLogin(found);
   };
   const card = { background:"#fff", borderRadius:16, padding:"36px 32px", boxShadow:"0 8px 32px #0569691a", border:"1px solid #e2f0e8", width:360, maxWidth:"90vw" };
