@@ -177,7 +177,9 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const [tpls, setTpls] = React.useState(loadTpls);
   const [selTpl, setSelTpl] = React.useState(tpls[0]?.id||"");
   const [selLead, setSelLead] = React.useState("");
-  const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
+  const [toEmail, setToEmail] = React.useState("");
+  const [copiedTo, setCopiedTo] = React.useState(false);
+  const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:""});
   const [previewSubj, setPreviewSubj] = React.useState("");
   const [previewBody, setPreviewBody] = React.useState("");
   const [editMode, setEditMode] = React.useState(false);
@@ -187,12 +189,13 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
   const tpl = tpls.find(t=>t.id===selTpl)||tpls[0];
   const lead = leads.find(l=>l.id===selLead);
 
-  // リード選択時に担当者名・担当者苗字・会社名を自動入力
+  // リード選択時に担当者名・担当者苗字・会社名・宛先メールアドレスを自動入力
   React.useEffect(()=>{
     if(lead){
       const contact=lead.contact||lead.company||"";
       const surname=contact.split(/[ \u3000]/)[0]||contact;
       setVars(v=>({...v,担当者名:contact,担当者苗字:surname,会社名:lead.company||""}));
+      setToEmail(lead.email||"");
     }
   },[selLead]);
 
@@ -450,6 +453,14 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [] }) {
                       <button onClick={()=>{setPreviewSubj(subj);setPreviewBody(body);}} style={{padding:"5px 12px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>↩ リセット</button>
                       <button onClick={saveGmailDraft} disabled={gmailSaving} style={{padding:"5px 14px",borderRadius:7,border:"none",background:gmailSaved?"#2563eb":gmailSaving?"#93c5fd":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontSize:12,fontWeight:700,cursor:gmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:gmailSaving?0.7:1}}>{gmailSaving?"保存中...":gmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
                       <button onClick={()=>copy(previewSubj+"\n\n"+previewBody)} style={{padding:"5px 14px",borderRadius:7,border:"none",background:copied?"#059669":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copied?"✅ コピー済み":"📋 全文コピー"}</button>
+                    </div>
+                  </div>
+                  {/* 宛先 */}
+                  <div style={{marginBottom:8}}>
+                    <label style={{fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3}}>宛先</label>
+                    <div style={{display:"flex",gap:4}}>
+                      <input type="email" value={toEmail} onChange={e=>setToEmail(e.target.value)} placeholder="メールアドレスが自動入力されます" style={{flex:1,padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:toEmail?"#f0fdf4":"#f8fffe",color:"#174f35"}} />
+                      {toEmail && <button onClick={()=>{navigator.clipboard?.writeText(toEmail);setCopiedTo(true);setTimeout(()=>setCopiedTo(false),2000);}} style={{padding:"0 10px",borderRadius:7,border:"1px solid #c0dece",background:copiedTo?"#059669":"#f0f5f2",color:copiedTo?"#fff":"#6a9a7a",fontSize:11,cursor:"pointer",fontFamily:"inherit",flexShrink:0,whiteSpace:"nowrap"}}>{copiedTo?"✅ コピー済み":"📋 コピー"}</button>}
                     </div>
                   </div>
                   <div style={{marginBottom:8}}>
@@ -1834,6 +1845,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
   const nad = lead.next_action_date;
   const subParts = [
     lead.contact,
+    lead.email || null,
     lead.date ? `反響日：${lead.date}` : null,
     last ? `最終：${last.date}${last.time ? " "+last.time : ""}` : null,
   ].filter(Boolean);
@@ -1965,7 +1977,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
 function LeadForm({ initial, onSave, onClose }) {
   const [d, setD] = useState(() => {
     const base = {
-      company:"", contact:"", source:"HP",
+      company:"", contact:"", email:"", source:"HP",
       portal_site:"", portal_type:"", charge_applied:false,
       meeting_date:"", meeting_time:"", sales_member:"",
       is_member:"", mql:"非MQL",
@@ -1998,6 +2010,9 @@ function LeadForm({ initial, onSave, onClose }) {
               <div style={{fontSize:"11px",color:"#666",marginTop:"2px"}}>姓名の間は半角スペースを空けて下さい</div>
             </div>
           </Row2>
+          <div style={{marginBottom:10}}>
+            <Field label="メールアドレス" type="email" value={d.email||""} onChange={v=>set("email",v)} placeholder="例：yamada@example.com" />
+          </div>
           <Row2>
             <Field label="反響日 *" type="date" value={d.date} onChange={v=>set("date",v)} />
             <div>
@@ -2250,6 +2265,7 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:14, fontWeight:700, color:"#174f35", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap"}}>{lead.company}</div>
             {lead.contact && <div style={{fontSize:11, color:"#6a9a7a", marginTop:2}}>{lead.contact}</div>}
+            {lead.email && <div style={{fontSize:11, color:"#0ea5e9", marginTop:2}}><a href={`mailto:${lead.email}`} style={{color:"#0ea5e9", textDecoration:"none"}}>✉️ {lead.email}</a></div>}
           </div>
           <button onClick={onClose} style={{background:"none", border:"none", cursor:"pointer", color:"#6a9a7a", fontSize:16, flexShrink:0, lineHeight:1, padding:0}}>✕</button>
         </div>
