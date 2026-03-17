@@ -198,7 +198,7 @@ const isDueSoon = (dateStr) => {
 const TODAY = new Date().toISOString().split("T")[0];
 const THIS_MONTH = TODAY.slice(0, 7);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const at = (v) => ACTION_TYPES.find(a => a.v === v) || ACTION_TYPES[4];
+const at = (v) => ACTION_TYPES.find(a => a.v === v) || ACTION_TYPES[0];
 
 const DEFAULT_EMAIL_TEMPLATES = [
   { id:"t1", name:"初回フォロー", subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
@@ -255,7 +255,7 @@ function LeadCombobox({ leads, value, onChange, placeholder, inputStyle, darkMod
               onMouseEnter={e=>e.currentTarget.style.background=hoverBg}
               onMouseLeave={e=>e.currentTarget.style.background="none"}>
               {l.company}{l.contact?`（${l.contact}）`:""}
-              {darkMode&&l.status?<span style={{marginLeft:6,fontSize:11,color:"#64748b"}}>[{l.status}]</span>:null}
+              {darkMode&&l.status?<span style={{marginLeft:6,fontSize:11,color:"#64748b"}}>[{typeof l.status==="object"?l.status.label||"":String(l.status)}]</span>:null}
             </div>
           ))}
         </div>
@@ -703,8 +703,8 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
               {lead&&(lead.actions||[]).length>0&&(
                 <div style={{marginTop:8,background:"#1e293b",borderRadius:8,padding:"10px 12px",border:"1px solid #334155"}}>
                   <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>直近のアクション</div>
-                  {[...(lead.actions||[])].sort((a,b)=>(b.ts||"").localeCompare(a.ts||"")).slice(0,2).map(a=>(
-                    <div key={a.id} style={{fontSize:11,color:"#94a3b8",borderLeft:"2px solid #334155",paddingLeft:8,marginBottom:4}}>{a.date} {a.time} {ACTION_TYPES.find(t=>t.v===a.type)?.icon||"📞"} {a.result} — {(a.summary||"").slice(0,40)}</div>
+                  {[...(lead.actions||[])].filter(a=>a&&typeof a==="object").sort((a,b)=>(String(b.ts||"")).localeCompare(String(a.ts||""))).slice(0,2).map((a,i)=>(
+                    <div key={a.id||i} style={{fontSize:11,color:"#94a3b8",borderLeft:"2px solid #334155",paddingLeft:8,marginBottom:4}}>{String(a.date||"")} {String(a.time||"")} {ACTION_TYPES.find(t=>t.v===a.type)?.icon||"📞"} {String(a.result||"")} — {String(a.summary||"").slice(0,40)}</div>
                   ))}
                 </div>
               )}
@@ -3901,8 +3901,23 @@ const CSS = `
 `;
 
 
+    class ErrorBoundary extends React.Component {
+      constructor(props){super(props);this.state={hasError:false,error:null};}
+      static getDerivedStateFromError(e){return{hasError:true,error:e};}
+      render(){
+        if(this.state.hasError){
+          return <div style={{padding:40,textAlign:"center",fontFamily:"'Noto Sans JP',sans-serif"}}>
+            <div style={{fontSize:40,marginBottom:16}}>⚠️</div>
+            <div style={{fontSize:18,fontWeight:700,color:"#dc2626",marginBottom:8}}>エラーが発生しました</div>
+            <div style={{fontSize:13,color:"#6b7280",marginBottom:24,maxWidth:400,margin:"0 auto 24px"}}>{String(this.state.error?.message||"予期しないエラーが発生しました")}</div>
+            <button onClick={()=>this.setState({hasError:false,error:null})} style={{padding:"8px 24px",borderRadius:8,background:"#059669",color:"#fff",border:"none",fontSize:14,fontWeight:700,cursor:"pointer"}}>再試行</button>
+          </div>;
+        }
+        return this.props.children;
+      }
+    }
     const root=ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App/>);
+    root.render(<ErrorBoundary><App/></ErrorBoundary>);
   </script>
 </body>
 </html>
