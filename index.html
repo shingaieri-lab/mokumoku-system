@@ -1045,13 +1045,13 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
   return (
     <div style={{padding:"24px 28px", width:"60vw"}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ 設定</div>
-      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "営業設定・アカウントを管理できます。"}</div>
+      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "営業設定・API設定・アカウントを管理できます。"}</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
       <div style={{marginBottom:0}}>
         {currentUser?.role==="admin" && tabBtn("leadmgmt","📋 リード管理")}
         {currentUser?.role==="admin" && tabBtn("portal","🏢 ポータルサイト")}
         {currentUser?.role==="admin" ? tabBtn("sales","👤 営業担当") : tabBtn("sales","👤 営業設定")}
-        {currentUser?.role==="admin" && tabBtn("apikey","🔑 API設定")}
+        {tabBtn("apikey","🔑 API設定")}
         {currentUser?.role==="admin" && tabBtn("accounts","👥 アカウント管理（管理者）")}
         {tabBtn("myaccount","👤 アカウント管理")}
       </div>
@@ -1134,8 +1134,40 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
         )}
         {tab === "apikey" && (
           <div>
+            {currentUser?.role !== "admin" ? (
+              <div>
+                <div style={{fontSize:12,color:"#6a9a7a",marginBottom:16}}>AIアシスタント・Gmail送信・カレンダー連携に使用するAPIキーを設定します。</div>
+                <div style={{marginBottom:12}}>
+                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>🔑 Gemini APIキー</label>
+                  <input type="password" value={profileForm.geminiKey||""} onChange={e=>setProfileForm(p=>({...p,geminiKey:e.target.value}))}
+                    placeholder="AIzaSy..."
+                    style={{...inp, fontFamily:"monospace"}} />
+                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>AIアシスタント機能に使用します。<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google AI Studio</a>で取得できます。</div>
+                </div>
+                <div style={{marginBottom:12}}>
+                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>📨 Gmail OAuth Client ID</label>
+                  <input type="text" value={profileForm.gmailClientId||""} onChange={e=>setProfileForm(p=>({...p,gmailClientId:e.target.value}))}
+                    placeholder="xxxxxxxxxx.apps.googleusercontent.com"
+                    style={{...inp, fontFamily:"monospace"}} />
+                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>Gmail送信機能に使用します。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a>で取得できます。</div>
+                </div>
+                <div style={{marginBottom:16}}>
+                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>📅 GoogleカレンダーID</label>
+                  <input type="text" value={profileForm.calendarId||""} onChange={e=>setProfileForm(p=>({...p,calendarId:e.target.value}))}
+                    placeholder="例：tanaka@gmail.com"
+                    style={{...inp, fontFamily:"monospace"}} />
+                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>商談候補日検索に使用します（自分のGoogleカレンダーID）。カレンダー設定→「カレンダーのID」で確認できます。</div>
+                </div>
+                {profileMsg && <div style={{fontSize:12,color:"#059669",fontWeight:700,marginBottom:10}}>{profileMsg}</div>}
+                <button onClick={saveProfile}
+                  style={{padding:"8px 28px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                  保存
+                </button>
+              </div>
+            ) : (
+            <div>
             <div style={{fontSize:12,color:"#6a9a7a",marginBottom:8}}>AIアシスタント機能を使うにはGemini APIキーが必要です。</div>
-            <div style={{fontSize:11,color:"#9ca3af",marginBottom:16,background:"#f0f5f2",borderRadius:6,padding:"8px 12px"}}>💡 各アカウントで個別に設定できます（アカウント管理タブ → API連携設定）。個別設定がある場合はそちらが優先されます。</div>
+            <div style={{fontSize:11,color:"#9ca3af",marginBottom:16,background:"#f0f5f2",borderRadius:6,padding:"8px 12px"}}>💡 各アカウントで個別にAPIキーを設定することもできます。個別設定がある場合はそちらが優先されます。</div>
             <div style={{marginBottom:16}}>
               <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>🔑 Gemini APIキー</label>
               <input type="password"
@@ -1241,6 +1273,8 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                 作成完了画面に表示される <code style={{background:"#d8ede1",padding:"1px 5px",borderRadius:3,fontFamily:"monospace"}}>xxxxxxxxxx.apps.googleusercontent.com</code> 形式のクライアント ID をコピーし、上記フィールドに貼り付けてフォーカスを外すと保存されます。
               </div>
             </div>
+          </div>
+            )}
           </div>
         )}
         {tab === "leadmgmt" && currentUser?.role==="admin" && (
@@ -1395,30 +1429,6 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                 <textarea value={profileForm.signature||""} onChange={e=>setProfileForm(p=>({...p,signature:e.target.value}))}
                   placeholder={"例：\n---\n田中 太郎\nダンドリワーク株式会社\nTEL: 03-xxxx-xxxx"}
                   style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff",resize:"vertical",minHeight:100,lineHeight:1.5}} />
-              </div>
-              <div style={{marginTop:20,paddingTop:16,borderTop:"1px solid #e2f0e8"}}>
-                <div style={{fontSize:13,fontWeight:700,color:"#174f35",marginBottom:12}}>🔑 API連携設定</div>
-                <div style={{marginBottom:12}}>
-                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>Gemini APIキー</label>
-                  <input type="password" value={profileForm.geminiKey||""} onChange={e=>setProfileForm(p=>({...p,geminiKey:e.target.value}))}
-                    placeholder="AIzaSy..."
-                    style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"monospace",background:"#fff"}} />
-                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>AIアシスタント機能に使用します。<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google AI Studio</a>で取得できます。</div>
-                </div>
-                <div style={{marginBottom:12}}>
-                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>Gmail OAuth Client ID</label>
-                  <input type="text" value={profileForm.gmailClientId||""} onChange={e=>setProfileForm(p=>({...p,gmailClientId:e.target.value}))}
-                    placeholder="xxxxxxxxxx.apps.googleusercontent.com"
-                    style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"monospace",background:"#fff"}} />
-                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>Gmail送信機能に使用します。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a>で取得できます。</div>
-                </div>
-                <div style={{marginBottom:12}}>
-                  <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>GoogleカレンダーID</label>
-                  <input type="text" value={profileForm.calendarId||""} onChange={e=>setProfileForm(p=>({...p,calendarId:e.target.value}))}
-                    placeholder="例：tanaka@gmail.com"
-                    style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"monospace",background:"#fff"}} />
-                  <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>商談候補日検索に使用します（自分のGoogleカレンダーID）。カレンダー設定→「カレンダーのID」で確認できます。</div>
-                </div>
               </div>
               {profileMsg && <div style={{fontSize:12,color:"#059669",fontWeight:700,marginBottom:10}}>{profileMsg}</div>}
               <button onClick={saveProfile}
