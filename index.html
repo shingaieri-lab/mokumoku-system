@@ -1260,8 +1260,8 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                       <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:700,color:"#6a9a7a",marginBottom:4}}>アイコンを選択</div>
                       {LEAD_SOURCE_ICONS.map(icon=>(
                         <button key={icon.key} onClick={()=>{setNewSourceIcon(icon.key);setShowIconPicker(null);}} title={icon.label}
-                          style={{padding:3,borderRadius:7,border:newSourceIcon===icon.key?"2px solid #10b981":"2px solid transparent",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                          <SourceIconSVG iconKey={icon.key} size={30}/>
+                          style={{padding:2,borderRadius:8,border:"none",boxShadow:newSourceIcon===icon.key?"0 0 0 2.5px #10b981":"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box"}}>
+                          <SourceIconSVG iconKey={icon.key} size={32}/>
                         </button>
                       ))}
                     </div>
@@ -1289,8 +1289,8 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                                 <div style={{gridColumn:"1/-1",fontSize:11,fontWeight:700,color:"#6a9a7a",marginBottom:4}}>アイコンを選択</div>
                                 {LEAD_SOURCE_ICONS.map(icon=>(
                                   <button key={icon.key} onClick={()=>{setEditSourceIcon(icon.key);setShowIconPicker(null);}} title={icon.label}
-                                    style={{padding:3,borderRadius:7,border:editSourceIcon===icon.key?"2px solid #10b981":"2px solid transparent",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                                    <SourceIconSVG iconKey={icon.key} size={30}/>
+                                    style={{padding:2,borderRadius:8,border:"none",boxShadow:editSourceIcon===icon.key?"0 0 0 2.5px #10b981":"none",background:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxSizing:"border-box"}}>
+                                    <SourceIconSVG iconKey={icon.key} size={32}/>
                                   </button>
                                 ))}
                               </div>
