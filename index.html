@@ -2736,7 +2736,7 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
   const actions = lead.actions || [];
   const copyDealInfo = () => {
     const meetingDateTime = [lead.meeting_date, lead.meeting_time].filter(Boolean).join(' ');
-    const text = `商談担当：${lead.sales_member||''}\n商談日時：${meetingDateTime}\n会社名：${lead.company||''}\nHP：${lead.hp_url||''}\nzoho：${lead.zoho_url||''}\nIS確度：${lead.is_accuracy||''}`;
+    const text = `商談担当：${lead.sales_member ? lead.sales_member+'さん' : ''}\n商談日時：${meetingDateTime}\n会社名：${lead.company||''}\nHP：${lead.hp_url||''}\nzoho：${lead.zoho_url||''}\nIS確度：${lead.is_accuracy||''}`;
     navigator.clipboard?.writeText(text);
     setDealCopied(true);
     setTimeout(() => setDealCopied(false), 2000);
