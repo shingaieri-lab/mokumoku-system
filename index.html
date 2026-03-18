@@ -2504,8 +2504,11 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
         onClick={()=>setOpenId(id => id === lead.id ? null : lead.id)}>
 
         {/* アイコン */}
-        <div style={{width:36, height:36,borderRadius:9, flexShrink:0, background: open ? sc+"22" : "#f0f5f2", border:`1.5px solid ${sc}33`, display:"flex",alignItems:"center", justifyContent:"center",fontSize:17}}>
-          <SourceIconSVG iconKey={srcIconKey2} size={26}/>
+        <div style={{flexShrink:0, display:"flex", flexDirection:"column", alignItems:"center", gap:2}}>
+          <div style={{width:36, height:36,borderRadius:9, background: open ? sc+"22" : "#f0f5f2", border:`1.5px solid ${sc}33`, display:"flex",alignItems:"center", justifyContent:"center",fontSize:17}}>
+            <SourceIconSVG iconKey={srcIconKey2} size={26}/>
+          </div>
+          {lead.source && <span style={{fontSize:9, color:"#6a9a7a", fontWeight:700, maxWidth:42, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", textAlign:"center", lineHeight:1}}>{lead.source}</span>}
         </div>
 
         {/* 会社名＋サブテキスト */}
@@ -2588,7 +2591,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
             {lead.hp_url && (
               <a href={lead.hp_url} target="_blank" rel="noopener noreferrer"
                 style={{...S.zohoLinkSmall, fontSize:11, padding:"3px 9px", flexShrink:0, background:"#e0f2fe", borderColor:"#7dd3fc", color:"#0369a1"}} onClick={e=>e.stopPropagation()}>
-                🌐 HP
+                🌐 WEB
               </a>
             )}
             {(nad || lead.next_action) && (
@@ -2640,7 +2643,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
 function LeadForm({ initial, onSave, onClose }) {
   const [d, setD] = useState(() => {
     const base = {
-      company:"", contact:"", email:"", source:"HP",
+      company:"", contact:"", email:"", source: getSources()[0] || "HP",
       portal_site:"", portal_type:"", charge_applied:false,
       meeting_date:"", meeting_time:"", sales_member:"",
       is_member:"", mql:"非MQL",
