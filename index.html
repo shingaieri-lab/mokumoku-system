@@ -1639,7 +1639,8 @@ function useIsMobile(bp=768) {
 
 function App() {
   const isMobile = useIsMobile();
-  const [page, setPage] = useState("dashboard");
+  const [page, setPage] = useState(() => sessionStorage.getItem('current_page') || "dashboard");
+  const navigate = (p) => { sessionStorage.setItem('current_page', p); setPage(p); };
   const [settingsTab, setSettingsTab] = useState(null);
   const [dashFilter, setDashFilter] = useState(null);
   const [leads, setLeads] = useState([]);
@@ -1716,7 +1717,7 @@ function App() {
             }
             setAiConfig(data.aiConfig || {});
             setMasterVer(v => v + 1);
-          } else {
+          } else if (r.status === 401) {
             localStorage.removeItem('session_token');
             localStorage.removeItem('current_user_id');
           }
@@ -1744,14 +1745,14 @@ function App() {
   return (
     <div style={{...S.root, flexDirection: isMobile ? "column" : "row"}}>
       <style>{CSS}</style>
-      <Nav page={page} setPage={setPage} setSettingsTab={setSettingsTab} count={leads.length} currentUser={currentUser} onLogout={logout} onUpdateProfile={updateMyProfile} isMobile={isMobile} />
+      <Nav page={page} setPage={navigate} setSettingsTab={setSettingsTab} count={leads.length} currentUser={currentUser} onLogout={logout} onUpdateProfile={updateMyProfile} isMobile={isMobile} />
       <main style={{...S.main, paddingBottom: isMobile ? 65 : 0}}>
-        {page === "dashboard" && <Dashboard leads={leads} currentUser={currentUser} onNavigate={(f)=>{ setDashFilter(f); setPage("leads"); }} masterVer={masterVer} isMobile={isMobile} />}
+        {page === "dashboard" && <Dashboard leads={leads} currentUser={currentUser} onNavigate={(f)=>{ setDashFilter(f); navigate("leads"); }} masterVer={masterVer} isMobile={isMobile} />}
         {page === "trend"     && <Trend leads={leads} />}
         {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction} currentUser={currentUser}
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }} />}
-        {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => setPage("leads")} goCalendar={() => setPage("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
-        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>setPage("email")} currentUser={currentUser} />}
+        {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => navigate("leads")} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
+        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>navigate("email")} currentUser={currentUser} />}
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} />}
         {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} isMobile={isMobile} />}
       </main>
