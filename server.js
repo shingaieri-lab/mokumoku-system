@@ -110,6 +110,26 @@ app.post('/api/email-tpls', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// 全データリセット（管理者のみ）
+app.post('/api/reset', requireAuth, async (req, res) => {
+  const accounts = await getAccounts();
+  const account = accounts.find(a => a.id === req.accountId);
+  if (!account || account.role !== 'admin') {
+    return res.status(403).json({ error: '管理者のみ実行できます' });
+  }
+  try {
+    await kv.del('accounts');
+    await kv.del('leads');
+    await kv.del('master_settings');
+    await kv.del('ai_config');
+    await kv.del('gcal_config');
+    await kv.del('email_tpls');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'リセットに失敗しました: ' + e.message });
+  }
+});
+
 if (!process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

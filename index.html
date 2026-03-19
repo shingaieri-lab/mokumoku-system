@@ -1449,7 +1449,33 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
           </div>
         )}
         {tab === "accounts" && currentUser?.role==="admin" && (
-          <AccountManager currentUser={currentUser} onClose={null} inline={true} onUpdateProfile={onUpdateProfile} />
+          <div>
+            <AccountManager currentUser={currentUser} onClose={null} inline={true} onUpdateProfile={onUpdateProfile} />
+            <div style={{marginTop:32,borderTop:"1px solid #fca5a5",paddingTop:20}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#991b1b",marginBottom:6}}>⚠️ 全データリセット</div>
+              <div style={{fontSize:11,color:"#6b7280",marginBottom:12}}>アカウント情報・ポータルサイト・API設定・営業担当・流入元・リード・メールテンプレートをすべて初期化します。この操作は取り消せません。</div>
+              <button onClick={async () => {
+                if (!window.confirm("本当に全データをリセットしますか？\n\nアカウント情報・ポータルサイト・API設定・営業設定・流入元・リード・メールテンプレートがすべて削除されます。\nこの操作は取り消せません。")) return;
+                if (!window.confirm("最終確認：全データを削除してデフォルト状態に戻しますか？")) return;
+                try {
+                  const res = await fetch('/api/reset', { method:'POST', headers:{'Content-Type':'application/json','x-session-token':getToken()}, body:JSON.stringify({}) });
+                  const r = await res.json();
+                  if (r.ok) {
+                    alert("リセット完了。ページを再読み込みします。");
+                    window.__appData = {};
+                    localStorage.removeItem('session_token');
+                    window.location.reload();
+                  } else {
+                    alert("エラー: " + (r.error || "不明なエラー"));
+                  }
+                } catch(e) {
+                  alert("リセットに失敗しました: " + e.message);
+                }
+              }} style={{padding:"8px 20px",borderRadius:7,border:"none",background:"#dc2626",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                🗑️ 全データをリセット
+              </button>
+            </div>
+          </div>
         )}
         {tab === "myaccount" && (
           <div>
