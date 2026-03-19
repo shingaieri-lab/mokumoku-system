@@ -30,7 +30,7 @@ async function requireAuth(req, res, next) {
     req.accountId = accountId;
     next();
   } catch {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(503).json({ error: 'Service unavailable' });
   }
 }
 
