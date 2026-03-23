@@ -990,6 +990,8 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
   const [editStatusIdx, setEditStatusIdx] = React.useState(null);
   const [editStatusForm, setEditStatusForm] = React.useState({ label:"", color:"" });
   const [newStatusForm, setNewStatusForm] = React.useState({ label:"", color:"#0ea5e9" });
+  const [dragStatusIdx, setDragStatusIdx] = React.useState(null);
+  const [dragOverStatusIdx, setDragOverStatusIdx] = React.useState(null);
   const addStatus = () => {
     const l = newStatusForm.label.trim(); if (!l) return;
     if (getStatusData().some(s=>s.label===l)) { alert("既に存在します"); return; }
@@ -1346,7 +1348,22 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
             <div style={{fontSize:13,fontWeight:700,color:"#174f35",marginBottom:12}}>ステータス管理</div>
             <div style={{marginBottom:12}}>
               {getStatusData().map((s, idx) => (
-                <div key={idx} style={{display:"flex",alignItems:"center",gap:8,background:"#f8fbf9",borderRadius:8,border:"1px solid #e2f0e8",padding:"8px 12px",marginBottom:6}}>
+                <div key={idx}
+                  draggable={editStatusIdx!==idx}
+                  onDragStart={()=>setDragStatusIdx(idx)}
+                  onDragOver={e=>{e.preventDefault();setDragOverStatusIdx(idx);}}
+                  onDrop={()=>{
+                    if(dragStatusIdx===null||dragStatusIdx===idx){setDragOverStatusIdx(null);return;}
+                    const arr=[...getStatusData()];
+                    const [moved]=arr.splice(dragStatusIdx,1);
+                    arr.splice(idx,0,moved);
+                    save({...master,statuses:arr});
+                    setDragStatusIdx(null);setDragOverStatusIdx(null);
+                  }}
+                  onDragEnd={()=>{setDragStatusIdx(null);setDragOverStatusIdx(null);}}
+                  style={{display:"flex",alignItems:"center",gap:8,background:"#f8fbf9",borderRadius:8,padding:"8px 12px",marginBottom:6,
+                    border:dragOverStatusIdx===idx&&dragStatusIdx!==idx?"2px solid #10b981":"1px solid #e2f0e8",
+                    opacity:dragStatusIdx===idx?0.4:1,transition:"opacity 0.15s"}}>
                   {editStatusIdx===idx ? (
                     <div style={{display:"flex",alignItems:"center",gap:8,flex:1,flexWrap:"wrap"}}>
                       <input value={editStatusForm.label} onChange={e=>setEditStatusForm(p=>({...p,label:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&saveStatus()} style={{...inp,flex:1,minWidth:100,padding:"4px 8px"}} autoFocus />
@@ -1360,10 +1377,7 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                     </div>
                   ) : (
                     <>
-                      <div style={{display:"flex",flexDirection:"column",gap:1,flexShrink:0}}>
-                        <button onClick={()=>moveStatus(idx,"up")} disabled={idx===0} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:idx===0?"#f5f5f5":"#fff",color:idx===0?"#ccc":"#6a9a7a",cursor:idx===0?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▲</button>
-                        <button onClick={()=>moveStatus(idx,"down")} disabled={idx===getStatusData().length-1} style={{fontSize:9,padding:"1px 5px",borderRadius:3,border:"1px solid #c0dece",background:idx===getStatusData().length-1?"#f5f5f5":"#fff",color:idx===getStatusData().length-1?"#ccc":"#6a9a7a",cursor:idx===getStatusData().length-1?"default":"pointer",lineHeight:1.2,fontFamily:"inherit"}}>▼</button>
-                      </div>
+                      <span title="ドラッグして並び替え" style={{cursor:"grab",color:"#c0dece",fontSize:18,flexShrink:0,lineHeight:1,userSelect:"none",paddingRight:2}}>⠿</span>
                       <div style={{width:14,height:14,borderRadius:"50%",background:s.color,flexShrink:0,boxShadow:"0 1px 3px #0003"}} />
                       <span style={{flex:1,fontSize:13,fontWeight:600,color:"#174f35"}}>{s.label}</span>
                       <button onClick={()=>startEditStatus(idx)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,background:"#eef8f2",color:"#059669",border:"1px solid #c0dece",cursor:"pointer",fontFamily:"inherit",flexShrink:0,opacity:0.3,transition:"opacity 0.15s"}} onMouseEnter={e=>e.currentTarget.style.opacity="1"} onMouseLeave={e=>e.currentTarget.style.opacity="0.3"}>編集</button>
