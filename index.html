@@ -897,7 +897,7 @@ function SourceIconSVG({ iconKey, size=28, color }) {
 
 function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialTab, onLeadsChange, onMasterSave }) {
   const [master, setMaster] = React.useState(() => getMaster());
-  const [tab, setTab] = React.useState(initialTab || (currentUser?.role === "admin" ? "leadmgmt" : "sales"));
+  const [tab, setTab] = React.useState(initialTab || (currentUser?.is_staff === false ? "apikey" : currentUser?.role === "admin" ? "leadmgmt" : "sales"));
   const [msg, setMsg] = React.useState("");
   const [profileForm, setProfileForm] = React.useState({ name: currentUser?.name||"", password: currentUser?.password||"", email: currentUser?.email||"", color: currentUser?.color||PALETTE[0], id: currentUser?.id||"", signature: currentUser?.signature||"", geminiKey: currentUser?.geminiKey||"", gmailClientId: currentUser?.gmailClientId||"", calendarId: currentUser?.calendarId||"" });
   const [profileMsg, setProfileMsg] = React.useState("");
@@ -1073,14 +1073,14 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
   return (
     <div className="settings-page" style={{padding:"24px 28px", width:"60vw", maxWidth:"100%"}}>
       <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ 設定</div>
-      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "営業設定・API設定・アカウントを管理できます。"}</div>
+      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.is_staff === false ? "API設定・アカウントを管理できます。" : currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "営業設定・API設定・アカウントを管理できます。"}</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
       <div style={{marginBottom:0}}>
-        {currentUser?.role==="admin" && tabBtn("leadmgmt","📋 リード管理")}
-        {currentUser?.role==="admin" && tabBtn("portal","🏢 ポータルサイト")}
-        {currentUser?.role==="admin" ? tabBtn("sales","👤 営業担当") : tabBtn("sales","👤 営業設定")}
+        {currentUser?.role==="admin" && currentUser?.is_staff !== false && tabBtn("leadmgmt","📋 リード管理")}
+        {currentUser?.role==="admin" && currentUser?.is_staff !== false && tabBtn("portal","🏢 ポータルサイト")}
+        {currentUser?.is_staff !== false && (currentUser?.role==="admin" ? tabBtn("sales","👤 営業担当") : tabBtn("sales","👤 営業設定"))}
         {tabBtn("apikey","🔑 API設定")}
-        {currentUser?.role==="admin" && tabBtn("accounts","👥 アカウント管理（管理者）")}
+        {currentUser?.role==="admin" && currentUser?.is_staff !== false && tabBtn("accounts","👥 アカウント管理（管理者）")}
         {tabBtn("myaccount","👤 アカウント管理")}
       </div>
       <div style={{background:"#fff",borderRadius:"0 8px 8px 8px",border:"1px solid #d8ede1",padding:"20px"}}>
@@ -1713,7 +1713,7 @@ function App() {
       <main style={{...S.main, paddingBottom: isMobile ? 65 : 0}}>
         {page === "dashboard" && <Dashboard leads={leads} currentUser={currentUser} onNavigate={(f)=>{ setDashFilter(f); navigate("leads"); }} masterVer={masterVer} isMobile={isMobile} />}
         {page === "trend"     && <Trend leads={leads} />}
-        {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction} currentUser={currentUser}
+        {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction} currentUser={currentUser} readOnly={currentUser?.is_staff === false}
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }} />}
         {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => navigate("leads")} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
         {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>navigate("email")} currentUser={currentUser} />}
@@ -2273,7 +2273,7 @@ function CSVImport({ onImport, onClose, result }) {
   );
 }
 
-function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, currentUser }) {
+function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, currentUser, readOnly }) {
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState(null);
   const [showImport, setShowImport] = useState(false);
@@ -2348,10 +2348,10 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
             const a = document.createElement("a"); a.href=url; a.download="dandori_leads_"+TODAY+".csv"; a.click();
             URL.revokeObjectURL(url);
           }} style={S.btnSec}>📤 CSVエクスポート</button>
-          <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={S.btnSec}>
+          {!readOnly && <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={S.btnSec}>
             📥 CSVインポート
-          </button>
-          <button onClick={() => { setEditing(null); setShowForm(true); }} style={{...S.btnP, background:"linear-gradient(135deg,#f97316,#ea580c)"}}>＋ 新規追加</button>
+          </button>}
+          {!readOnly && <button onClick={() => { setEditing(null); setShowForm(true); }} style={{...S.btnP, background:"linear-gradient(135deg,#f97316,#ea580c)"}}>＋ 新規追加</button>}
         </div>
       </Header>
 
@@ -2431,8 +2431,9 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
             {list.length === 0 && <div style={{...S.empty,padding:"32px"}}>リードがありません</div>}
             {list.map(lead => (
               <LeadRow key={lead.id} lead={lead} openId={openId} setOpenId={setOpenId}
-                onEdit={() => { setEditing(lead); setShowForm(true); }}
-                onDelete={() => onDelete(lead.id)}
+                onEdit={readOnly ? null : () => { setEditing(lead); setShowForm(true); }}
+                onDelete={readOnly ? null : () => onDelete(lead.id)}
+                readOnly={readOnly}
                 onStatusChange={s => {
                   const patch = { status: s };
                   if (lead.status === "商談確定" && s !== "商談確定") {
@@ -2455,9 +2456,10 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
               lead={selectedLead}
               onClose={() => setOpenId(null)}
               onUpdate={p => onUpdate(selectedLead.id, p)}
-              onEdit={() => { setEditing(selectedLead); setShowForm(true); }}
-              onDelete={() => { onDelete(selectedLead.id); setOpenId(null); }}
+              onEdit={readOnly ? null : () => { setEditing(selectedLead); setShowForm(true); }}
+              onDelete={readOnly ? null : () => { onDelete(selectedLead.id); setOpenId(null); }}
               currentUser={currentUser}
+              readOnly={readOnly}
               onEditAction={(aid, updated) => {
                 const newActions = (selectedLead.actions||[]).map(a => a.id === aid ? { ...a, ...updated } : a);
                 const patch = { actions: newActions };
@@ -2524,7 +2526,7 @@ function NextActionEditBtn({ nad, lead, onUpdate }) {
   );
 }
 
-function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, setOpenId }) {
+function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, setOpenId, readOnly }) {
   const open = openId === lead.id;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const pc = "#10b981"; // 優先度廃止のためエメラルド固定
@@ -2586,15 +2588,18 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
             <span style={{fontSize:11,fontWeight:700,color:"#6a9a7a", background:"#f0f5f2",border:"1px solid #c0dece", borderRadius:6,padding:"2px 7px", whiteSpace:"nowrap"}}>課金対象外</span>
           )}
 
-          {/* ステータス select */}
-          <select value={lead.status||"新規"}
-            onChange={e=>{ e.stopPropagation(); onStatusChange(e.target.value); }}
-            style={{fontSize:11,fontWeight:700,color:sc, background:sc+"15",border:`1px solid ${sc}44`, borderRadius:8,padding:"3px 8px",cursor:"pointer", fontFamily:"inherit", outline:"none", whiteSpace:"nowrap"}}>
-            {getStatuses().map(s=><option key={s}>{s}</option>)}
-          </select>
+          {/* ステータス select / badge */}
+          {readOnly
+            ? <span style={{fontSize:11,fontWeight:700,color:sc, background:sc+"15",border:`1px solid ${sc}44`, borderRadius:8,padding:"3px 8px", whiteSpace:"nowrap"}}>{lead.status||"新規"}</span>
+            : <select value={lead.status||"新規"}
+                onChange={e=>{ e.stopPropagation(); onStatusChange(e.target.value); }}
+                style={{fontSize:11,fontWeight:700,color:sc, background:sc+"15",border:`1px solid ${sc}44`, borderRadius:8,padding:"3px 8px",cursor:"pointer", fontFamily:"inherit", outline:"none", whiteSpace:"nowrap"}}>
+                {getStatuses().map(s=><option key={s}>{s}</option>)}
+              </select>
+          }
 
-          {/* 編集・削除ボタン */}
-          <div style={{display:"flex", gap:3, alignItems:"center", marginLeft:4}}>
+          {/* 編集・削除ボタン（IS担当のみ） */}
+          {!readOnly && <div style={{display:"flex", gap:3, alignItems:"center", marginLeft:4}}>
             <button onClick={e=>{e.stopPropagation();onEdit();}}
               style={{width:26, height:26,borderRadius:6,border:"1px solid #c0dece", background:"#f8fbf9",cursor:"pointer",fontSize:12, display:"flex",alignItems:"center", justifyContent:"center", opacity:0.3, transition:"opacity 0.15s"}}
               onMouseEnter={e=>e.currentTarget.style.opacity="1"}
@@ -2612,7 +2617,7 @@ function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, openId, set
                 onMouseEnter={e=>e.currentTarget.style.opacity="1"}
                 onMouseLeave={e=>e.currentTarget.style.opacity="0.3"}>🗑</button>
             )}
-          </div>
+          </div>}
         </div>
       </div>
 
@@ -2958,7 +2963,7 @@ function ActionForm({ onSave, onClose, initial }) {
   );
 }
 
-function ActEntry({ a, onEdit, onDelete }) {
+function ActEntry({ a, onEdit, onDelete, readOnly }) {
   const t = at(a.type);
   return (
     <div style={{...S.actEntry, borderLeft:`3px solid ${t.color}`}}>
@@ -2972,8 +2977,8 @@ function ActEntry({ a, onEdit, onDelete }) {
             const uc = USER_COLORS[a.recorded_by]||"#059669";
             return <span style={{fontSize:10,color:uc,fontWeight:600}}>記録者：{a.recorded_by}</span>;
           })()}
-          <button onClick={onEdit} style={S.btnEditAct} title="編集">✏️</button>
-          <button onClick={onDelete} style={{...S.btnEditAct,color:"#ef444466"}} title="削除">✕</button>
+          {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集">✏️</button>}
+          {!readOnly && <button onClick={onDelete} style={{...S.btnEditAct,color:"#ef444466"}} title="削除">✕</button>}
         </div>
         <p style={{margin:0,fontSize:12,color:"#174f35", lineHeight:1.6, whiteSpace:"pre-wrap"}}>{a.summary}</p>
         {(a.nextDate||a.next) && <div style={{fontSize:11,color:"#059669", marginTop:3}}>→ 次回：{a.nextDate||""}{a.nextTime ? " "+a.nextTime : ""}{a.next ? " "+a.next : ""}</div>}
@@ -2982,7 +2987,7 @@ function ActEntry({ a, onEdit, onDelete }) {
   );
 }
 
-function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser }) {
+function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser, readOnly }) {
   const [showAF, setShowAF] = useState(false);
   const [editingAction, setEditingAction] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -3017,14 +3022,14 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
           </div>
           <div style={{display:"flex", alignItems:"center", gap:4, flexShrink:0}}>
             <button onClick={copyDealInfo} style={{background: dealCopied?"#10b981":"none", border:`1px solid ${dealCopied?"#10b981":"#10b98166"}`, borderRadius:6, cursor:"pointer", color: dealCopied?"#fff":"#059669", fontSize:12, padding:"2px 8px", lineHeight:1.4, fontWeight:600, transition:"all 0.2s"}}>{dealCopied ? "✅ コピー済み" : "📋 商談共有用"}</button>
-            <button onClick={onEdit} style={{background:"none", border:"1px solid #10b98166", borderRadius:6, cursor:"pointer", color:"#059669", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>✏️ 編集</button>
-            {confirmDelete
+            {!readOnly && <button onClick={onEdit} style={{background:"none", border:"1px solid #10b98166", borderRadius:6, cursor:"pointer", color:"#059669", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>✏️ 編集</button>}
+            {!readOnly && (confirmDelete
               ? <>
                   <button onClick={() => { onDelete(); onClose(); }} style={{background:"#ef4444", border:"none", borderRadius:6, cursor:"pointer", color:"#fff", fontSize:12, padding:"2px 8px", lineHeight:1.4, fontWeight:700}}>削除確認</button>
                   <button onClick={() => setConfirmDelete(false)} style={{background:"none", border:"1px solid #6a9a7a66", borderRadius:6, cursor:"pointer", color:"#6a9a7a", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>キャンセル</button>
                 </>
               : <button onClick={() => setConfirmDelete(true)} style={{background:"none", border:"1px solid #ef444466", borderRadius:6, cursor:"pointer", color:"#ef4444", fontSize:12, padding:"2px 8px", lineHeight:1.4}}>🗑 削除</button>
-            }
+            )}
             <button onClick={onClose} style={{background:"none", border:"none", cursor:"pointer", color:"#6a9a7a", fontSize:16, flexShrink:0, lineHeight:1, padding:0, marginLeft:2}}>✕</button>
           </div>
         </div>
@@ -3048,7 +3053,7 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
                 <span style={{color: overdue?"#dc2626":today?"#ea580c":"#059669"}}>→</span>
                 {nad && <span style={{fontWeight:700, color: overdue?"#dc2626":today?"#ea580c":"#059669"}}>{nad}{lead.next_action_time ? " "+lead.next_action_time : ""}</span>}
               </div>
-              <NextActionEditBtn nad={nad} lead={lead} onUpdate={onUpdate} />
+              {!readOnly && <NextActionEditBtn nad={nad} lead={lead} onUpdate={onUpdate} />}
             </div>
             {lead.next_action && (
               <div style={{color:"#174f35", marginTop:3, lineHeight:1.5, wordBreak:"break-word", whiteSpace:"pre-wrap", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden"}}>
@@ -3071,12 +3076,12 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
       <div style={{padding:"12px 16px"}}>
         <div style={S.histHeader}>
           <span style={S.sectionLabel}>📋 アクション履歴（{actions.length}件）</span>
-          <button onClick={() => { setShowAF(v=>!v); setEditingAction(null); }} style={S.btnAddAct}>
+          {!readOnly && <button onClick={() => { setShowAF(v=>!v); setEditingAction(null); }} style={S.btnAddAct}>
             {showAF ? "✕ 閉じる" : "＋ 記録する"}
-          </button>
+          </button>}
         </div>
 
-        {showAF && (
+        {!readOnly && showAF && (
           <ActionForm
             onSave={a => {
               const actionWithRecorder = { ...a, recorded_by: currentUser?.name || "" };
@@ -3096,7 +3101,7 @@ function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAct
                   ? <ActionForm key={a.id} initial={a}
                       onSave={updated => { onEditAction(a.id, updated); setEditingAction(null); }}
                       onClose={() => setEditingAction(null)} />
-                  : <ActEntry key={a.id||i} a={a} onEdit={() => setEditingAction(a)} onDelete={() => onDeleteAction(a.id)} />
+                  : <ActEntry key={a.id||i} a={a} onEdit={() => setEditingAction(a)} onDelete={() => onDeleteAction(a.id)} readOnly={readOnly} />
               ))}
             </div>
         }
