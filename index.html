@@ -2114,7 +2114,7 @@ function parseCSV(text) {
       const row = {};
       FIXED_COLS.forEach((k,j) => { row[k] = (vals[j]||"").trim(); });
       if (!row.company) continue;
-      row.id = uid(); row.actions = [];
+      row.id = uid(); row.actions = []; row.created_at = Date.now();
       row.charge_applied = row.charge_applied === "TRUE" || row.charge_applied === "true";
       if (!getStatuses().includes(row.status)) row.status = getStatuses()[0] || "新規";
       if (!MQL_OPTIONS.includes(row.mql)) row.mql = "非MQL";
@@ -2133,7 +2133,7 @@ function parseCSV(text) {
     const row = {};
     headers.forEach((h,j) => { const key = CSV_COLUMNS[h]; if (key) row[key] = (vals[j]||"").trim(); });
     if (!row.company) { errors.push(`${i+1}行目: 会社名が空のためスキップ`); continue; }
-    row.id = uid(); row.actions = [];
+    row.id = uid(); row.actions = []; row.created_at = Date.now();
     row.charge_applied = row.charge_applied === "TRUE" || row.charge_applied === "true";
     if (!getStatuses().includes(row.status)) row.status = getStatuses()[0] || "新規";
     if (!MQL_OPTIONS.includes(row.mql)) row.mql = "非MQL";
@@ -2321,7 +2321,13 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
         const da = a.next_action_date||"9999", db = b.next_action_date||"9999";
         return sortDir === "asc" ? (da > db ? 1 : -1) : (da < db ? 1 : -1);
       }
-      // 標準: 追客日 > ステータス > 反響日
+      // 標準: 新規登録（本日登録かつアクション未登録）は最上部に表示（1日間有効）
+      const toDay = ts => ts ? new Date(ts).toISOString().split("T")[0] : null;
+      const aIsNew = toDay(a.created_at) === TODAY && (!a.actions || a.actions.length === 0);
+      const bIsNew = toDay(b.created_at) === TODAY && (!b.actions || b.actions.length === 0);
+      if (aIsNew && !bIsNew) return -1;
+      if (!aIsNew && bIsNew) return 1;
+      // 追客日 > ステータス > 反響日
       const da = a.next_action_date||"", db = b.next_action_date||"";
       if (da && !db) return -1;
       if (!da && db) return 1;
@@ -2481,7 +2487,7 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
       {showForm && (
         <LeadForm initial={editing}
           onSave={d => {
-            editing ? onUpdate(editing.id, d) : onAdd({ id: uid(), date: TODAY, actions: [], ...d });
+            editing ? onUpdate(editing.id, d) : onAdd({ id: uid(), date: TODAY, actions: [], created_at: Date.now(), ...d });
             setShowForm(false);
           }}
           onClose={() => setShowForm(false)} />
