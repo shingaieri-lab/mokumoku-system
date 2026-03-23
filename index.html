@@ -2591,8 +2591,8 @@ function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, in
 
       {/* モバイル: アクション履歴をオーバーレイで表示 */}
       {isMobile && selectedLead && (
-        <div style={{position:"fixed", inset:0, zIndex:500, background:"#000000bb", display:"flex", flexDirection:"column", justifyContent:"flex-end"}}>
-          <div style={{background:"#fff", borderRadius:"16px 16px 0 0", maxHeight:"85vh", display:"flex", flexDirection:"column", overflowY:"auto", paddingBottom:65}}>
+        <div style={{position:"fixed", inset:0, zIndex:500, background:"#000000bb", display:"flex", flexDirection:"column", justifyContent:"flex-end"}} onClick={() => setOpenId(null)}>
+          <div style={{background:"#fff", borderRadius:"16px 16px 0 0", maxHeight:"85vh", display:"flex", flexDirection:"column", overflowY:"auto", paddingBottom:65}} onClick={e => e.stopPropagation()}>
             <ActionHistoryPanel
               key={selectedLead.id}
               lead={selectedLead}
@@ -4144,7 +4144,7 @@ const CSS = `
     .page-pad { padding-left: 12px !important; padding-right: 12px !important; }
     .filter-bar { flex-wrap: wrap !important; }
     .filter-bar > * { flex-shrink: 1 !important; min-width: 0 !important; }
-    .filter-bar input { min-width: 140px !important; }
+    .filter-bar input { min-width: 140px !important; width: auto !important; }
     .filter-bar select { min-width: 100px !important; max-width: none !important; }
     .email-grid { grid-template-columns: 1fr !important; }
     .email-main-grid { grid-template-columns: 1fr !important; height: auto !important; }
@@ -4172,6 +4172,7 @@ const CSS = `
     .filter-bar input, .filter-bar select { font-size: 12px !important; padding: 6px 8px !important; }
     .kpi-card-value { font-size: 20px !important; }
     .lead-list-container { padding-left: 8px !important; padding-right: 8px !important; }
+    .lead-list-container .page-pad { margin-left: -8px !important; margin-right: -8px !important; }
   }
 `;
 
