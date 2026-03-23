@@ -835,7 +835,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
         token = await new Promise((res, rej) => {
           const client = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
-            scope: 'https://www.googleapis.com/auth/calendar.events',
+            scope: 'https://www.googleapis.com/auth/tasks',
             callback: (resp) => {
               if (resp.error) {
                 if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
@@ -855,31 +855,25 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
         });
         setAiCalToken(token);
       }
-      const startDT = nextTime ? `${nextDate}T${nextTime}:00` : `${nextDate}T10:00:00`;
-      const startDate = new Date(startDT);
-      const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
-      const pad = n => String(n).padStart(2, "0");
-      const fmtDT = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
-      const event = {
-        summary: lead.company || "(会社名未設定)",
-        description: lead.zoho_url || "",
-        start: { dateTime: fmtDT(startDate), timeZone: "Asia/Tokyo" },
-        end: { dateTime: fmtDT(endDate), timeZone: "Asia/Tokyo" }
+      const task = {
+        title: lead.company || "(会社名未設定)",
+        notes: lead.zoho_url || "",
+        due: `${nextDate}T00:00:00.000Z`
       };
-      const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      const calRes = await fetch("https://tasks.googleapis.com/tasks/v1/lists/@default/tasks", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(event)
+        body: JSON.stringify(task)
       });
       if (!calRes.ok) {
         const err = await calRes.json();
         if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setAiCalToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
-        throw new Error(err.error?.message || 'TODO作成に失敗しました');
+        throw new Error(err.error?.message || 'タスク作成に失敗しました');
       }
       setAiCalSaved(true);
       setTimeout(() => setAiCalSaved(false), 3000);
     } catch(e) {
-      alert('GoogleカレンダーTODO作成エラー: ' + e.message);
+      alert('GoogleタスクTODO作成エラー: ' + e.message);
     } finally {
       setAiCalSaving(false);
     }
@@ -1012,7 +1006,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
                       </div>
                     </div>
                     <div style={{display:"flex",justifyContent:"flex-end"}}>
-                      <button onClick={saveAiCalTodo} disabled={aiCalSaving||!selLead||!result?.next_action_date_offset} style={{background:aiCalSaved?"#7c3aed":aiCalSaving?"#4c1d9566":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:7,padding:"8px 20px",fontSize:12,fontWeight:700,cursor:(aiCalSaving||!selLead||!result?.next_action_date_offset)?"not-allowed":"pointer",fontFamily:"inherit",opacity:(aiCalSaving||!selLead||!result?.next_action_date_offset)?0.5:1}}>{aiCalSaving?"作成中...":aiCalSaved?"✅ TODO作成済":"📅 GoogleカレンダーにTODO作成"}</button>
+                      <button onClick={saveAiCalTodo} disabled={aiCalSaving||!selLead||!result?.next_action_date_offset} style={{background:aiCalSaved?"#7c3aed":aiCalSaving?"#4c1d9566":"linear-gradient(135deg,#7c3aed,#6d28d9)",color:"#fff",border:"none",borderRadius:7,padding:"8px 20px",fontSize:12,fontWeight:700,cursor:(aiCalSaving||!selLead||!result?.next_action_date_offset)?"not-allowed":"pointer",fontFamily:"inherit",opacity:(aiCalSaving||!selLead||!result?.next_action_date_offset)?0.5:1}}>{aiCalSaving?"作成中...":aiCalSaved?"✅ タスク作成済":"✅ GoogleタスクにTODO作成"}</button>
                     </div>
                   </div>
                 )}
@@ -1365,7 +1359,7 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
         {tab === "apikey" && (
           <div>
             <div>
-              <div style={{fontSize:12,color:"#6a9a7a",marginBottom:16}}>AIアシスタント・Gmail送信に使用するAPIキーを設定します。</div>
+              <div style={{fontSize:12,color:"#6a9a7a",marginBottom:16}}>AIアシスタント・Gmail送信・GoogleタスクTODO登録に使用するAPIキーを設定します。</div>
               <div style={{marginBottom:12}}>
                 <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>🔑 Gemini APIキー</label>
                 <input type="password" value={profileForm.geminiKey||""} onChange={e=>setProfileForm(p=>({...p,geminiKey:e.target.value}))}
@@ -1401,7 +1395,7 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                 <input type="text" value={profileForm.gmailClientId||""} onChange={e=>setProfileForm(p=>({...p,gmailClientId:e.target.value}))}
                   placeholder="xxxxxxxxxx.apps.googleusercontent.com"
                   style={{...inp, fontFamily:"monospace"}} />
-                <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>Gmail送信機能に使用します。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a>で取得できます。</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>Gmail送信・GoogleタスクTODO登録機能に使用します。<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a>で取得できます。</div>
               </div>
               <div style={{background:"#f0f5f2",borderRadius:8,padding:"14px 16px",fontSize:12,color:"#3d7a5e",lineHeight:2,marginBottom:16}}>
                 <div style={{fontWeight:700,marginBottom:6,fontSize:13}}>📋 Gmail OAuth Client ID 取得手順</div>
@@ -1432,6 +1426,22 @@ function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialT
                 <div><b>⑦ クライアント ID をコピーして貼り付け</b></div>
                 <div style={{paddingLeft:16,color:"#5a8a6a",lineHeight:1.6}}>
                   作成完了画面に表示される <code style={{background:"#d8ede1",padding:"1px 5px",borderRadius:3,fontFamily:"monospace"}}>xxxxxxxxxx.apps.googleusercontent.com</code> 形式のクライアント ID をコピーし、上記フィールドに貼り付けて「保存」をクリックします。
+                </div>
+              </div>
+              <div style={{background:"#eff6ff",borderRadius:8,padding:"14px 16px",fontSize:12,color:"#1e40af",lineHeight:2,marginBottom:16,border:"1px solid #bfdbfe"}}>
+                <div style={{fontWeight:700,marginBottom:6,fontSize:13}}>✅ GoogleタスクTODO登録 — 追加設定手順</div>
+                <div style={{fontSize:11,color:"#3b82f6",marginBottom:10}}>上記の Gmail OAuth Client ID をそのまま使用します。以下の追加設定のみ必要です。</div>
+                <div><b>① Google Tasks API を有効化</b></div>
+                <div style={{paddingLeft:16,color:"#1d4ed8",lineHeight:1.6,marginBottom:4}}>
+                  <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{color:"#2563eb"}}>Google Cloud Console</a> を開き、左メニュー「APIとサービス」→「ライブラリ」→ 検索欄に <b>「Google Tasks API」</b> と入力 → 選択 →「<b>有効にする</b>」をクリック。
+                </div>
+                <div><b>② OAuth 同意画面にスコープを追加</b></div>
+                <div style={{paddingLeft:16,color:"#1d4ed8",lineHeight:1.6,marginBottom:4}}>
+                  左メニュー「APIとサービス」→「OAuth 同意画面」→「<b>スコープを追加または削除</b>」をクリック。検索欄に <code style={{background:"#dbeafe",padding:"1px 5px",borderRadius:3,fontFamily:"monospace"}}>tasks</code> と入力し、<b>「Google Tasks API」の <code style={{background:"#dbeafe",padding:"1px 5px",borderRadius:3,fontFamily:"monospace"}}>.../auth/tasks</code></b> にチェック →「更新」→「保存して次へ」。
+                </div>
+                <div><b>③ 初回利用時のGoogleアカウント認証</b></div>
+                <div style={{paddingLeft:16,color:"#1d4ed8",lineHeight:1.6}}>
+                  「✅ GoogleタスクにTODO作成」ボタンを初めてクリックするとGoogleのポップアップが表示されます。アカウントを選択し「<b>許可</b>」をクリックしてください。同一セッション中は再認証不要です。
                 </div>
               </div>
               {profileMsg && <div style={{fontSize:12,color:"#059669",fontWeight:700,marginBottom:10}}>{profileMsg}</div>}
@@ -2749,7 +2759,7 @@ function NextActionEditBtn({ nad, lead, onUpdate, currentUser }) {
         token = await new Promise((res, rej) => {
           const client = window.google.accounts.oauth2.initTokenClient({
             client_id: clientId,
-            scope: 'https://www.googleapis.com/auth/calendar.events',
+            scope: 'https://www.googleapis.com/auth/tasks',
             callback: (resp) => {
               if (resp.error) {
                 if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
@@ -2769,31 +2779,25 @@ function NextActionEditBtn({ nad, lead, onUpdate, currentUser }) {
         });
         setCalToken(token);
       }
-      const startDT = time ? `${date}T${time}:00` : `${date}T10:00:00`;
-      const startDate = new Date(startDT);
-      const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
-      const pad = n => String(n).padStart(2, "0");
-      const fmtDT = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
-      const event = {
-        summary: lead.company || "(会社名未設定)",
-        description: lead.zoho_url || "",
-        start: { dateTime: fmtDT(startDate), timeZone: "Asia/Tokyo" },
-        end: { dateTime: fmtDT(endDate), timeZone: "Asia/Tokyo" }
+      const task = {
+        title: lead.company || "(会社名未設定)",
+        notes: lead.zoho_url || "",
+        due: `${date}T00:00:00.000Z`
       };
-      const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+      const calRes = await fetch("https://tasks.googleapis.com/tasks/v1/lists/@default/tasks", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(event)
+        body: JSON.stringify(task)
       });
       if (!calRes.ok) {
         const err = await calRes.json();
         if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setCalToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
-        throw new Error(err.error?.message || 'TODO作成に失敗しました');
+        throw new Error(err.error?.message || 'タスク作成に失敗しました');
       }
       setCalSaved(true);
       setTimeout(() => setCalSaved(false), 3000);
     } catch(e) {
-      alert('GoogleカレンダーTODO作成エラー: ' + e.message);
+      alert('GoogleタスクTODO作成エラー: ' + e.message);
     } finally {
       setCalSaving(false);
     }
