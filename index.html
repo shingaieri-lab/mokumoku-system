@@ -221,7 +221,23 @@ const AI_SYSTEM_PROMPT = `あなたはダンドリワーク（建築施工管理
 
 ユーザーが電話メモ・アクション記録を入力すると、以下のJSON形式のみで出力してください。
 
-{"action_summary":"架電内容サマリー（2〜3文）","action_type":"call または email または sms または other","action_result":"取次 または 不在 または 不通 または 折電 または 送信済 または その他","next_action_date_offset":3,"next_action_time":"10:00","next_action_memo":"次回アクションメモ","followup_talk_points":["ポイント1","ポイント2"],"email_subject":"フォローメール件名","email_body":"フォローメール本文","interest_level":"高 または 中 または 低","memo_for_zoho":"Zoho用詳細サマリー（3〜5文）"}
+{"action_summary":"架電内容サマリー（2〜3文）","action_type":"call または email または sms または other","action_result":"取次 または 不在 または 不通 または 折電 または 送信済 または その他","next_action_date_offset":5,"next_action_time":"10:00","next_action_memo":"次回アクションメモ","followup_talk_points":["ポイント1","ポイント2"],"email_subject":"フォローメール件名","email_body":"フォローメール本文","interest_level":"高 または 中 または 低","memo_for_zoho":"Zoho用詳細サマリー（3〜5文）"}
+
+【next_action_date_offsetの決定ルール】
+メモ内容・過去のアクション履歴・顧客の反応を読み取り、最適な営業日数（整数）を判断してください。
+
+- 「来週」「1週間後」→ 5
+- 「2週間後」「再来週」→ 10
+- 「来月」「1ヶ月後」→ 22
+- 「3日後」「数日後」→ 3
+- 「明日」→ 1
+- 「2〜3日後」→ 3
+- 不在・不通が続いている → 過去の架電間隔を参考に同程度の日数
+- 折電待ち → 2〜3営業日後（早めにフォロー）
+- 興味度「高」で前向き → 2〜3営業日後
+- 興味度「中」検討中 → 5〜7営業日後
+- 興味度「低」・繁忙期 → 10〜22営業日後
+- 過去履歴がある場合は架電間隔のパターンも参考にすること
 
 必ずJSONのみ返してください。`;
 
@@ -662,6 +678,9 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
   const [editEmail, setEditEmail] = React.useState({ subject:"", body:"" });
   const [copiedEmail, setCopiedEmail] = React.useState(false);
   const [copiedZoho, setCopiedZoho] = React.useState(false);
+  const [aiGmailToken, setAiGmailToken] = React.useState(null);
+  const [aiGmailSaving, setAiGmailSaving] = React.useState(false);
+  const [aiGmailSaved, setAiGmailSaved] = React.useState(false);
   const lead = leads.find(l=>l.id===selLead);
 
   const addBizDays=(dateStr,days)=>{
@@ -675,9 +694,11 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
     if(!memo.trim()) return;
     if(!apiKey){setError("APIキーが未設定です。設定画面（⚙️）の「APIキー設定」タブから入力してください。");return;}
     setLoading(true);setError("");setResult(null);setSaved(false);
-    const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ${lead.status}`:"";
+    const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ステータス:${lead.status}`:"";
+    const recentActions=(lead?.actions||[]).filter(a=>a&&typeof a==="object").sort((a,b)=>(String(b.ts||"")).localeCompare(String(a.ts||""))).slice(0,5);
+    const actHistory=recentActions.length>0?"\n\n【過去のアクション履歴（直近5件）】\n"+recentActions.map((a,i)=>`${i+1}. ${a.date||""}${a.time?" "+a.time:""} [${a.type||""}] ${a.result||""} — ${String(a.summary||"").slice(0,80)}`).join("\n"):"";
     try{
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+actHistory+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
       const data=await res.json();
       if(data.error) throw new Error(data.error.message||data.error.status);
       const text=(data.candidates[0].content.parts||[]).map(i=>i.text||"").join("");
@@ -696,9 +717,80 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
   const saveToLead=()=>{
     if(!result||!selLead) return;
     const nextDate=result.next_action_date_offset?addBizDays(actionDate,result.next_action_date_offset):"";
-    const newAct={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),type:result.action_type||manualType,result:result.action_result||manualResult,summary:result.action_summary||memo,date:actionDate,time:actionTime,nextDate,nextTime:result.next_action_time||"",next:result.next_action_memo||"",ts:new Date().toISOString(),recorded_by:currentUser?.name||""};
+    const newAct={id:Date.now().toString(36)+Math.random().toString(36).slice(2,5),type:result.action_type||manualType,result:result.action_result||manualResult,summary:memo,date:actionDate,time:actionTime,nextDate,nextTime:result.next_action_time||"",next:result.next_action_memo||"",talkPoints:(result.followup_talk_points||[]).slice(0,4),ts:new Date().toISOString(),recorded_by:currentUser?.name||""};
     onUpdate(lead.id,{actions:[...(lead.actions||[]),newAct],next_action_date:nextDate,next_action_time:result.next_action_time||lead.next_action_time||"",next_action:result.next_action_memo||lead.next_action||""});
     setSaved(true);setTimeout(()=>setSaved(false),3000);
+  };
+
+  const saveAiGmailDraft = async () => {
+    const cfg = getEffectiveAiConfig(currentUser);
+    const clientId = cfg.gmailClientId;
+    if (!clientId) { alert("設定 > APIキー設定 で Gmail Client ID を入力してください"); return; }
+    setAiGmailSaving(true);
+    try {
+      let token = aiGmailToken;
+      if (!token) {
+        if (!window.google?.accounts?.oauth2) {
+          await new Promise((res, rej) => {
+            if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) { res(); return; }
+            const s = document.createElement('script');
+            s.src = 'https://accounts.google.com/gsi/client';
+            s.onload = res; s.onerror = rej;
+            document.head.appendChild(s);
+          });
+          await new Promise(r => setTimeout(r, 500));
+        }
+        token = await new Promise((res, rej) => {
+          const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/gmail.compose',
+            callback: (resp) => {
+              if (resp.error) {
+                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
+                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
+                } else { rej(new Error(resp.error)); }
+              } else { res(resp.access_token); }
+            },
+            error_callback: (err) => {
+              if (err.type === 'popup_blocked_by_browser') {
+                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
+              } else {
+                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
+              }
+            }
+          });
+          client.requestAccessToken();
+        });
+        setAiGmailToken(token);
+      }
+      const utf8B64 = (str) => { const b = new TextEncoder().encode(str); let s=''; for(let c of b) s+=String.fromCharCode(c); return btoa(s); };
+      const to = lead?.email || '';
+      const lines = [];
+      if (to) lines.push(`To: ${to}`);
+      lines.push(`Subject: =?UTF-8?B?${utf8B64(editEmail.subject)}?=`);
+      lines.push('MIME-Version: 1.0');
+      lines.push('Content-Type: text/plain; charset=UTF-8');
+      lines.push('Content-Transfer-Encoding: base64');
+      lines.push('');
+      lines.push(utf8B64(editEmail.body));
+      const raw = btoa(lines.join('\r\n')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      const draftRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/drafts', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: { raw } })
+      });
+      if (!draftRes.ok) {
+        const err = await draftRes.json();
+        if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setAiGmailToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
+        throw new Error(err.error?.message || '保存に失敗しました');
+      }
+      setAiGmailSaved(true);
+      setTimeout(() => setAiGmailSaved(false), 3000);
+    } catch(e) {
+      alert('Gmail下書き保存エラー: ' + e.message);
+    } finally {
+      setAiGmailSaving(false);
+    }
   };
 
   const iLvColor={"高":"#10b981","中":"#f59e0b","低":"#ef4444"};
@@ -834,9 +926,10 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
                 )}
                 {activeTab==="email"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                    <div style={{display:"flex",justifyContent:"flex-end"}}><button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}
-
-${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}} style={{background:copiedEmail?"#10b98122":"#ffffff0f",color:copiedEmail?"#10b981":"#94a3b8",border:`1px solid ${copiedEmail?"#10b98144":"#33415566"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedEmail?"✓ コピー済":"📋 全文コピー"}</button></div>
+                    <div style={{display:"flex",justifyContent:"flex-end",gap:8,flexWrap:"wrap"}}>
+                      <button onClick={saveAiGmailDraft} disabled={aiGmailSaving} style={{background:aiGmailSaved?"#2563eb":aiGmailSaving?"#1e40af66":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:aiGmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:aiGmailSaving?0.7:1}}>{aiGmailSaving?"保存中...":aiGmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
+                      <button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}\n\n${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}} style={{background:copiedEmail?"#10b98122":"#ffffff0f",color:copiedEmail?"#10b981":"#94a3b8",border:`1px solid ${copiedEmail?"#10b98144":"#33415566"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedEmail?"✓ コピー済":"📋 全文コピー"}</button>
+                    </div>
                     <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
                       <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase"}}>件名</div>
                       <div style={{padding:"12px 16px"}}><input value={editEmail.subject} onChange={e=>setEditEmail(p=>({...p,subject:e.target.value}))} style={{width:"100%",background:"#0f172a",border:"1px solid #334155",borderRadius:7,padding:"8px 12px",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
@@ -2988,6 +3081,7 @@ function ActEntry({ a, onEdit, onDelete, readOnly }) {
         </div>
         <p style={{margin:0,fontSize:12,color:"#174f35", lineHeight:1.6, whiteSpace:"pre-wrap"}}>{a.summary}</p>
         {(a.nextDate||a.next) && <div style={{fontSize:11,color:"#059669", marginTop:3}}>→ 次回：{a.nextDate||""}{a.nextTime ? " "+a.nextTime : ""}{a.next ? " "+a.next : ""}</div>}
+        {a.talkPoints?.length>0&&<div style={{marginTop:5,background:"#f0f9f5",borderRadius:6,padding:"6px 10px"}}><div style={{fontSize:10,color:"#059669",fontWeight:700,marginBottom:4}}>📞 次回架電トークポイント</div>{a.talkPoints.map((p,i)=><div key={i} style={{display:"flex",gap:6,alignItems:"flex-start",marginBottom:3}}><span style={{background:"#059669",color:"#fff",borderRadius:3,padding:"0px 5px",fontSize:10,fontWeight:700,flexShrink:0,lineHeight:"16px"}}>{i+1}</span><span style={{fontSize:11,color:"#174f35",lineHeight:1.5}}>{p}</span></div>)}</div>}
       </div>
     </div>
   );
