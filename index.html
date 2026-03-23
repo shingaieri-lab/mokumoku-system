@@ -239,6 +239,11 @@ const AI_SYSTEM_PROMPT = `あなたはダンドリワーク（建築施工管理
 - 興味度「低」・繁忙期 → 10〜22営業日後
 - 過去履歴がある場合は架電間隔のパターンも参考にすること
 
+【フォローメールの生成ルール】
+- email_bodyの書き出しは「{会社名}\n{担当者名} 様」（【リード】の会社名・担当者名を使用、なければ「ご担当者」）
+- 本文中には「ダンドリワークの{送信者名}でございます」（【送信者情報】の名前を使用）
+- 【送信者情報】に署名が含まれる場合、メール本文末尾に必ずそのまま追加すること
+
 必ずJSONのみ返してください。`;
 
 function LeadCombobox({ leads, value, onChange, placeholder, inputStyle, darkMode }) {
@@ -694,11 +699,14 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
     if(!memo.trim()) return;
     if(!apiKey){setError("APIキーが未設定です。設定画面（⚙️）の「APIキー設定」タブから入力してください。");return;}
     setLoading(true);setError("");setResult(null);setSaved(false);
-    const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ステータス:${lead.status}`:"";
+    const senderName=currentUser?.name||"";
+    const senderSig=currentUser?.signature||"";
+    const ctx=lead?`\n【リード】会社名:${lead.company} / 担当者名:${lead.contact} / ステータス:${lead.status}`:"";
     const recentActions=(lead?.actions||[]).filter(a=>a&&typeof a==="object").sort((a,b)=>(String(b.ts||"")).localeCompare(String(a.ts||""))).slice(0,5);
     const actHistory=recentActions.length>0?"\n\n【過去のアクション履歴（直近5件）】\n"+recentActions.map((a,i)=>`${i+1}. ${a.date||""}${a.time?" "+a.time:""} [${a.type||""}] ${a.result||""} — ${String(a.summary||"").slice(0,80)}`).join("\n"):"";
+    const userCtx=`\n\n【送信者情報】名前:${senderName}`+(senderSig?`\n署名:\n${senderSig}`:"");
     try{
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+actHistory+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+actHistory+userCtx+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
       const data=await res.json();
       if(data.error) throw new Error(data.error.message||data.error.status);
       const text=(data.candidates[0].content.parts||[]).map(i=>i.text||"").join("");
@@ -706,7 +714,13 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
       const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
       if(!jsonMatch) throw new Error("レスポンスからJSONを抽出できませんでした");
       const parsed=JSON.parse(jsonMatch[0]);
-      setResult(parsed);setEditEmail({subject:parsed.email_subject||"",body:parsed.email_body||""});setActiveTab("action");
+      // AI生成後：リード選択・ログイン情報から会社名・担当者名・署名・送信者名を自動反映
+      const leadContact=lead?.contact||lead?.company||"";
+      const leadSurname=leadContact.split(/[ \u3000]/)[0]||leadContact;
+      let emailBody=parsed.email_body||"";
+      emailBody=emailBody.replaceAll("{{担当者名}}",leadContact).replaceAll("{{担当者苗字}}",leadSurname).replaceAll("{{会社名}}",lead?.company||"").replaceAll("{{送信者名}}",senderName);
+      if(senderSig&&!emailBody.includes(senderSig)){emailBody=emailBody.trim()+"\n\n"+senderSig;}
+      setResult(parsed);setEditEmail({subject:parsed.email_subject||"",body:emailBody});setActiveTab("action");
     }catch(e){
       if(e.message==="Failed to fetch"){setError("APIへの接続に失敗しました。ネットワーク接続を確認するか、ブラウザのCORSエラーが原因の場合はローカルサーバー経由（http://localhost）でアクセスしてください。");}
       else{setError("解析失敗: "+e.message);}
