@@ -1911,7 +1911,7 @@ function App() {
         {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction} currentUser={currentUser} isMobile={isMobile} readOnly={currentUser?.is_staff === false}
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }} />}
         {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => navigate("leads")} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
-        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>navigate("email")} currentUser={currentUser} />}
+        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>navigate("email")} currentUser={currentUser} leads={leads} />}
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} />}
         {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} isMobile={isMobile} />}
       </main>
@@ -3727,7 +3727,7 @@ function saveGCalConfig(cfg) {
   apiPost('/api/gcal-config', cfg);
 }
 
-function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail = ()=>{}, currentUser }) {
+function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail = ()=>{}, currentUser, leads = [] }) {
   const [cfg, setCfg] = useState(() => loadGCalConfig());
   const [showSetup, setShowSetup] = useState(false);
   const [editCfg, setEditCfg] = useState(() => loadGCalConfig());
@@ -3766,6 +3766,7 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
 
   // カレンダー登録モーダル用
   const [showCalReg, setShowCalReg] = useState(false);
+  const [calRegLeadId, setCalRegLeadId] = useState("");
   const [calRegCompany, setCalRegCompany] = useState("");
   const [calRegTitleTpl, setCalRegTitleTpl] = useState("仮WEB営1）【{{会社名}}様】");
   const [calRegLoading, setCalRegLoading] = useState(false);
@@ -4245,12 +4246,28 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
       {/* カレンダー登録モーダル */}
       {showCalReg && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}
-          onClick={e=>{if(e.target===e.currentTarget)setShowCalReg(false);}}>
+          onClick={e=>{if(e.target===e.currentTarget){setShowCalReg(false);setCalRegLeadId("");}}}>
           <div style={{background:"#fff",borderRadius:16,padding:28,width:500,maxWidth:"95vw",boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"85vh",overflowY:"auto"}}>
             <div style={{fontSize:16,fontWeight:800,color:"#174f35",marginBottom:18}}>📅 Googleカレンダーに登録</div>
 
             <div style={{marginBottom:12}}>
               <label style={{...S.lbl}}>会社名<span style={{fontWeight:400,color:"#6b7280",fontSize:11,marginLeft:6}}>（{"{{会社名}}"} に代入されます）</span></label>
+              {leads.length > 0 && (
+                <div style={{marginBottom:6}}>
+                  <LeadCombobox
+                    leads={leads}
+                    value={calRegLeadId}
+                    onChange={id => {
+                      setCalRegLeadId(id);
+                      const lead = leads.find(l => l.id === id);
+                      if (lead) setCalRegCompany(lead.company || "");
+                    }}
+                    placeholder="リードから検索・選択"
+                    inputStyle={S.inp}
+                    darkMode={false}
+                  />
+                </div>
+              )}
               <input value={calRegCompany} onChange={e=>setCalRegCompany(e.target.value)}
                 placeholder="例：株式会社〇〇" style={S.inp} />
             </div>
@@ -4290,7 +4307,7 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
             )}
 
             <div style={{display:"flex",gap:8,justifyContent:"flex-end",marginTop:4}}>
-              <button onClick={()=>setShowCalReg(false)} style={S.btnSec}>閉じる</button>
+              <button onClick={()=>{setShowCalReg(false);setCalRegLeadId("");}} style={S.btnSec}>閉じる</button>
               <button onClick={registerToCalendar}
                 disabled={calRegLoading || !resolvedCalTitle.trim()}
                 style={{...S.btnP,opacity:(calRegLoading||!resolvedCalTitle.trim())?0.6:1,
