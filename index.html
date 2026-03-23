@@ -221,7 +221,23 @@ const AI_SYSTEM_PROMPT = `あなたはダンドリワーク（建築施工管理
 
 ユーザーが電話メモ・アクション記録を入力すると、以下のJSON形式のみで出力してください。
 
-{"action_summary":"架電内容サマリー（2〜3文）","action_type":"call または email または sms または other","action_result":"取次 または 不在 または 不通 または 折電 または 送信済 または その他","next_action_date_offset":3,"next_action_time":"10:00","next_action_memo":"次回アクションメモ","followup_talk_points":["ポイント1","ポイント2"],"email_subject":"フォローメール件名","email_body":"フォローメール本文","interest_level":"高 または 中 または 低","memo_for_zoho":"Zoho用詳細サマリー（3〜5文）"}
+{"action_summary":"架電内容サマリー（2〜3文）","action_type":"call または email または sms または other","action_result":"取次 または 不在 または 不通 または 折電 または 送信済 または その他","next_action_date_offset":5,"next_action_time":"10:00","next_action_memo":"次回アクションメモ","followup_talk_points":["ポイント1","ポイント2"],"email_subject":"フォローメール件名","email_body":"フォローメール本文","interest_level":"高 または 中 または 低","memo_for_zoho":"Zoho用詳細サマリー（3〜5文）"}
+
+【next_action_date_offsetの決定ルール】
+メモ内容・過去のアクション履歴・顧客の反応を読み取り、最適な営業日数（整数）を判断してください。
+
+- 「来週」「1週間後」→ 5
+- 「2週間後」「再来週」→ 10
+- 「来月」「1ヶ月後」→ 22
+- 「3日後」「数日後」→ 3
+- 「明日」→ 1
+- 「2〜3日後」→ 3
+- 不在・不通が続いている → 過去の架電間隔を参考に同程度の日数
+- 折電待ち → 2〜3営業日後（早めにフォロー）
+- 興味度「高」で前向き → 2〜3営業日後
+- 興味度「中」検討中 → 5〜7営業日後
+- 興味度「低」・繁忙期 → 10〜22営業日後
+- 過去履歴がある場合は架電間隔のパターンも参考にすること
 
 必ずJSONのみ返してください。`;
 
@@ -678,9 +694,11 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
     if(!memo.trim()) return;
     if(!apiKey){setError("APIキーが未設定です。設定画面（⚙️）の「APIキー設定」タブから入力してください。");return;}
     setLoading(true);setError("");setResult(null);setSaved(false);
-    const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ${lead.status}`:"";
+    const ctx=lead?`\n【リード】${lead.company} / ${lead.contact} / ステータス:${lead.status}`:"";
+    const recentActions=(lead?.actions||[]).filter(a=>a&&typeof a==="object").sort((a,b)=>(String(b.ts||"")).localeCompare(String(a.ts||""))).slice(0,5);
+    const actHistory=recentActions.length>0?"\n\n【過去のアクション履歴（直近5件）】\n"+recentActions.map((a,i)=>`${i+1}. ${a.date||""}${a.time?" "+a.time:""} [${a.type||""}] ${a.result||""} — ${String(a.summary||"").slice(0,80)}`).join("\n"):"";
     try{
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYSTEM_PROMPT}]},contents:[{role:"user",parts:[{text:ctx+actHistory+"\n\n【メモ】\n"+memo}]}],generationConfig:{maxOutputTokens:2048,responseMimeType:"application/json"}})});
       const data=await res.json();
       if(data.error) throw new Error(data.error.message||data.error.status);
       const text=(data.candidates[0].content.parts||[]).map(i=>i.text||"").join("");
