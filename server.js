@@ -157,6 +157,59 @@ app.post('/api/invite', requireAuth, rateLimit, async (req, res) => {
   res.json({ code });
 });
 
+// パスワードリセットコード発行（管理者のみ・対象ユーザーID紐付け・30分有効）
+app.post('/api/generate-reset-code', requireAuth, rateLimit, async (req, res) => {
+  const accounts = await getAccounts();
+  const requester = accounts.find(a => a.id === req.accountId);
+  if (!requester || requester.role !== 'admin') {
+    return res.status(403).json({ error: '管理者のみ実行できます' });
+  }
+  const { targetId } = req.body;
+  if (!targetId) return res.status(400).json({ error: 'targetIdが必要です' });
+  if (!accounts.find(a => a.id === targetId)) {
+    return res.status(404).json({ error: 'アカウントが見つかりません' });
+  }
+  const code = crypto.randomBytes(6).toString('hex'); // 12文字のランダムコード
+  await kv.set('resetCode:' + code, targetId, { ex: 60 * 30 }); // 30分有効
+  res.json({ code });
+});
+
+// リセットコードを使ったパスワード再設定（認証不要・ログインできない場合の救済）
+app.post('/api/reset-password-with-code', rateLimit, async (req, res) => {
+  const { id, code, newPassword } = req.body;
+  if (!id || !code || !newPassword) return res.status(400).json({ error: '全項目入力してください' });
+  const targetId = await kv.get('resetCode:' + code);
+  if (!targetId || targetId !== id) {
+    return res.status(400).json({ error: 'リセットコードが無効または期限切れです' });
+  }
+  const pwError = validatePassword(newPassword);
+  if (pwError) return res.status(400).json({ error: pwError });
+  const accounts = await getAccounts();
+  const target = accounts.find(a => a.id === id);
+  if (!target) return res.status(404).json({ error: 'アカウントが見つかりません' });
+  target.password = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+  await writeData('accounts', accounts);
+  await kv.del('resetCode:' + code); // 使用済みにする（1回限り）
+  res.json({ ok: true });
+});
+
+// パスワードリセット（管理者のみ・対象アカウントのパスワードのみ更新）
+app.post('/api/reset-password/:id', requireAuth, rateLimit, async (req, res) => {
+  const accounts = await getAccounts();
+  const requester = accounts.find(a => a.id === req.accountId);
+  if (!requester || requester.role !== 'admin') {
+    return res.status(403).json({ error: '管理者のみ実行できます' });
+  }
+  const { password } = req.body;
+  const pwError = validatePassword(password);
+  if (pwError) return res.status(400).json({ error: pwError });
+  const target = accounts.find(a => a.id === req.params.id);
+  if (!target) return res.status(404).json({ error: 'アカウントが見つかりません' });
+  target.password = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  await writeData('accounts', accounts);
+  res.json({ ok: true });
+});
+
 // ロック中アカウント一覧取得（管理者のみ）
 app.get('/api/login-locks', requireAuth, rateLimit, async (req, res) => {
   const accounts = await getAccounts();
