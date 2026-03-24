@@ -175,6 +175,7 @@ function syncISColors() {
 }
 syncISColors();
 
+// フォールバック用ハードコードリスト（APIが取得できない場合に使用）
 const JP_HOLIDAYS = new Set([
   "2025-01-01","2025-01-13","2025-02-11","2025-02-23","2025-02-24",
   "2025-03-20","2025-04-29","2025-05-03","2025-05-04","2025-05-05","2025-05-06",
@@ -185,6 +186,17 @@ const JP_HOLIDAYS = new Set([
   "2026-07-20","2026-08-11","2026-09-21","2026-09-22","2026-09-23","2026-10-12",
   "2026-11-03","2026-11-23",
 ]);
+// 起動時に内閣府データ準拠の祝日APIから最新の祝日を取得してSetを自動更新する
+// 取得失敗時はハードコードリストをそのまま使う（ネットワーク不要で動作）
+(async () => {
+  try {
+    const res = await fetch('https://holidays-jp.github.io/api/v1/date.json');
+    if (res.ok) {
+      const data = await res.json();
+      Object.keys(data).forEach(d => JP_HOLIDAYS.add(d));
+    }
+  } catch(e) { /* フォールバック継続 */ }
+})();
 const isBusinessDay = (dateStr) => {
   if (!dateStr) return true;
   const d = new Date(dateStr + "T00:00:00");
@@ -206,16 +218,79 @@ const isDueSoon = (dateStr) => {
 const TODAY = new Date().toISOString().split("T")[0];
 const THIS_MONTH = TODAY.slice(0, 7);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+// ── Gmail共通ユーティリティ ──────────────────────────────────────────────────
+// OAuthトークン（Googleの認証許可証）を取得する共通関数
+// currentToken: すでに持っているトークン（あればそのまま返す）
+const acquireGmailToken = async (clientId, currentToken) => {
+  if (currentToken) return currentToken;
+  // Googleのスクリプトがまだ読み込まれていなければ動的に読み込む
+  if (!window.google?.accounts?.oauth2) {
+    await new Promise((res, rej) => {
+      if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) { res(); return; }
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return new Promise((res, rej) => {
+    const client = window.google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: 'https://www.googleapis.com/auth/gmail.compose',
+      callback: (resp) => {
+        if (resp.error) {
+          if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
+            rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
+          } else { rej(new Error(resp.error)); }
+        } else { res(resp.access_token); }
+      },
+      error_callback: (err) => {
+        if (err.type === 'popup_blocked_by_browser') {
+          rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
+        } else {
+          rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
+        }
+      }
+    });
+    client.requestAccessToken();
+  });
+};
+
+// MIMEメール形式のRAWデータ（Gmail APIが受け取る形式）を組み立てる共通関数
+const buildGmailDraftRaw = (to, subject, body) => {
+  const utf8B64 = (str) => { const b = new TextEncoder().encode(str); let s=''; for(let c of b) s+=String.fromCharCode(c); return btoa(s); };
+  const lines = [];
+  if (to) lines.push(`To: ${to}`);
+  lines.push(`Subject: =?UTF-8?B?${utf8B64(subject)}?=`);
+  lines.push('MIME-Version: 1.0');
+  lines.push('Content-Type: text/plain; charset=UTF-8');
+  lines.push('Content-Transfer-Encoding: base64');
+  lines.push('');
+  lines.push(utf8B64(body));
+  return btoa(lines.join('\r\n')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+};
+
+// Gmail APIに下書きを送信する共通関数
+// 認証切れ（401）の場合は isUnauthenticated フラグ付きエラーをスローする
+const postGmailDraft = async (token, raw) => {
+  const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/drafts', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: { raw } })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) {
+      throw Object.assign(new Error('認証の期限が切れました。再度お試しください。'), { isUnauthenticated: true });
+    }
+    throw new Error(err.error?.message || '保存に失敗しました');
+  }
+};
+// ────────────────────────────────────────────────────────────────────────────
 const at = (v) => ACTION_TYPES.find(a => a.v === v) || ACTION_TYPES[0];
 
-const DEFAULT_EMAIL_TEMPLATES = [
-  { id:"t1", name:"初回フォロー", subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
-  { id:"t2", name:"商談日程調整", subject:"【ダンドリワーク】商談のご案内", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\nこの度はお時間をいただきありがとうございます。\n以下の日程にてオンライン商談をご提案させていただきます。\n\n■候補日時\n{{候補日時}}\n\nご都合はいかがでしょうか？\n何卒よろしくお願いいたします。" },
-  { id:"t3", name:"ナーチャリング", subject:"【ダンドリワーク】建設業の施工管理DX事例のご紹介", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n以前お話しさせていただいた件ですが、\n最近、同様の課題をお持ちのお客様で成果が出た事例がございますので\nご参考までにお送りさせていただきます。\n\n引き続きよろしくお願いいたします。" },
-];
-function loadTpls() { return window.__appData.emailTpls || DEFAULT_EMAIL_TEMPLATES; }
-function saveTpls(t) { window.__appData.emailTpls = t; apiPost('/api/email-tpls', t); }
-function applyVars(body, vars) { return Object.entries(vars).reduce((s,[k,v])=>s.replaceAll("{{"+k+"}}",v||("{{"+k+"}}")),body); }
 
 const AI_SYSTEM_PROMPT = `あなたはダンドリワーク（建築施工管理アプリ）のインサイドセールス専任アシスタントです。
 
@@ -295,9 +370,9 @@ function LeadCombobox({ leads, value, onChange, placeholder, inputStyle, darkMod
 
 function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile }) {
   const DEFAULT_EMAIL_TEMPLATES = [
-    { id:"t1", name:"初回フォロー", useSlots:false, subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者苗字}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
-    { id:"t2", name:"商談日程調整", useSlots:true, subject:"【ダンドリワーク{{送信者名}}】ご説明日程候補日をお送りします", body:"{{担当者苗字}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n下記日程のご都合は、いかがでしょうか。\n\n============================\n【日程候補】\n{{候補日時}}\n============================\n\nご都合のよろしい日程をご返信いただけますと幸いです。\nよろしくお願いいたします。" },
-    { id:"t3", name:"ナーチャリング", useSlots:false, subject:"【ダンドリワーク】建設業の施工管理DX事例のご紹介", body:"{{担当者苗字}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n以前お話しさせていただいた件で、成果が出た事例をご紹介します。" },
+    { id:"t1", name:"初回フォロー", useSlots:false, subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
+    { id:"t2", name:"商談日程調整", useSlots:true, subject:"【ダンドリワーク{{送信者名}}】ご説明日程候補日をお送りします", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n下記日程のご都合は、いかがでしょうか。\n\n============================\n【日程候補】\n{{候補日時}}\n============================\n\nご都合のよろしい日程をご返信いただけますと幸いです。\nよろしくお願いいたします。" },
+    { id:"t3", name:"ナーチャリング", useSlots:false, subject:"【ダンドリワーク】建設業の施工管理DX事例のご紹介", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n以前お話しさせていただいた件で、成果が出た事例をご紹介します。" },
   ];
   const loadTpls = () => window.__appData.emailTpls || DEFAULT_EMAIL_TEMPLATES;
   const saveTpls = (t) => { window.__appData.emailTpls = t; apiPost('/api/email-tpls', t); };
@@ -407,66 +482,10 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile
     if (!clientId) { alert("設定 > APIキー設定 で Gmail Client ID を入力してください"); return; }
     setGmailSaving(true);
     try {
-      let token = gmailToken;
-      if (!token) {
-        if (!window.google?.accounts?.oauth2) {
-          await new Promise((res, rej) => {
-            if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) { res(); return; }
-            const s = document.createElement('script');
-            s.src = 'https://accounts.google.com/gsi/client';
-            s.onload = res; s.onerror = rej;
-            document.head.appendChild(s);
-          });
-          await new Promise(r => setTimeout(r, 500));
-        }
-        token = await new Promise((res, rej) => {
-          const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: clientId,
-            scope: 'https://www.googleapis.com/auth/gmail.compose',
-            callback: (resp) => {
-              if (resp.error) {
-                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-                } else {
-                  rej(new Error(resp.error));
-                }
-              } else {
-                res(resp.access_token);
-              }
-            },
-            error_callback: (err) => {
-              if (err.type === 'popup_blocked_by_browser') {
-                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-              } else {
-                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-              }
-            }
-          });
-          client.requestAccessToken();
-        });
-        setGmailToken(token);
-      }
-      const utf8B64 = (str) => { const b = new TextEncoder().encode(str); let s=''; for(let c of b) s+=String.fromCharCode(c); return btoa(s); };
-      const to = vars.宛先メール||'';
-      const lines = [];
-      if (to) lines.push(`To: ${to}`);
-      lines.push(`Subject: =?UTF-8?B?${utf8B64(previewSubj)}?=`);
-      lines.push('MIME-Version: 1.0');
-      lines.push('Content-Type: text/plain; charset=UTF-8');
-      lines.push('Content-Transfer-Encoding: base64');
-      lines.push('');
-      lines.push(utf8B64(previewBody));
-      const raw = btoa(lines.join('\r\n')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-      const res = await fetch('https://www.googleapis.com/gmail/v1/users/me/drafts', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: { raw } })
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setGmailToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
-        throw new Error(err.error?.message || '保存に失敗しました');
-      }
+      const token = await acquireGmailToken(clientId, gmailToken);
+      setGmailToken(token);
+      const raw = buildGmailDraftRaw(vars.宛先メール||'', previewSubj, previewBody);
+      await postGmailDraft(token, raw);
       setGmailSaved(true);
       setTimeout(() => setGmailSaved(false), 3000);
       // 商談確定テンプレート（useMeeting）の場合、リード管理のステータスと商談情報を更新
@@ -488,6 +507,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile
         onUpdate(selLead, patch);
       }
     } catch(e) {
+      if (e.isUnauthenticated) setGmailToken(null);
       alert('Gmail下書き保存エラー: ' + e.message);
     } finally {
       setGmailSaving(false);
@@ -692,9 +712,8 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
   const lead = leads.find(l=>l.id===selLead);
 
   const addBizDays=(dateStr,days)=>{
-    const JP_HOL=new Set(["2025-01-01","2025-01-13","2025-02-11","2025-02-23","2025-03-20","2025-04-29","2025-05-03","2025-05-04","2025-05-05","2025-05-06","2025-07-21","2025-08-11","2025-09-15","2025-09-23","2025-10-13","2025-11-03","2025-11-23","2026-01-01","2026-01-12","2026-02-11","2026-02-23","2026-03-20","2026-04-29","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-07-20","2026-08-11","2026-09-21","2026-09-23","2026-10-12","2026-11-03","2026-11-23"]);
     let d=new Date(dateStr+"T00:00:00"),c=0;
-    while(c<days){d.setDate(d.getDate()+1);const s=d.toISOString().split("T")[0];if(d.getDay()!==0&&d.getDay()!==6&&!JP_HOL.has(s))c++;}
+    while(c<days){d.setDate(d.getDate()+1);const s=d.toISOString().split("T")[0];if(d.getDay()!==0&&d.getDay()!==6&&!JP_HOLIDAYS.has(s))c++;}
     return d.toISOString().split("T")[0];
   };
 
@@ -745,65 +764,14 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
     if (!clientId) { alert("設定 > APIキー設定 で Gmail Client ID を入力してください"); return; }
     setAiGmailSaving(true);
     try {
-      let token = aiGmailToken;
-      if (!token) {
-        if (!window.google?.accounts?.oauth2) {
-          await new Promise((res, rej) => {
-            if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) { res(); return; }
-            const s = document.createElement('script');
-            s.src = 'https://accounts.google.com/gsi/client';
-            s.onload = res; s.onerror = rej;
-            document.head.appendChild(s);
-          });
-          await new Promise(r => setTimeout(r, 500));
-        }
-        token = await new Promise((res, rej) => {
-          const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: clientId,
-            scope: 'https://www.googleapis.com/auth/gmail.compose',
-            callback: (resp) => {
-              if (resp.error) {
-                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-                } else { rej(new Error(resp.error)); }
-              } else { res(resp.access_token); }
-            },
-            error_callback: (err) => {
-              if (err.type === 'popup_blocked_by_browser') {
-                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-              } else {
-                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-              }
-            }
-          });
-          client.requestAccessToken();
-        });
-        setAiGmailToken(token);
-      }
-      const utf8B64 = (str) => { const b = new TextEncoder().encode(str); let s=''; for(let c of b) s+=String.fromCharCode(c); return btoa(s); };
-      const to = lead?.email || '';
-      const lines = [];
-      if (to) lines.push(`To: ${to}`);
-      lines.push(`Subject: =?UTF-8?B?${utf8B64(editEmail.subject)}?=`);
-      lines.push('MIME-Version: 1.0');
-      lines.push('Content-Type: text/plain; charset=UTF-8');
-      lines.push('Content-Transfer-Encoding: base64');
-      lines.push('');
-      lines.push(utf8B64(editEmail.body));
-      const raw = btoa(lines.join('\r\n')).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-      const draftRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/drafts', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: { raw } })
-      });
-      if (!draftRes.ok) {
-        const err = await draftRes.json();
-        if ((err.error?.code===401)||(err.error?.status==='UNAUTHENTICATED')) { setAiGmailToken(null); throw new Error('認証の期限が切れました。再度お試しください。'); }
-        throw new Error(err.error?.message || '保存に失敗しました');
-      }
+      const token = await acquireGmailToken(clientId, aiGmailToken);
+      setAiGmailToken(token);
+      const raw = buildGmailDraftRaw(lead?.email||'', editEmail.subject, editEmail.body);
+      await postGmailDraft(token, raw);
       setAiGmailSaved(true);
       setTimeout(() => setAiGmailSaved(false), 3000);
     } catch(e) {
+      if (e.isUnauthenticated) setAiGmailToken(null);
       alert('Gmail下書き保存エラー: ' + e.message);
     } finally {
       setAiGmailSaving(false);
