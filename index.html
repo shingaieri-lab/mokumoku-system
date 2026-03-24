@@ -368,7 +368,7 @@ function LeadCombobox({ leads, value, onChange, placeholder, inputStyle, darkMod
   );
 }
 
-function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile }) {
+function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile, initialLeadId = "" }) {
   const DEFAULT_EMAIL_TEMPLATES = [
     { id:"t1", name:"初回フォロー", useSlots:false, subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
     { id:"t2", name:"商談日程調整", useSlots:true, subject:"【ダンドリワーク{{送信者名}}】ご説明日程候補日をお送りします", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n下記日程のご都合は、いかがでしょうか。\n\n============================\n【日程候補】\n{{候補日時}}\n============================\n\nご都合のよろしい日程をご返信いただけますと幸いです。\nよろしくお願いいたします。" },
@@ -381,8 +381,14 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile
   const [tpls, setTpls] = React.useState(loadTpls);
   const [dragIdx, setDragIdx] = React.useState(null);
   const [overIdx, setOverIdx] = React.useState(null);
-  const [selTpl, setSelTpl] = React.useState(tpls[0]?.id||"");
-  const [selLead, setSelLead] = React.useState("");
+  const [selTpl, setSelTpl] = React.useState(() => {
+    if (candidateSlots.length > 0) {
+      const slotsTpl = loadTpls().find(t => t.useSlots);
+      if (slotsTpl) return slotsTpl.id;
+    }
+    return loadTpls()[0]?.id || "";
+  });
+  const [selLead, setSelLead] = React.useState(initialLeadId);
   const [vars, setVars] = React.useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
   const [previewSubj, setPreviewSubj] = React.useState("");
   const [previewBody, setPreviewBody] = React.useState("");
@@ -1809,6 +1815,7 @@ function App() {
     localStorage.setItem("current_user_id", updated.id);
   };
   const [candidateSlots, setCandidateSlots] = useState([]);
+  const [calendarLeadId, setCalendarLeadId] = useState("");
   const effectiveAiConfig = useMemo(() => ({
     ...aiConfig,
     geminiKey: currentUser?.geminiKey || aiConfig.geminiKey || "",
@@ -1879,9 +1886,9 @@ function App() {
         {page === "leads"     && <LeadList leads={leads} initialFilter={dashFilter} onFilterConsumed={()=>setDashFilter(null)} onAdd={addLead} onUpdate={updateLead} onDelete={deleteLead} onAddAction={addAction} currentUser={currentUser} isMobile={isMobile} readOnly={currentUser?.is_staff === false}
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }} />}
         {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={() => navigate("leads")} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
-        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={()=>navigate("email")} currentUser={currentUser} leads={leads} />}
+        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={(leadId)=>{ setCalendarLeadId(leadId); navigate("email"); }} currentUser={currentUser} leads={leads} />}
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} />}
-        {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} isMobile={isMobile} />}
+        {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} initialLeadId={calendarLeadId} isMobile={isMobile} />}
       </main>
     </div>
   );
@@ -3785,6 +3792,7 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
   const [calRegLoading, setCalRegLoading] = useState(false);
   const [calRegToken, setCalRegToken] = useState(null);
   const [calRegResults, setCalRegResults] = useState([]);
+  const [emailLeadId, setEmailLeadId] = useState("");
 
   const isConfigured = cfg.apiKey && Object.keys(mergedCalendarIds).length > 0;
 
@@ -3907,7 +3915,9 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
 
   const openCalReg = () => {
     setCalRegTitleTpl("仮WEB営1）【{{会社名}}様】");
-    setCalRegCompany("");
+    const preselectedLead = leads.find(l => l.id === emailLeadId);
+    setCalRegLeadId(emailLeadId);
+    setCalRegCompany(preselectedLead?.company || "");
     setCalRegResults([]);
     setShowCalReg(true);
   };
@@ -4205,7 +4215,7 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
                 style={{fontSize:11,padding:"4px 10px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#6a9a7a",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",opacity:candidateSlots.length===0?0.4:1}}>
                 選択をクリア
               </button>
-              <button onClick={onGoEmail} disabled={candidateSlots.length===0}
+              <button onClick={()=>onGoEmail(emailLeadId)} disabled={candidateSlots.length===0}
                 style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",background:candidateSlots.length===0?"#d1d5db":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",fontWeight:700}}>
                 📧 メールに使う
               </button>
@@ -4215,6 +4225,16 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
               </button>
             </div>
           </div>
+          {candidateSlots.length > 0 && (
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+              <span style={{fontSize:11,color:"#6a9a7a",fontWeight:600,whiteSpace:"nowrap"}}>対象リード：</span>
+              <div style={{flex:1,minWidth:180,maxWidth:280}}>
+                <LeadCombobox leads={leads} value={emailLeadId} onChange={setEmailLeadId}
+                  placeholder="会社名・担当者名で検索" inputStyle={{...S.inp,padding:"5px 10px",fontSize:12}} darkMode={false} />
+              </div>
+              {emailLeadId && <span style={{fontSize:11,color:"#059669",fontWeight:700}}>✅ {leads.find(l=>l.id===emailLeadId)?.company||""}</span>}
+            </div>
+          )}
           {candidateSlots.length === 0 && (
             <div style={{fontSize:11,color:"#6b7280",background:"#f9fafb",borderRadius:7,padding:"6px 10px",marginBottom:10,border:"1px dashed #d1d5db"}}>
               日時ボタンをクリックして候補日を選択（最大3つ）→「📧 メールに使う」でメールテンプレートに反映
