@@ -856,51 +856,51 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
   const iLvColor={"高":"#10b981","中":"#f59e0b","低":"#ef4444"};
 
   return (
-    <div style={{minHeight:"100vh",background:"#0f172a",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#e2e8f0"}}>
-      <div className="ai-header" style={{background:"linear-gradient(135deg,#1e3a5f,#0f2744)",borderBottom:"1px solid #1e40af33",padding:"18px 28px",display:"flex",alignItems:"center",gap:14}}>
-        <div style={{width:38,height:38,background:"linear-gradient(135deg,#3b82f6,#1d4ed8)",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🤖</div>
+    <div style={{minHeight:"100vh",background:"#f0f5f2",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#174f35"}}>
+      <div className="ai-header" style={{background:"linear-gradient(135deg,#10b981,#059669)",borderBottom:"1px solid #059669",padding:"18px 28px",display:"flex",alignItems:"center",gap:14}}>
+        <div style={{width:38,height:38,background:"#ffffff33",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🤖</div>
         <div style={{minWidth:0, flex:1}}>
           <div style={{fontSize:17,fontWeight:700,color:"#fff"}}>AIアシスタント</div>
-          <div className="ai-header-sub" style={{fontSize:11,color:"#94a3b8",marginTop:2}}>アクション記録 → 自動解析 → 履歴登録・ネクストアクション提案</div>
+          <div className="ai-header-sub" style={{fontSize:11,color:"#d1fae5",marginTop:2}}>アクション記録 → 自動解析 → 履歴登録・ネクストアクション提案</div>
         </div>
         <div style={{marginLeft:"auto"}}>
-          {apiKey?<div style={{background:"#10b98122",border:"1px solid #10b98144",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#34d399"}}>✅ APIキー設定済み</div>:<div style={{background:"#ef444422",border:"1px solid #ef444444",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#f87171"}}>⚠️ APIキー未設定</div>}
+          {apiKey?<div style={{background:"#ffffff33",border:"1px solid #ffffff66",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff"}}>✅ APIキー設定済み</div>:<div style={{background:"#ffffff22",border:"1px solid #fca5a5",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff"}}>⚠️ APIキー未設定</div>}
         </div>
       </div>
       <div className="ai-layout" style={{display:"flex",height: isMobile ? "auto" : "calc(100vh - 77px)"}}>
-        <div className="ai-left-panel" style={{width:380,borderRight:"1px solid #1e293b",display:"flex",flexDirection:"column",background:"#0f172a",flexShrink:0,overflow:"auto"}}>
+        <div className="ai-left-panel" style={{width:380,borderRight:"1px solid #c0dece",display:"flex",flexDirection:"column",background:"#f0f5f2",flexShrink:0,overflow:"auto"}}>
           <div style={{flex:1,padding:"18px 20px",display:"flex",flexDirection:"column",gap:14}}>
             <div>
-              <label style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>🏢 リード選択</label>
-              <LeadCombobox leads={leads} value={selLead} onChange={id=>{setSelLead(id);setResult(null);setSaved(false);}} placeholder="会社名・担当者名で検索" inputStyle={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} darkMode={true} />
+              <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>🏢 リード選択</label>
+              <LeadCombobox leads={leads} value={selLead} onChange={id=>{setSelLead(id);setResult(null);setSaved(false);}} placeholder="会社名・担当者名で検索" inputStyle={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #c0dece",background:"#fff",color:"#174f35",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}} darkMode={false} />
               {lead&&(lead.actions||[]).length>0&&(
-                <div style={{marginTop:8,background:"#1e293b",borderRadius:8,padding:"10px 12px",border:"1px solid #334155"}}>
-                  <div style={{fontSize:11,color:"#64748b",marginBottom:4}}>直近のアクション</div>
+                <div style={{marginTop:8,background:"#fff",borderRadius:8,padding:"10px 12px",border:"1px solid #c0dece"}}>
+                  <div style={{fontSize:11,color:"#6a9a7a",marginBottom:4}}>直近のアクション</div>
                   {[...(lead.actions||[])].filter(a=>a&&typeof a==="object").sort((a,b)=>(String(b.ts||"")).localeCompare(String(a.ts||""))).slice(0,2).map((a,i)=>(
-                    <div key={a.id||i} style={{fontSize:11,color:"#94a3b8",borderLeft:"2px solid #334155",paddingLeft:8,marginBottom:4}}>{String(a.date||"")} {String(a.time||"")} {ACTION_TYPES.find(t=>t.v===a.type)?.icon||"📞"} {String(a.result||"")} — {String(a.summary||"").slice(0,40)}</div>
+                    <div key={a.id||i} style={{fontSize:11,color:"#6a9a7a",borderLeft:"2px solid #c0dece",paddingLeft:8,marginBottom:4}}>{String(a.date||"")} {String(a.time||"")} {ACTION_TYPES.find(t=>t.v===a.type)?.icon||"📞"} {String(a.result||"")} — {String(a.summary||"").slice(0,40)}</div>
                   ))}
                 </div>
               )}
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-              <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:6}}>📅 日付</label><input type="date" value={actionDate} onChange={e=>setActionDate(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
-              <div><label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:6}}>🕐 時刻</label><select value={actionTime} onChange={e=>setActionTime(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #334155",background:"#1e293b",color:"#e2e8f0",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}>{Array.from({length:48},(_,i)=>{const h=String(Math.floor(i/2)).padStart(2,"0");const m=i%2===0?"00":"30";return <option key={i} value={`${h}:${m}`}>{h}:{m}</option>;})}</select></div>
+              <div><label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>📅 日付</label><input type="date" value={actionDate} onChange={e=>setActionDate(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #c0dece",background:"#fff",color:"#174f35",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
+              <div><label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>🕐 時刻</label><select value={actionTime} onChange={e=>setActionTime(e.target.value)} style={{width:"100%",padding:"8px 10px",borderRadius:8,border:"1px solid #c0dece",background:"#fff",color:"#174f35",fontSize:12,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}>{Array.from({length:48},(_,i)=>{const h=String(Math.floor(i/2)).padStart(2,"0");const m=i%2===0?"00":"30";return <option key={i} value={`${h}:${m}`}>{h}:{m}</option>;})}</select></div>
             </div>
             <div>
-              <label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:6}}>📋 アクション種別</label>
+              <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>📋 アクション種別</label>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {ACTION_TYPES.map(t=><button key={t.v} onClick={()=>setManualType(t.v)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:manualType===t.v?700:400,cursor:"pointer",fontFamily:"inherit",background:manualType===t.v?"linear-gradient(135deg,#2563eb,#1d4ed8)":"#1e293b",color:manualType===t.v?"#fff":"#94a3b8",border:manualType===t.v?"1px solid #3b82f6":"1px solid #334155"}}>{t.icon} {t.label}</button>)}
+                {ACTION_TYPES.map(t=><button key={t.v} onClick={()=>setManualType(t.v)} style={{padding:"6px 12px",borderRadius:8,fontSize:12,fontWeight:manualType===t.v?700:400,cursor:"pointer",fontFamily:"inherit",background:manualType===t.v?"linear-gradient(135deg,#2563eb,#1d4ed8)":"#fff",color:manualType===t.v?"#fff":"#6a9a7a",border:manualType===t.v?"1px solid #3b82f6":"1px solid #c0dece"}}>{t.icon} {t.label}</button>)}
               </div>
             </div>
             <div>
-              <label style={{fontSize:11,fontWeight:700,color:"#64748b",display:"block",marginBottom:6}}>📌 アクション結果</label>
+              <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:6}}>📌 アクション結果</label>
               <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                {ACTION_RESULTS.map(r=><button key={r} onClick={()=>setManualResult(r)} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:manualResult===r?700:400,cursor:"pointer",fontFamily:"inherit",background:manualResult===r?"linear-gradient(135deg,#0d9488,#059669)":"#1e293b",color:manualResult===r?"#fff":"#94a3b8",border:manualResult===r?"1px solid #10b981":"1px solid #334155"}}>{r}</button>)}
+                {ACTION_RESULTS.map(r=><button key={r} onClick={()=>setManualResult(r)} style={{padding:"6px 10px",borderRadius:8,fontSize:11,fontWeight:manualResult===r?700:400,cursor:"pointer",fontFamily:"inherit",background:manualResult===r?"linear-gradient(135deg,#0d9488,#059669)":"#fff",color:manualResult===r?"#fff":"#6a9a7a",border:manualResult===r?"1px solid #10b981":"1px solid #c0dece"}}>{r}</button>)}
               </div>
             </div>
             <div style={{flex:1,display:"flex",flexDirection:"column"}}>
-              <label style={{fontSize:11,fontWeight:700,color:"#64748b",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>📝 アクションメモ</label>
-              <textarea value={memo} onChange={e=>setMemo(e.target.value)} placeholder={"例：\n田中部長に架電。取次いただき3分ほど話せた。\n現在は紙とLINEで管理、職人10名。\n来月繁忙期で「忙しくなる前に検討したい」とのこと。\n2週間後に再度連絡希望。"} style={{flex:1,minHeight:140,background:"#1e293b",border:"1px solid #334155",borderRadius:10,padding:"12px 14px",color:"#e2e8f0",fontSize:13,lineHeight:1.7,resize:"vertical",outline:"none",fontFamily:"inherit"}}/>
+              <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",letterSpacing:"0.06em",textTransform:"uppercase",display:"block",marginBottom:6}}>📝 アクションメモ</label>
+              <textarea value={memo} onChange={e=>setMemo(e.target.value)} placeholder={"例：\n田中部長に架電。取次いただき3分ほど話せた。\n現在は紙とLINEで管理、職人10名。\n来月繁忙期で「忙しくなる前に検討したい」とのこと。\n2週間後に再度連絡希望。"} style={{flex:1,minHeight:140,background:"#fff",border:"1px solid #c0dece",borderRadius:10,padding:"12px 14px",color:"#174f35",fontSize:13,lineHeight:1.7,resize:"vertical",outline:"none",fontFamily:"inherit"}}/>
             </div>
             {error&&<div style={{color:"#f87171",fontSize:12,background:"#ef444416",borderRadius:8,padding:"8px 12px",border:"1px solid #ef444433"}}>{error}</div>}
             <button onClick={analyze} disabled={loading||!memo.trim()} style={{background:loading?"#1e40af66":"linear-gradient(135deg,#2563eb,#1d4ed8)",color:"#fff",border:"none",borderRadius:10,padding:"13px 0",fontSize:14,fontWeight:700,cursor:loading||!memo.trim()?"not-allowed":"pointer",opacity:!memo.trim()?0.5:1,fontFamily:"inherit"}}>
@@ -918,19 +918,19 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
           )}
           {loading&&(
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
-              <div style={{width:48,height:48,border:"3px solid #1e293b",borderTop:"3px solid #3b82f6",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              <div style={{width:48,height:48,border:"3px solid #c0dece",borderTop:"3px solid #3b82f6",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
               <div style={{fontSize:14,color:"#64748b"}}>解析中...</div>
               <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
             </div>
           )}
           {result&&(
             <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-              <div style={{display:"flex",borderBottom:"1px solid #1e293b",background:"#0f172a",flexShrink:0}}>
+              <div style={{display:"flex",borderBottom:"1px solid #e2f0e8",background:"#fff",flexShrink:0}}>
                 {[["action","📋 記録"],["next","📅 ネクスト"],["email","✉️ メール"],["zoho","📝 Zoho"]].map(([k,l])=>(
-                  <button key={k} onClick={()=>setActiveTab(k)} style={{padding:"12px 16px",background:"none",border:"none",borderBottom:activeTab===k?"2px solid #3b82f6":"2px solid transparent",color:activeTab===k?"#3b82f6":"#64748b",fontSize:12,fontWeight:activeTab===k?700:400,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>{l}</button>
+                  <button key={k} onClick={()=>setActiveTab(k)} style={{padding:"12px 16px",background:"none",border:"none",borderBottom:activeTab===k?"2px solid #10b981":"2px solid transparent",color:activeTab===k?"#059669":"#6a9a7a",fontSize:12,fontWeight:activeTab===k?700:400,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"}}>{l}</button>
                 ))}
                 <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",paddingRight:20}}>
-                  {!selLead?<span style={{fontSize:11,color:"#475569"}}>※リード選択で保存可</span>:saved?<span style={{fontSize:12,color:"#10b981",fontWeight:700}}>✅ 保存完了！</span>:<button onClick={saveToLead} style={{background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💾 履歴に保存</button>}
+                  {!selLead?<span style={{fontSize:11,color:"#6a9a7a"}}>※リード選択で保存可</span>:saved?<span style={{fontSize:12,color:"#10b981",fontWeight:700}}>✅ 保存完了！</span>:<button onClick={saveToLead} style={{background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",border:"none",borderRadius:8,padding:"8px 20px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💾 履歴に保存</button>}
                 </div>
               </div>
               <div style={{flex:1,overflow:"auto",padding:"20px 24px"}}>
@@ -938,18 +938,18 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
                     <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
                       <span style={{background:(iLvColor[result.interest_level]||"#64748b")+"22",color:iLvColor[result.interest_level]||"#64748b",border:`1px solid ${iLvColor[result.interest_level]||"#64748b"}44`,borderRadius:6,padding:"4px 14px",fontSize:13,fontWeight:700}}>興味度：{result.interest_level||"不明"}</span>
-                      <span style={{background:"#3b82f622",color:"#60a5fa",border:"1px solid #3b82f644",borderRadius:6,padding:"4px 14px",fontSize:13,fontWeight:700}}>{ACTION_TYPES.find(t=>t.v===result.action_type)?.icon||"📞"} {ACTION_TYPES.find(t=>t.v===result.action_type)?.label||"電話"}</span>
-                      <span style={{background:"#33415522",color:"#94a3b8",border:"1px solid #33415544",borderRadius:6,padding:"4px 14px",fontSize:13,fontWeight:700}}>結果：{result.action_result||"その他"}</span>
+                      <span style={{background:"#dbeafe",color:"#2563eb",border:"1px solid #bfdbfe",borderRadius:6,padding:"4px 14px",fontSize:13,fontWeight:700}}>{ACTION_TYPES.find(t=>t.v===result.action_type)?.icon||"📞"} {ACTION_TYPES.find(t=>t.v===result.action_type)?.label||"電話"}</span>
+                      <span style={{background:"#f0f5f2",color:"#6a9a7a",border:"1px solid #c0dece",borderRadius:6,padding:"4px 14px",fontSize:13,fontWeight:700}}>結果：{result.action_result||"その他"}</span>
                     </div>
 
                     {result.followup_talk_points?.length>0&&(
-                      <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
-                        <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>次回架電トークポイント</div>
+                      <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2f0e8",overflow:"hidden"}}>
+                        <div style={{padding:"10px 16px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8",fontSize:12,fontWeight:700,color:"#6a9a7a",textTransform:"uppercase",letterSpacing:"0.06em"}}>次回架電トークポイント</div>
                         <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:8}}>
                           {result.followup_talk_points.map((p,i)=>(
-                            <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",background:"#0f172a",borderRadius:7,padding:"9px 12px"}}>
+                            <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",background:"#f8fffe",borderRadius:7,padding:"9px 12px"}}>
                               <span style={{background:"#3b82f6",color:"#fff",borderRadius:4,padding:"1px 7px",fontSize:11,fontWeight:700,flexShrink:0,marginTop:1}}>{i+1}</span>
-                              <span style={{fontSize:13.5,color:"#cbd5e1",lineHeight:1.6}}>{p}</span>
+                              <span style={{fontSize:13.5,color:"#374151",lineHeight:1.6}}>{p}</span>
                             </div>
                           ))}
                         </div>
@@ -959,23 +959,23 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
                 )}
                 {activeTab==="next"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                    <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
-                      <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.06em"}}>推奨ネクストアクション</div>
+                    <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2f0e8",overflow:"hidden"}}>
+                      <div style={{padding:"10px 16px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8",fontSize:12,fontWeight:700,color:"#6a9a7a",textTransform:"uppercase",letterSpacing:"0.06em"}}>推奨ネクストアクション</div>
                       <div style={{padding:"18px 16px",display:"flex",flexDirection:"column",gap:14}}>
                         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                          <div style={{background:"#0f172a",borderRadius:8,padding:"12px 16px"}}>
-                            <div style={{fontSize:11,color:"#475569",marginBottom:4}}>推奨タイミング</div>
-                            <div style={{fontSize:20,fontWeight:700,color:"#60a5fa"}}>{result.next_action_date_offset?`${result.next_action_date_offset}営業日後`:"—"}</div>
-                            {result.next_action_date_offset&&<div style={{fontSize:12,color:"#64748b",marginTop:4}}>→ {addBizDays(actionDate,result.next_action_date_offset)}</div>}
+                          <div style={{background:"#f0f5f2",borderRadius:8,padding:"12px 16px"}}>
+                            <div style={{fontSize:11,color:"#6a9a7a",marginBottom:4}}>推奨タイミング</div>
+                            <div style={{fontSize:20,fontWeight:700,color:"#2563eb"}}>{result.next_action_date_offset?`${result.next_action_date_offset}営業日後`:"—"}</div>
+                            {result.next_action_date_offset&&<div style={{fontSize:12,color:"#6a9a7a",marginTop:4}}>→ {addBizDays(actionDate,result.next_action_date_offset)}</div>}
                           </div>
-                          <div style={{background:"#0f172a",borderRadius:8,padding:"12px 16px"}}>
-                            <div style={{fontSize:11,color:"#475569",marginBottom:4}}>推奨時間帯</div>
-                            <div style={{fontSize:20,fontWeight:700,color:"#a78bfa"}}>{result.next_action_time||"—"}</div>
+                          <div style={{background:"#f0f5f2",borderRadius:8,padding:"12px 16px"}}>
+                            <div style={{fontSize:11,color:"#6a9a7a",marginBottom:4}}>推奨時間帯</div>
+                            <div style={{fontSize:20,fontWeight:700,color:"#7c3aed"}}>{result.next_action_time||"—"}</div>
                           </div>
                         </div>
-                        <div style={{background:"#0f172a",borderRadius:8,padding:"12px 16px"}}>
-                          <div style={{fontSize:11,color:"#475569",marginBottom:6}}>次回アクションメモ</div>
-                          <div style={{fontSize:13.5,color:"#34d399",fontWeight:600,lineHeight:1.6}}>{result.next_action_memo||"—"}</div>
+                        <div style={{background:"#f0f5f2",borderRadius:8,padding:"12px 16px"}}>
+                          <div style={{fontSize:11,color:"#6a9a7a",marginBottom:6}}>次回アクションメモ</div>
+                          <div style={{fontSize:13.5,color:"#059669",fontWeight:600,lineHeight:1.6}}>{result.next_action_memo||"—"}</div>
                         </div>
                       </div>
                     </div>
@@ -988,24 +988,24 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
                     <div style={{display:"flex",justifyContent:"flex-end",gap:8,flexWrap:"wrap"}}>
                       <button onClick={saveAiGmailDraft} disabled={aiGmailSaving} style={{background:aiGmailSaved?"#2563eb":aiGmailSaving?"#1e40af66":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:aiGmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:aiGmailSaving?0.7:1}}>{aiGmailSaving?"保存中...":aiGmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
-                      <button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}\n\n${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}} style={{background:copiedEmail?"#10b98122":"#ffffff0f",color:copiedEmail?"#10b981":"#94a3b8",border:`1px solid ${copiedEmail?"#10b98144":"#33415566"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedEmail?"✓ コピー済":"📋 全文コピー"}</button>
+                      <button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}\n\n${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}} style={{background:copiedEmail?"#d1fae5":"#f0f5f2",color:copiedEmail?"#10b981":"#6a9a7a",border:`1px solid ${copiedEmail?"#a7f3d0":"#c0dece"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedEmail?"✓ コピー済":"📋 全文コピー"}</button>
                     </div>
-                    <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
-                      <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase"}}>件名</div>
-                      <div style={{padding:"12px 16px"}}><input value={editEmail.subject} onChange={e=>setEditEmail(p=>({...p,subject:e.target.value}))} style={{width:"100%",background:"#0f172a",border:"1px solid #334155",borderRadius:7,padding:"8px 12px",color:"#e2e8f0",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
+                    <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2f0e8",overflow:"hidden"}}>
+                      <div style={{padding:"10px 16px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8",fontSize:12,fontWeight:700,color:"#6a9a7a",textTransform:"uppercase"}}>件名</div>
+                      <div style={{padding:"12px 16px"}}><input value={editEmail.subject} onChange={e=>setEditEmail(p=>({...p,subject:e.target.value}))} style={{width:"100%",background:"#f8fffe",border:"1px solid #c0dece",borderRadius:7,padding:"8px 12px",color:"#174f35",fontSize:13,fontFamily:"inherit",outline:"none",boxSizing:"border-box"}}/></div>
                     </div>
-                    <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
-                      <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase"}}>本文（直接編集可）</div>
-                      <div style={{padding:"14px 16px"}}><textarea value={editEmail.body} onChange={e=>setEditEmail(p=>({...p,body:e.target.value}))} rows={14} style={{width:"100%",background:"#0f172a",border:"1px solid #334155",borderRadius:8,padding:"12px 14px",color:"#e2e8f0",fontSize:13,lineHeight:1.8,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}/></div>
+                    <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2f0e8",overflow:"hidden"}}>
+                      <div style={{padding:"10px 16px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8",fontSize:12,fontWeight:700,color:"#6a9a7a",textTransform:"uppercase"}}>本文（直接編集可）</div>
+                      <div style={{padding:"14px 16px"}}><textarea value={editEmail.body} onChange={e=>setEditEmail(p=>({...p,body:e.target.value}))} rows={14} style={{width:"100%",background:"#f8fffe",border:"1px solid #c0dece",borderRadius:8,padding:"12px 14px",color:"#174f35",fontSize:13,lineHeight:1.8,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}/></div>
                     </div>
                   </div>
                 )}
                 {activeTab==="zoho"&&(
                   <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                    <div style={{display:"flex",justifyContent:"flex-end"}}><button onClick={()=>{navigator.clipboard?.writeText(result?.memo_for_zoho||"");setCopiedZoho(true);setTimeout(()=>setCopiedZoho(false),2000);}} style={{background:copiedZoho?"#10b98122":"#ffffff0f",color:copiedZoho?"#10b981":"#94a3b8",border:`1px solid ${copiedZoho?"#10b98144":"#33415566"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedZoho?"✓ コピー済":"📋 コピー"}</button></div>
-                    <div style={{background:"#1e293b",borderRadius:10,border:"1px solid #334155",overflow:"hidden"}}>
-                      <div style={{padding:"10px 16px",background:"#162032",borderBottom:"1px solid #334155",fontSize:12,fontWeight:700,color:"#64748b",textTransform:"uppercase"}}>Zoho入力用メモ</div>
-                      <div style={{padding:"14px 16px"}}><pre style={{whiteSpace:"pre-wrap",fontSize:13.5,color:"#cbd5e1",lineHeight:1.8,margin:0,fontFamily:"inherit"}}>{result.memo_for_zoho||"—"}</pre></div>
+                    <div style={{display:"flex",justifyContent:"flex-end"}}><button onClick={()=>{navigator.clipboard?.writeText(result?.memo_for_zoho||"");setCopiedZoho(true);setTimeout(()=>setCopiedZoho(false),2000);}} style={{background:copiedZoho?"#d1fae5":"#f0f5f2",color:copiedZoho?"#10b981":"#6a9a7a",border:`1px solid ${copiedZoho?"#a7f3d0":"#c0dece"}`,borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedZoho?"✓ コピー済":"📋 コピー"}</button></div>
+                    <div style={{background:"#fff",borderRadius:10,border:"1px solid #e2f0e8",overflow:"hidden"}}>
+                      <div style={{padding:"10px 16px",background:"#f0f5f2",borderBottom:"1px solid #e2f0e8",fontSize:12,fontWeight:700,color:"#6a9a7a",textTransform:"uppercase"}}>Zoho入力用メモ</div>
+                      <div style={{padding:"14px 16px"}}><pre style={{whiteSpace:"pre-wrap",fontSize:13.5,color:"#374151",lineHeight:1.8,margin:0,fontFamily:"inherit"}}>{result.memo_for_zoho||"—"}</pre></div>
                     </div>
                   </div>
                 )}
@@ -4533,7 +4533,7 @@ const CSS = `
     .email-grid { grid-template-columns: 1fr !important; }
     .email-main-grid { grid-template-columns: 1fr !important; height: auto !important; }
     .ai-layout { flex-direction: column !important; height: auto !important; min-height: 0 !important; overflow: auto !important; }
-    .ai-left-panel { width: 100% !important; border-right: none !important; border-bottom: 1px solid #1e293b !important; max-height: none !important; overflow: visible !important; }
+    .ai-left-panel { width: 100% !important; border-right: none !important; border-bottom: 1px solid #c0dece !important; max-height: none !important; overflow: visible !important; }
     .ai-header { padding: 12px 14px !important; }
     .ai-header-sub { display: none !important; }
     .cal-page { width: 100% !important; max-width: 100% !important; padding: 14px 12px !important; }
