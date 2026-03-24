@@ -1932,7 +1932,7 @@ function WizardStatusBadge({ ok }) {
 }
 
 // ── セットアップウィザード ──────────────────────────────────────────
-function SetupWizard({ currentUser, onUpdateProfile, onClose }) {
+function SetupWizard({ currentUser, onUpdateProfile, onSave, aiConfig, onClose }) {
   const [section, setSection] = useState("overview");
   const [step, setStep] = useState(0);
   const [geminiKey, setGeminiKey] = useState(currentUser?.geminiKey || "");
@@ -2199,7 +2199,7 @@ function SetupWizard({ currentUser, onUpdateProfile, onClose }) {
           </div>
           <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
             <button onClick={() => setStep(3)} style={btnS}>← 戻る</button>
-            <button onClick={() => { onUpdateProfile({ ...currentUser, gmailClientId: gmailClientId.trim() }); go("overview"); }} style={btnP}>保存して完了</button>
+            <button onClick={() => { onUpdateProfile({ ...currentUser, gmailClientId: gmailClientId.trim() }); if (onSave) onSave({ ...(aiConfig||{}), gmailClientId: gmailClientId.trim() }); go("overview"); }} style={btnP}>保存して完了</button>
           </div>
         </div>
       </WizardOverlay>
@@ -2435,7 +2435,7 @@ function App() {
     <div style={{...S.root, flexDirection: isMobile ? "column" : "row"}}>
       <style>{CSS}</style>
       <Nav page={page} setPage={navigate} setSettingsTab={setSettingsTab} count={leads.length} currentUser={currentUser} onLogout={logout} onUpdateProfile={updateMyProfile} isMobile={isMobile} />
-      {showWizard && <SetupWizard currentUser={currentUser} onUpdateProfile={updateMyProfile} onClose={() => setShowWizard(false)} />}
+      {showWizard && <SetupWizard currentUser={currentUser} onUpdateProfile={updateMyProfile} onSave={saveAiConfig} aiConfig={effectiveAiConfig} onClose={() => setShowWizard(false)} />}
       <main style={{...S.main, paddingBottom: isMobile ? 65 : 0}}>
         {page === "dashboard" && <Dashboard leads={leads} currentUser={currentUser} onNavigate={(f)=>{ setDashFilter(f); navigate("leads"); }} masterVer={masterVer} isMobile={isMobile} />}
         {page === "trend"     && <Trend leads={leads} />}
