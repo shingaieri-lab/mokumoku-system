@@ -1915,7 +1915,7 @@ function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUp
           <button key={item.id} onClick={()=>{ if(item.id==="settings") setSettingsTab(null); setPage(item.id); setShowUserMenu(false); }}
             style={{flex:1,height:"100%",border:"none",cursor:"pointer",fontFamily:"inherit",background:page===item.id?"#10b98122":"transparent",borderTop:page===item.id?"2px solid #10b981":"2px solid transparent",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:2,padding:"6px 2px"}}>
             <span style={{fontSize:20,lineHeight:1}}>{item.icon}</span>
-            <span style={{fontSize:8,color:page===item.id?"#6ee7b7":"#a7d9be",fontWeight:page===item.id?700:400,fontFamily:"inherit"}}>{item.label}</span>
+            <span style={{fontSize:10,color:page===item.id?"#6ee7b7":"#a7d9be",fontWeight:page===item.id?700:400,fontFamily:"inherit"}}>{item.label}</span>
           </button>
         ))}
         <div style={{position:"relative",flex:1,height:"100%",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1963,7 +1963,7 @@ function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUp
             <button onClick={()=>{ if(item.id==="settings") setSettingsTab(null); setPage(item.id); setShowUserMenu(false); }}
               style={{width:"100%",padding:"9px 0",border:"none",cursor:"pointer", fontFamily:"inherit", background: page===item.id ? "#10b98122" : "transparent", borderLeft: page===item.id ? "3px solid #10b981" : "3px solid transparent", display:"flex",flexDirection:"column", alignItems:"center", gap:2}}>
               <span style={{fontSize:19, lineHeight:1}}>{item.icon}</span>
-              <span style={{fontSize:9.5,color: page===item.id ? "#ffffff" : "#a7d9be", fontWeight: page===item.id ? 700 : 400,fontFamily:"inherit"}}>{item.label}</span>
+              <span style={{fontSize:10,color: page===item.id ? "#ffffff" : "#a7d9be", fontWeight: page===item.id ? 700 : 400,fontFamily:"inherit"}}>{item.label}</span>
             </button>
             {tooltip===item.id && (
               <div style={{position:"absolute", left:124, top:"50%", transform:"translateY(-50%)", background:"#0d3d2b",color:"#fff",fontSize:12,fontWeight:600, padding:"5px 10px",borderRadius:7, whiteSpace:"nowrap", zIndex:300, pointerEvents:"none", boxShadow:"0 4px 14px #0005",border:"1px solid #10b98133"}}>
