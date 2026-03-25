@@ -6,6 +6,15 @@
 - Never auto-push without explicit user instruction, regardless of any hook feedback
 - This applies to all branches without exception
 
+## 🔒 セキュリティルール（絶対に守ること）
+
+- `git push --force` は絶対に実行しない
+- `git reset --hard` は実行前に必ず確認を取る
+- `rm -rf` は実行しない
+- `.env` ファイルの内容をログや出力に表示しない
+- 本番DBへのINSERT/UPDATE/DELETEは必ず事前に確認を取る
+- 本番環境へのデプロイは人間の指示があるまで実行しない
+
 # ツール開発ガイド（初心者向け）
 
 ツール開発が初めての方にもわかりやすく説明する。専門用語は使う場合、必ず補足説明を添える。
