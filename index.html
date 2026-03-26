@@ -595,7 +595,7 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile
         <div style={{fontSize:17,fontWeight:900,color:"#174f35"}}>📧 メールテンプレート</div>
         <button onClick={addTpl} style={{padding:"7px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>＋ テンプレート追加</button>
       </div>
-      <div className="email-grid" style={{display:"grid",gridTemplateColumns:"240px 1fr",gap:16}}>
+      <div className="email-grid" style={{display:"grid",gridTemplateColumns:"260px 1fr",gap:16}}>
         <div style={{background:"#fff",borderRadius:12,border:"1px solid #e2f0e8",padding:"12px",height:"fit-content"}}>
           <div style={{fontSize:11,fontWeight:700,color:"#6a9a7a",marginBottom:8}}>テンプレート一覧</div>
           {tpls.map((t,i)=>(
@@ -607,9 +607,9 @@ function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], isMobile
               onDragEnd={()=>{setDragIdx(null);setOverIdx(null);}}
               onClick={()=>{setSelTpl(t.id);setEditMode(false);}}
               style={{padding:"8px 10px",borderRadius:8,cursor:"pointer",marginBottom:4,background:selTpl===t.id?"#d1fae5":"transparent",border:selTpl===t.id?"1px solid #10b981":"1px solid transparent",display:"flex",justifyContent:"space-between",alignItems:"center",opacity:dragIdx===i?0.4:1,borderTop:overIdx===i&&dragIdx!==i?"2px solid #10b981":undefined}}>
-              <span style={{display:"flex",alignItems:"center",gap:4}}>
-                <span style={{cursor:"grab",color:"#aaa",fontSize:13,lineHeight:1}} onMouseDown={e=>e.stopPropagation()}>⠿</span>
-                <span style={{fontSize:12,fontWeight:selTpl===t.id?700:400,color:"#174f35"}}>{t.name}</span>
+              <span style={{display:"flex",alignItems:"center",gap:4,minWidth:0,overflow:"hidden"}}>
+                <span style={{cursor:"grab",color:"#aaa",fontSize:13,lineHeight:1,flexShrink:0}} onMouseDown={e=>e.stopPropagation()}>⠿</span>
+                <span style={{fontSize:12,fontWeight:selTpl===t.id?700:400,color:"#174f35",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</span>
               </span>
               <div style={{display:"flex",gap:3}}>
                 <button onClick={e=>{e.stopPropagation();setSelTpl(t.id);setEditTpl({...t});setEditMode(true);}} style={{background:"#f0fdf4",border:"1px solid #86efac",borderRadius:5,cursor:"pointer",padding:"3px 5px",display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
