@@ -646,6 +646,8 @@ app.post('/api/zoho/create-deal', requireAuth, rateLimit, async (req, res) => {
     });
   }
 
+  const cfg = await readData('zoho_config');
+
   try {
     // 1. 取引先（Account）作成
     const accountRes = await zohoApi('POST', '/Accounts', {
@@ -678,16 +680,19 @@ app.post('/api/zoho/create-deal', requireAuth, rateLimit, async (req, res) => {
     const probability = probMap[lead.is_accuracy] || 20;
     const closingDate = lead.meeting_date || new Date().toISOString().slice(0, 10);
 
-    const dealRes = await zohoApi('POST', '/Deals', {
-      data: [{
-        Deal_Name: lead.zoho_lead_type,
-        Account_Name: { id: accountId },
-        Contact_Name: { id: contactId },
-        Stage: '提案中',
-        Probability: probability,
-        Closing_Date: closingDate,
-      }],
-    });
+    const dealData = {
+      Deal_Name: lead.zoho_lead_type,
+      Account_Name: { id: accountId },
+      Contact_Name: { id: contactId },
+      Stage: '提案中',
+      Probability: probability,
+      Closing_Date: closingDate,
+    };
+    // 設定画面で入力されたAPI名があればカスタムフィールドに商談日をセット
+    if (cfg?.meetingDateFieldApiName) dealData[cfg.meetingDateFieldApiName] = closingDate;
+    if (cfg?.closingDateFieldApiName) dealData[cfg.closingDateFieldApiName] = closingDate;
+
+    const dealRes = await zohoApi('POST', '/Deals', { data: [dealData] });
     if (dealRes.data?.[0]?.status !== 'success') {
       return res.status(500).json({ error: '商談作成失敗', detail: dealRes });
     }
