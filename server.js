@@ -464,7 +464,7 @@ app.get('/api/zoho/auth', requireAuth, async (req, res) => {
   const domain = getZohoDomain(cfg.dataCenter);
   const scopes = [
     'ZohoCRM.modules.Leads.ALL',
-    'ZohoCRM.modules.Notes.CREATE',
+    'ZohoCRM.modules.Calls.CREATE',
     'ZohoCRM.modules.Accounts.CREATE',
     'ZohoCRM.modules.Contacts.CREATE',
     'ZohoCRM.modules.Deals.CREATE',
@@ -586,25 +586,40 @@ app.post('/api/zoho/push-action', requireAuth, rateLimit, async (req, res) => {
   if (!zohoLeadId || !action) return res.status(400).json({ error: 'パラメータ不足' });
 
   try {
-    const noteTitle = `[${action.type || 'アクション'}] ${action.result || ''}`.trim();
+    // 開始日時をISO 8601形式に変換（日本時間 +09:00）
+    const dateStr = action.date || new Date().toISOString().slice(0, 10);
+    const timeStr = action.time || '09:00';
+    const callStartTime = `${dateStr}T${timeStr}:00+09:00`;
+
+    // アクション方法のラベル（商談方法にマッピング）
+    const typeLabels = { call: '電話', email: 'メール', sms: 'SMS', other: 'その他' };
+    const methodLabel = typeLabels[action.type] || action.type || '電話';
+
+    // 説明フィールドの内容（アクション履歴）
     const lines = [action.summary || ''];
+    if (action.result) lines.push(`結果: ${action.result}`);
     if (action.next) lines.push(`次回アクション: ${action.next}`);
     if (action.nextDate) lines.push(`次回日時: ${action.nextDate}${action.nextTime ? ' ' + action.nextTime : ''}`);
-    const noteContent = lines.filter(Boolean).join('\n') || '（内容なし）';
+    const description = lines.filter(Boolean).join('\n') || '（内容なし）';
 
-    const data = await zohoApi('POST', '/Notes', {
+    const data = await zohoApi('POST', '/Calls', {
       data: [{
-        Note_Title: noteTitle,
-        Note_Content: noteContent,
-        Parent_Id: zohoLeadId,
+        Subject: '電話）インバウンド',         // 行動名（固定）
+        Call_Type: 'Inbound',                 // 電話種別：インバウンド
+        Call_Start_Time: callStartTime,        // 開始日時 = アクション日時
+        Call_Purpose: '追客',                  // 活動目的（固定）
+        Description: description,             // 説明 = アクション履歴
+        // 商談方法 = アクション方法（カスタムフィールドのAPI名はZoho管理画面で確認してください）
+        // 例: Shodan_Houhou: methodLabel,
+        Who_Id: { id: zohoLeadId },
         $se_module: 'Leads',
       }],
     });
 
     if (data.data?.[0]?.status === 'success') {
-      res.json({ ok: true, noteId: data.data[0].details?.id });
+      res.json({ ok: true, activityId: data.data[0].details?.id });
     } else {
-      res.status(500).json({ error: 'Note作成失敗', detail: data });
+      res.status(500).json({ error: '行動作成失敗', detail: data });
     }
   } catch (e) {
     res.status(500).json({ error: e.message });
