@@ -1,3 +1,9 @@
+# セッション開始時に必ず読むこと
+
+- `SPEC.md` — ツール仕様・機能一覧・API・データ構造
+- `REVIEW.md` — 未対応の課題一覧（P0〜P2）
+- `ZOHO_CRM_INTEGRATION.md` — Zoho連携の仕様
+
 # Claudeへの指示
 
 ## Git操作ルール（例外なく守ること）
