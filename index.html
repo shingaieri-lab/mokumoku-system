@@ -72,6 +72,22 @@ async function saveLeads(leads) {
   }
 }
 
+// Google OAuth のエラーハンドリング共通処理
+function handleOAuthCallbackError(resp, rej) {
+  if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
+    rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
+  } else {
+    rej(new Error(resp.error));
+  }
+}
+function handleOAuthPopupError(err, rej) {
+  if (err.type === 'popup_blocked_by_browser') {
+    rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
+  } else {
+    rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
+  }
+}
+
 const SOURCES = ["HP", "ポータルサイト", "電話"];
 const PORTAL_SITES = ["アスピック", "現場TECH", "DX親方"];
 const PORTAL_TYPES = {
@@ -276,21 +292,13 @@ const acquireGmailToken = async (clientId, currentTokenObj) => {
       scope: 'https://www.googleapis.com/auth/gmail.compose',
       callback: (resp) => {
         if (resp.error) {
-          if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-            rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-          } else { rej(new Error(resp.error)); }
+          handleOAuthCallbackError(resp, rej);
         } else {
           // 55分後に期限切れとして扱う（Googleトークンは60分有効）
           res({ token: resp.access_token, expiresAt: Date.now() + 55 * 60 * 1000 });
         }
       },
-      error_callback: (err) => {
-        if (err.type === 'popup_blocked_by_browser') {
-          rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-        } else {
-          rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-        }
-      }
+      error_callback: (err) => handleOAuthPopupError(err, rej)
     });
     client.requestAccessToken();
   });
@@ -814,7 +822,7 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
       if(sigTrimmed&&!emailBody.includes(sigTrimmed)){emailBody=emailBody.trim()+"\n\n"+sigTrimmed;}
       setSaved(false);setResult(parsed);setEditEmail({subject:parsed.email_subject||"",body:emailBody});setActiveTab("action");
     }catch(e){
-      if(e.message==="Failed to fetch"){setError("APIへの接続に失敗しました。ネットワーク接続を確認するか、ブラウザのCORSエラーが原因の場合はローカルサーバー経由（http://localhost）でアクセスしてください。");}
+      if(e.message==="Failed to fetch"){setError("AIサービスへの接続に失敗しました。ネットワーク接続を確認してください。問題が続く場合は管理者にお問い合わせください。");}
       else{setError("解析失敗: "+e.message);}
     }
     setLoading(false);
@@ -894,19 +902,10 @@ function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, current
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/tasks',
             callback: (resp) => {
-              if (resp.error) {
-                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-                } else { rej(new Error(resp.error)); }
-              } else { res(resp.access_token); }
+              if (resp.error) { handleOAuthCallbackError(resp, rej); }
+              else { res(resp.access_token); }
             },
-            error_callback: (err) => {
-              if (err.type === 'popup_blocked_by_browser') {
-                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-              } else {
-                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-              }
-            }
+            error_callback: (err) => handleOAuthPopupError(err, rej)
           });
           client.requestAccessToken();
         });
@@ -3777,19 +3776,10 @@ function NextActionEditBtn({ nad, lead, onUpdate, currentUser }) {
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/tasks',
             callback: (resp) => {
-              if (resp.error) {
-                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-                } else { rej(new Error(resp.error)); }
-              } else { res(resp.access_token); }
+              if (resp.error) { handleOAuthCallbackError(resp, rej); }
+              else { res(resp.access_token); }
             },
-            error_callback: (err) => {
-              if (err.type === 'popup_blocked_by_browser') {
-                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-              } else {
-                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-              }
-            }
+            error_callback: (err) => handleOAuthPopupError(err, rej)
           });
           client.requestAccessToken();
         });
@@ -4793,11 +4783,9 @@ function AccountManager({ currentUser, onClose, inline, onUpdateProfile }) {
     setForm({ id:"", name:"", password:"", role:"member", color:PALETTE[0], email:"", signature:"", isStaff:false });
     setEditingId(null); setErr("");
   };
-  const startEdit = async (a) => {
+  const startEdit = (a) => {
     setForm({ ...a, password: "" });
     setEditingId(a.id); setErr("");
-    const r = await fetch('/api/account-password/' + a.id);
-    if (r.ok) { const data = await r.json(); setForm(p => ({ ...p, password: data.password })); }
   };
   const cancelEdit = () => { setForm({ id:"", name:"", password:"", role:"member", color:PALETTE[0], email:"", signature:"", isStaff:false }); setEditingId(null); setErr(""); };
   const deleteAccount = (id) => {
@@ -5141,19 +5129,10 @@ function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail =
             client_id: clientId,
             scope: 'https://www.googleapis.com/auth/calendar.events',
             callback: (resp) => {
-              if (resp.error) {
-                if (resp.error === 'redirect_uri_mismatch' || resp.error === 'invalid_client') {
-                  rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" を追加してください。`));
-                } else { rej(new Error(resp.error)); }
-              } else { res(resp.access_token); }
+              if (resp.error) { handleOAuthCallbackError(resp, rej); }
+              else { res(resp.access_token); }
             },
-            error_callback: (err) => {
-              if (err.type === 'popup_blocked_by_browser') {
-                rej(new Error('ポップアップがブロックされました。ブラウザのポップアップブロックを解除してください。'));
-              } else {
-                rej(new Error(`OAuth設定エラー: Google Cloud ConsoleのOAuthクライアントの「承認済みJavaScriptオリジン」に "${window.location.origin}" が登録されているか確認してください。`));
-              }
-            }
+            error_callback: (err) => handleOAuthPopupError(err, rej)
           });
           client.requestAccessToken();
         });
