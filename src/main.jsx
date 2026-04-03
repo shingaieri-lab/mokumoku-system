@@ -9,12 +9,19 @@ import { Splash, Header, Card, KPI, IF, Note, Row2, Field } from './components/u
 import { useIsMobile } from './hooks/useIsMobile.js';
 import { TODAY } from './lib/holidays.js';
 import { ACTION_TYPES } from './constants/index.js';
-// Step 3 追加分
+// Step 3 追加分（チャート・ウィザード）
 import { SVGBarChart } from './components/charts/SVGBarChart.jsx';
 import { SVGLineChart } from './components/charts/SVGLineChart.jsx';
 import { Trend } from './components/charts/Trend.jsx';
 import { WizardOverlay, WizardStepBar, WizardStatusBadge } from './components/wizard/WizardParts.jsx';
 import { SetupWizard } from './components/wizard/SetupWizard.jsx';
+// Step 3 追加分（ページ第1弾）
+import { Nav } from './components/nav/Nav.jsx';
+import { LeadCombobox } from './components/leads/LeadCombobox.jsx';
+import { CSVImport } from './components/leads/CSVImport.jsx';
+import { VoiceButton } from './components/actions/VoiceButton.jsx';
+import { ActEntry } from './components/actions/ActEntry.jsx';
+import { LoginScreen } from './pages/LoginScreen.jsx';
 
 function Preview() {
   const isMobile = useIsMobile();
