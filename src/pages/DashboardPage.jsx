@@ -8,7 +8,7 @@ import {
   getPortalSites, getPortalPrice,
 } from '../lib/master.js';
 
-export function DashboardPage({ leads, currentUser, onNavigate, isMobile }) {
+export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMobile }) {
   const toYM = (dateStr) => {
     if (!dateStr) return "";
     if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.slice(0, 7);

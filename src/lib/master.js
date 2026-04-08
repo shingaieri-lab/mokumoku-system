@@ -9,8 +9,8 @@ const DEFAULT_SALES_MEMBERS = [];
 const DEFAULT_IS_MEMBERS = [];
 const DEFAULT_PORTAL_SITES = [];
 const DEFAULT_PORTAL_TYPES = {};
-const DEFAULT_SOURCES = [];
-const DEFAULT_STATUSES_WITH_COLORS = [];
+export const DEFAULT_SOURCES = [];
+export const DEFAULT_STATUSES_WITH_COLORS = [];
 
 function loadMasterSettings() {
   return window.__appData?.masterSettings || null;
