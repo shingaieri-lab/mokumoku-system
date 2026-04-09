@@ -1,6 +1,6 @@
 # IS進捗管理ツール レビュー記録
 
-レビュー開始：2026-03-23　／　最終更新：2026-04-08
+レビュー開始：2026-03-23　／　最終更新：2026-04-09
 
 ---
 
@@ -94,42 +94,39 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 |---------|
 | **Vite移行完了**（`feature/vite-migration`）：5,759行の単一 index.html を Vite + React ESM 構成に分割。54モジュール、ビルドエラーゼロ |
 | **server.js 分割完了**（`feature/file-split`）：983行のモノリスを `lib/`・`routes/` に8ファイル分割。`server.js` はエントリーポイント30行のみに |
+| **コンポーネント分割完了**（`feature/component-split`）：`src/main.jsx` 4,885行 → 192行に削減。19コンポーネントを `src/components/` に、ビジネスロジックを `src/lib/` に分離。41モジュール、ビルドエラーゼロ |
 
 ---
 
 ## ❌ 未対応・今後の課題
 
-### 🔴 コード品質（CLAUDE.md違反）― 2026-04-08 検出
+### 🔴 コード品質（CLAUDE.md違反）― 2026-04-09 時点
 
 #### ファイル肥大化（300行超）
 
+`src/main.jsx` の分割は完了。抽出したコンポーネントの一部がまだ300行超。
+
 | ファイル | 行数 | 分割案 |
 |------|------|------|
-| `src/pages/SettingsPage.jsx` | 705行 | タブ別にコンポーネント分割（PortalSettings, SalesSettings, ApiKeySettings 等） |
-| `src/pages/CalendarPage.jsx` | 623行 | freeBusy計算ロジックを `lib/gcal.js` に移動、カレンダー登録UIを別コンポーネントに |
-| `src/pages/AIPage.jsx` | 435行 | AI解析ロジックを `lib/ai.js` に移動 |
-| `src/components/wizard/SetupWizard.jsx` | 408行 | ステップ別コンポーネントに分割 |
-| `src/pages/EmailPage.jsx` | 334行 | テンプレート編集UIを別コンポーネントに |
-| `src/pages/LeadsPage.jsx` | 319行 | フィルター・テーブルUIを別コンポーネントに |
-
-#### 重複定義（共通化すべき）
-
-| 問題 | 場所 |
-|------|------|
-| `addBizDays` が2箇所に定義 | `src/lib/holidays.js:56` と `src/pages/AIPage.jsx:58`。AIPage 側を削除し `lib/holidays.js` をimportして使う |
-| `uid()` が2箇所に定義 | `src/constants/index.js:52` と `src/lib/holidays.js:31`。どちらか一方に統一する |
+| `src/components/SettingsPage.jsx` | 955行 | タブ別にコンポーネント分割（PortalSettings, SalesSettings, ApiKeySettings 等） |
+| `src/components/CalendarPage.jsx` | 611行 | freeBusy計算ロジックを `lib/gcal.js` に移動、カレンダー登録UIを別コンポーネントに |
+| `src/components/SetupWizard.jsx` | 449行 | ステップ別コンポーネントに分割 |
+| `src/components/AIPage.jsx` | 434行 | AI解析ロジックを `lib/ai.js` に移動 |
+| `src/components/LeadList.jsx` | 340行 | フィルター・テーブルUIを別コンポーネントに |
+| `src/components/EmailPage.jsx` | 331行 | テンプレート編集UIを別コンポーネントに |
+| `src/components/LeadForms.jsx` | 326行 | LeadForm / ActionForm / ActEntry を別ファイルに分割 |
 
 #### API呼び出しのコンポーネント直書き（`lib/` に切り出すべき）
 
 | コンポーネント | 直書きしているAPI |
 |------|------|
-| `src/components/actions/ActionHistoryPanel.jsx` | `/api/zoho/create-deal`, `/api/zoho/push-action` |
-| `src/components/settings/AccountManager.jsx` | `/api/login-locks`, `/api/login-lock/:id`, `/api/invite` |
-| `src/components/settings/ZohoCrmSettings.jsx` | `/api/zoho-config` |
-| `src/pages/AIPage.jsx` | `/api/ai/analyze` |
-| `src/pages/CalendarPage.jsx` | Google Calendar freeBusy API, カレンダー登録API |
-| `src/pages/LeadsPage.jsx` | `/api/zoho/import-lead`, `/api/zoho/update-lead-status` |
-| `src/pages/LoginScreen.jsx` | `/api/signup`, `/api/login`, `/api/reset-password-direct`, `/api/data` |
+| `src/components/ActionHistoryPanel.jsx` | `/api/zoho/create-deal`, `/api/zoho/push-action` |
+| `src/components/AccountManager.jsx` | `/api/login-locks`, `/api/login-lock/:id`, `/api/invite` |
+| `src/components/SettingsPage.jsx` | `/api/zoho-config` |
+| `src/components/AIPage.jsx` | `/api/ai/analyze` |
+| `src/components/CalendarPage.jsx` | Google Calendar freeBusy API, カレンダー登録API |
+| `src/components/LeadList.jsx` | `/api/zoho/import-lead`, `/api/zoho/update-lead-status` |
+| `src/components/LoginScreen.jsx` | `/api/signup`, `/api/login`, `/api/reset-password-direct`, `/api/data` |
 
 ---
 
