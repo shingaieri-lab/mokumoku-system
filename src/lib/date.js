@@ -58,3 +58,14 @@ export function addBusinessDays(dateStr, days) {
   }
   return d.toISOString().split("T")[0];
 }
+
+// AIが提案する時間を営業時間（9〜18時、12〜13時除外）に補正する
+export function clampToBusinessTime(timeStr) {
+  if (!timeStr) return "10:00";
+  const [h, m] = timeStr.split(":").map(Number);
+  const mins = (isNaN(h) ? 10 : h) * 60 + (isNaN(m) ? 0 : m);
+  if (mins < 9 * 60) return "09:00";
+  if (mins >= 18 * 60) return "17:00";
+  if (mins >= 12 * 60 && mins < 13 * 60) return "13:00";
+  return timeStr;
+}
