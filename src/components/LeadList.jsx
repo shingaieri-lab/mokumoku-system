@@ -4,13 +4,14 @@ import {
   getSources, sourceHasPortal, getPortalSitesForSource,
   getStatuses, getStatusColor, getISMembers,
 } from '../lib/master.js';
-import { importZohoLead, updateZohoLeadStatus } from '../lib/zoho.js';
+import { updateZohoLeadStatus } from '../lib/zoho.js';
 import { S } from './styles.js';
 import { Header } from './ui.jsx';
 import { CSVImport } from './CSVImport.jsx';
 import { LeadRow } from './LeadRow.jsx';
 import { ActionHistoryPanel } from './ActionHistoryPanel.jsx';
 import { LeadForm } from './LeadForm.jsx';
+import { ZohoImportPanel } from './ZohoImportPanel.jsx';
 
 export function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile }) {
   const [showForm, setShowForm]     = useState(false);
@@ -18,9 +19,6 @@ export function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulk
   const [showImport, setShowImport] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [showZohoImport, setShowZohoImport] = useState(false);
-  const [zohoImportId, setZohoImportId] = useState('');
-  const [zohoImporting, setZohoImporting] = useState(false);
-  const [zohoImportMsg, setZohoImportMsg] = useState(null); // { type: 'ok'|'err', text }
   const [fStatuses, setFStatuses] = useState(new Set());
   const [fSource, setFSrc] = useState("");
   const [fPortal, setFPortal] = useState("");
@@ -107,7 +105,7 @@ export function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulk
             📥 CSVインポート
           </button>}
           {!readOnly && window.__appData?.zohoAuthenticated && (
-            <button onClick={() => { setShowZohoImport(v=>!v); setZohoImportId(''); setZohoImportMsg(null); }} style={S.btnSec}>
+            <button onClick={() => setShowZohoImport(v=>!v)} style={S.btnSec}>
               🔗 Zohoから取込
             </button>
           )}
@@ -116,48 +114,7 @@ export function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulk
       </Header>
 
       {/* Zoho手動取込パネル */}
-      {showZohoImport && !readOnly && (
-        <div style={{background:'#f0f7ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'12px 16px',marginBottom:8,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-          <span style={{fontSize:12,fontWeight:700,color:'#1e40af',flexShrink:0}}>🔗 ZohoリードIDで取込</span>
-          <input
-            value={zohoImportId}
-            onChange={e => setZohoImportId(e.target.value)}
-            placeholder="Zoho Lead ID（例：1234567890123456789）"
-            style={{...S.sel, width:280, flexShrink:0}}
-            onKeyDown={e => { if (e.key === 'Enter') document.getElementById('zoho-import-btn').click(); }}
-          />
-          <button
-            id="zoho-import-btn"
-            disabled={zohoImporting || !zohoImportId.trim()}
-            onClick={async () => {
-              setZohoImporting(true);
-              setZohoImportMsg(null);
-              try {
-                const { ok: resOk, data } = await importZohoLead(zohoImportId.trim());
-                if (!resOk) {
-                  setZohoImportMsg({ type: 'err', text: data.error || '取込に失敗しました' });
-                } else {
-                  onAdd(data.lead);
-                  setZohoImportId('');
-                  setZohoImportMsg({ type: 'ok', text: `「${data.lead.company || data.lead.contact}」を取込みました` });
-                }
-              } catch (e) {
-                setZohoImportMsg({ type: 'err', text: 'ネットワークエラー: ' + e.message });
-              } finally {
-                setZohoImporting(false);
-              }
-            }}
-            style={{...S.btnP, opacity: (zohoImporting || !zohoImportId.trim()) ? 0.5 : 1}}
-          >
-            {zohoImporting ? '取込中…' : '取込'}
-          </button>
-          {zohoImportMsg && (
-            <span style={{fontSize:12, fontWeight:700, color: zohoImportMsg.type === 'ok' ? '#059669' : '#dc2626'}}>
-              {zohoImportMsg.type === 'ok' ? '✓ ' : '✗ '}{zohoImportMsg.text}
-            </span>
-          )}
-        </div>
-      )}
+      {showZohoImport && !readOnly && <ZohoImportPanel onAdd={onAdd} />}
 
       {/* Filters */}
       {/* 1行目：検索・流入元・月・IS担当 */}
