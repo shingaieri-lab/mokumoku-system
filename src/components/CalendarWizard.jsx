@@ -1,0 +1,126 @@
+import React, { useState } from 'react';
+import { loadGCalConfig, saveGCalConfig } from '../lib/gcal.js';
+import { WizardOverlay, WizardStepBar, WIZARD_CARD, WIZARD_BTN_P, WIZARD_BTN_S, WIZARD_INP } from './WizardParts.jsx';
+
+export function CalendarWizard({ go, dismiss, members }) {
+  const gcal0 = loadGCalConfig();
+  const [step, setStep] = useState(0);
+  const [calApiKey, setCalApiKey] = useState(gcal0.apiKey || "");
+  const [calIds, setCalIds] = useState(gcal0.calendarIds || {});
+  const labels = ["はじめに", "プロジェクト", "APIキー", "カレンダーID", "完了"];
+
+  if (step === 0) return (
+    <WizardOverlay onDismiss={dismiss}>
+      <div style={WIZARD_CARD}>
+        <WizardStepBar current={0} labels={labels} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#174f35", marginBottom: 12 }}>📅 Googleカレンダーの設定</div>
+        <div style={{ background: "#f0f5f2", borderRadius: 8, padding: "14px 16px", marginBottom: 14, fontSize: 12, lineHeight: 1.9, color: "#3d7a5e" }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>設定すると使えること</div>
+          <div>✅ チームの空き時間を自動で検索</div>
+          <div>✅ 商談候補日をワンクリックでカレンダーに登録</div>
+        </div>
+        <div style={{ fontSize: 12, color: "#6a9a7a", marginBottom: 20 }}>必要なもの：各メンバーのGoogleカレンダーID<br />所要時間：約15〜30分　👤 管理者が1回だけ実施すればOK</div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
+          <button onClick={() => go("overview")} style={WIZARD_BTN_S}>← 戻る</button>
+          <button onClick={() => setStep(1)} style={WIZARD_BTN_P}>はじめる →</button>
+        </div>
+      </div>
+    </WizardOverlay>
+  );
+
+  if (step === 1) return (
+    <WizardOverlay onDismiss={dismiss}>
+      <div style={WIZARD_CARD}>
+        <WizardStepBar current={1} labels={labels} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#174f35", marginBottom: 12 }}>🔧 Google Cloudを準備する</div>
+        <div style={{ background: "#f0f5f2", borderRadius: 8, padding: "14px 16px", marginBottom: 14, fontSize: 12, lineHeight: 2, color: "#3d7a5e" }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>手順</div>
+          <div>1. 下のボタンをクリック → Google Cloud Console が開きます</div>
+          <div>2. 画面上部「プロジェクトを選択」をクリック</div>
+          <div>3. 「新しいプロジェクト」→ 名前を入力 → 「作成」</div>
+          <div>4. 「APIとサービス」→「ライブラリ」を開く</div>
+          <div>5. <b>「Google Calendar API」</b>を検索 → 「有効にする」</div>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", padding: "8px 16px", borderRadius: 8, background: "#eff6ff", color: "#2563eb", fontSize: 12, fontWeight: 600, border: "1px solid #bfdbfe", textDecoration: "none" }}>🔗 Google Cloud Console を開く（別タブ）</a>
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
+          <button onClick={() => setStep(0)} style={WIZARD_BTN_S}>← 戻る</button>
+          <button onClick={() => setStep(2)} style={WIZARD_BTN_P}>完了 → 次へ</button>
+        </div>
+      </div>
+    </WizardOverlay>
+  );
+
+  if (step === 2) return (
+    <WizardOverlay onDismiss={dismiss}>
+      <div style={WIZARD_CARD}>
+        <WizardStepBar current={2} labels={labels} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#174f35", marginBottom: 12 }}>🔑 APIキーを取得する</div>
+        <div style={{ background: "#f0f5f2", borderRadius: 8, padding: "14px 16px", marginBottom: 14, fontSize: 12, lineHeight: 2, color: "#3d7a5e" }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>手順</div>
+          <div>1. Cloud Console の「認証情報」を開く</div>
+          <div>2. 「認証情報を作成」→「APIキー」をクリック</div>
+          <div>3. <code style={{ background: "#d8ede1", padding: "1px 5px", borderRadius: 3 }}>AIzaSy...</code> で始まる文字列をコピー</div>
+        </div>
+        <div style={{ marginBottom: 8 }}>
+          <label style={{ fontSize: 11, fontWeight: 700, color: "#6a9a7a", display: "block", marginBottom: 4 }}>APIキーを貼り付け</label>
+          <input value={calApiKey} onChange={e => setCalApiKey(e.target.value)} placeholder="AIzaSy..." style={WIZARD_INP} />
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between", marginTop: 20 }}>
+          <button onClick={() => setStep(1)} style={WIZARD_BTN_S}>← 戻る</button>
+          <button onClick={() => setStep(3)} disabled={!calApiKey.trim()} style={{ ...WIZARD_BTN_P, opacity: calApiKey.trim() ? 1 : 0.5 }}>次へ →</button>
+        </div>
+      </div>
+    </WizardOverlay>
+  );
+
+  if (step === 3) return (
+    <WizardOverlay onDismiss={dismiss}>
+      <div style={{ ...WIZARD_CARD, maxWidth: 560 }}>
+        <WizardStepBar current={3} labels={labels} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#174f35", marginBottom: 12 }}>👥 メンバーのカレンダーIDを入力する</div>
+        <div style={{ background: "#fff7ed", borderRadius: 8, padding: "12px 14px", fontSize: 12, color: "#92400e", marginBottom: 14, border: "1px solid #fde68a", lineHeight: 1.8 }}>
+          <b>📌 カレンダーIDの確認方法（各メンバーが自分で確認）</b><br />
+          Googleカレンダー → 左の自分の名前「⋮」→「設定と共有」→「カレンダーのID」をコピー<br />
+          <b>⚠️ 「予定の詳細を表示」を「全員」に共有設定を変更してください</b>
+        </div>
+        <div style={{ maxHeight: 220, overflowY: "auto", marginBottom: 12 }}>
+          {members.map(m => (
+            <div key={m} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "#174f35", minWidth: 64, flexShrink: 0 }}>{m}</span>
+              <input value={(calIds || {})[m] || ""} onChange={e => setCalIds(p => ({ ...p, [m]: e.target.value }))} placeholder="例：tanaka@gmail.com" style={{ ...WIZARD_INP, fontSize: 12 }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
+          <button onClick={() => setStep(2)} style={WIZARD_BTN_S}>← 戻る</button>
+          <button onClick={() => setStep(4)} disabled={members.length > 0 && Object.values(calIds).filter(v => v.trim()).length === 0} style={{ ...WIZARD_BTN_P, opacity: (members.length === 0 || Object.values(calIds).filter(v => v.trim()).length > 0) ? 1 : 0.5 }}>次へ →</button>
+        </div>
+      </div>
+    </WizardOverlay>
+  );
+
+  const filledIds = Object.entries(calIds).filter(([, v]) => v.trim());
+  return (
+    <WizardOverlay onDismiss={dismiss}>
+      <div style={WIZARD_CARD}>
+        <WizardStepBar current={4} labels={labels} />
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#174f35", marginBottom: 12 }}>✅ カレンダー設定完了！</div>
+        <div style={{ background: "#d1fae5", borderRadius: 8, padding: "16px", marginBottom: 16, fontSize: 12, color: "#059669" }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>保存する内容</div>
+          <div>✅ APIキー：設定済み</div>
+          {filledIds.map(([name, id]) => <div key={name}>✅ {name}：{id}</div>)}
+        </div>
+        <div style={{ display: "flex", gap: 8, justifyContent: "space-between" }}>
+          <button onClick={() => setStep(3)} style={WIZARD_BTN_S}>← 戻る</button>
+          <button onClick={() => {
+            const filteredIds = Object.fromEntries(Object.entries(calIds).filter(([, v]) => v.trim()));
+            saveGCalConfig({ apiKey: calApiKey.trim(), calendarIds: filteredIds });
+            go("overview");
+          }} style={WIZARD_BTN_P}>保存して完了</button>
+        </div>
+      </div>
+    </WizardOverlay>
+  );
+}
