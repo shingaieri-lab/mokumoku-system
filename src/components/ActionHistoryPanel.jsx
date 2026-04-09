@@ -4,7 +4,8 @@ import { isOverdue, isDueToday, isDueSoon } from '../lib/date.js';
 import { createZohoDeal, pushZohoAction } from '../lib/zoho.js';
 import { S } from './styles.js';
 import { PencilIcon, TrashIcon } from './icons.jsx';
-import { ActionForm, ActEntry } from './LeadForms.jsx';
+import { ActionForm } from './ActionForm.jsx';
+import { ActEntry } from './ActEntry.jsx';
 import { NextActionEditBtn } from './LeadRow.jsx';
 
 export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser, readOnly }) {

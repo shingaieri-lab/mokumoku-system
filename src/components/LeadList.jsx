@@ -10,7 +10,7 @@ import { Header } from './ui.jsx';
 import { CSVImport } from './CSVImport.jsx';
 import { LeadRow } from './LeadRow.jsx';
 import { ActionHistoryPanel } from './ActionHistoryPanel.jsx';
-import { LeadForm } from './LeadForms.jsx';
+import { LeadForm } from './LeadForm.jsx';
 
 export function LeadList({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile }) {
   const [showForm, setShowForm]     = useState(false);

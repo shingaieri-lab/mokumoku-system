@@ -1,20 +1,12 @@
 import React, { useState } from 'react';
-import { TODAY, uid, ACTION_TYPES, ACTION_RESULTS, at } from '../lib/constants.js';
+import { TODAY } from '../lib/constants.js';
 import {
   getSources, sourceHasPortal, getPortalSitesForSource, getPortalTypes, getPortalPrice,
-  getISMembers, getSalesMembers, getStatuses, getStatusColor, USER_COLORS,
+  getISMembers, getSalesMembers, getStatuses,
 } from '../lib/master.js';
-import { isBusinessDay } from '../lib/date.js';
 import { normalizeDate } from './CSVImport.jsx';
 import { S } from './styles.js';
 import { Row2, Field } from './ui.jsx';
-import { PencilIcon, TrashIcon } from './icons.jsx';
-
-function VoiceButton({ onResult, style }) {
-  return (
-    <button style={{...style, opacity:0.5}} title="音声入力（別モジュール）">🎤</button>
-  );
-}
 
 export function LeadForm({ initial, onSave, onClose }) {
   const [d, setD] = useState(() => {
@@ -205,121 +197,6 @@ export function LeadForm({ initial, onSave, onClose }) {
             onSave(d); }}
             style={S.btnP}>{initial?"更新する":"登録する"}</button>
         </div>
-      </div>
-    </div>
-  );
-}
-
-export function ActionForm({ onSave, onClose, initial }) {
-  const [type,      setType]      = useState(initial?.type      || "call");
-  const [result,    setResult]    = useState(initial?.result    || "繋がった");
-  const [summary,   setSummary]   = useState(initial?.summary   || "");
-  const [date,      setDate]      = useState(initial?.date      || TODAY);
-  const [time,      setTime]      = useState(()=>{ if(initial?.time !== undefined) return initial.time; const n=new Date(); const m=Math.floor(n.getMinutes()/30)*30; return `${String(n.getHours()).padStart(2,"0")}:${String(m).padStart(2,"0")}`; });
-  const [nextDate,  setNextDate]  = useState(initial?.nextDate  || "");
-  const [nextTime,  setNextTime]  = useState(initial?.nextTime  || "");
-  const [nextLabel, setNextLabel] = useState(initial?.next      || "");
-  const isEdit = !!initial;
-  const timeOptions = Array.from({length:48},(_,i)=>{const h=String(Math.floor(i/2)).padStart(2,"0");const m=i%2===0?"00":"30";return `${h}:${m}`;});
-
-  return (
-    <div style={S.actForm}>
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8,marginBottom:8}}>
-        <div>
-          <label style={S.lbl}>方法</label>
-          <select value={type} onChange={e=>setType(e.target.value)} style={S.inp}>
-            {ACTION_TYPES.map(a=><option key={a.v} value={a.v}>{a.icon} {a.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={S.lbl}>結果</label>
-          <select value={result} onChange={e=>setResult(e.target.value)} style={S.inp}>
-            {ACTION_RESULTS.map(r=><option key={r}>{r}</option>)}
-          </select>
-        </div>
-        <div>
-          <label style={S.lbl}>日付</label>
-          <input type="date" value={date} onChange={e=>setDate(e.target.value)} style={S.inp} />
-        </div>
-        <div>
-          <label style={S.lbl}>時刻</label>
-          <select value={time} onChange={e=>setTime(e.target.value)} style={S.inp}>
-            <option value="">指定なし</option>
-            {timeOptions.map(t=><option key={t} value={t}>{t}</option>)}
-          </select>
-        </div>
-      </div>
-      <div style={{marginBottom:8}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-          <label style={{...S.lbl,marginBottom:0}}>一言メモ</label>
-          <VoiceButton onResult={t => setSummary(prev => prev ? prev + "　" + t : t)} style={{padding:"3px 8px",fontSize:13}} />
-        </div>
-        <textarea value={summary} onChange={e=>setSummary(e.target.value)} rows={2}
-          placeholder="内容を簡単にメモ… （🎤で音声入力）"
-          style={{...S.inp, resize:"none", lineHeight:1.6,fontFamily:"inherit"}} />
-      </div>
-      <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8,marginBottom:10}}>
-        <div>
-          <label style={S.lbl}>次回追客日</label>
-          <input type="date" value={nextDate} onChange={e=>setNextDate(e.target.value)}
-            style={{...S.inp, borderColor: nextDate && !isBusinessDay(nextDate) ? "#ef4444" : "#c0dece"}} />
-          {nextDate && !isBusinessDay(nextDate) && (
-            <div style={{fontSize:11,color:"#ef4444", marginTop:3}}>⚠️ 土日祝です</div>
-          )}
-        </div>
-        <div>
-          <label style={S.lbl}>次回時刻</label>
-          <select value={nextTime} onChange={e=>setNextTime(e.target.value)} style={S.inp}>
-            <option value="">指定なし</option>
-            {Array.from({length:28},(_,i)=>{
-              const h=String(Math.floor(i/2)+8).padStart(2,"0");
-              const m=i%2===0?"00":"30";
-              return <option key={i} value={`${h}:${m}`}>{`${h}:${m}`}</option>;
-            })}
-          </select>
-        </div>
-        <div>
-          <label style={S.lbl}>メモ（任意）</label>
-          <input value={nextLabel} onChange={e=>setNextLabel(e.target.value)}
-            placeholder="例：午前に架電" style={S.inp} />
-        </div>
-      </div>
-      <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-        <button onClick={onClose} style={S.btnSec}>キャンセル</button>
-        <button onClick={() => { if (!summary.trim() && !nextDate) return alert("メモまたは次回追客日を入力してください");
-          onSave({ id: initial?.id || uid(), type, result, summary, date, time, next: nextLabel, nextDate, nextTime, ts: initial?.ts || Date.now() }); }}
-          style={S.btnP}>{isEdit ? "更新する" : "記録する"}</button>
-      </div>
-    </div>
-  );
-}
-
-export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushing }) {
-  const t = at(a.type);
-  return (
-    <div style={{...S.actEntry, borderLeft:`3px solid ${t.color}`}}>
-      <span style={{fontSize:15,flexShrink:0}}>{t.icon}</span>
-      <div style={{flex:1}}>
-        <div style={{display:"flex", gap:6, alignItems:"center",flexWrap:"wrap",marginBottom:2}}>
-          <span style={{fontSize:11,fontWeight:700,color:t.color}}>{t.label}</span>
-          <span style={{fontSize:10,background:t.color+"22",color:t.color,borderRadius:4,padding:"1px 6px"}}>{a.result}</span>
-          <span style={{fontSize:10,color:"#3d7a5e", marginLeft:"auto"}}>{a.date}{a.time ? " "+a.time : ""}</span>
-          {a.recorded_by && (() => {
-            const uc = USER_COLORS[a.recorded_by]||"#059669";
-            return <span style={{fontSize:10,color:uc,fontWeight:600}}>記録者：{a.recorded_by}</span>;
-          })()}
-          {!readOnly && onPushZoho && (
-            <button onClick={onPushZoho} disabled={zohoPushing} title="Zohoに同期"
-              style={{...S.btnEditAct, background: zohoPushing?"#f0f9ff":"#e0f2fe", border:"1px solid #7dd3fc", color:"#0284c7", fontSize:10, padding:"1px 6px", borderRadius:4, cursor: zohoPushing?"default":"pointer"}}>
-              {zohoPushing ? "同期中" : "🔗"}
-            </button>
-          )}
-          {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集"><PencilIcon color="#059669"/></button>}
-          {!readOnly && <button onClick={onDelete} style={{...S.btnEditAct,background:"#fef2f2",border:"1px solid #fca5a5"}} title="削除"><TrashIcon color="#ef4444"/></button>}
-        </div>
-        <p style={{margin:0,fontSize:12,color:"#174f35", lineHeight:1.6, whiteSpace:"pre-wrap"}}>{a.summary}</p>
-        {(a.nextDate||a.next) && <div style={{fontSize:11,color:"#059669", marginTop:3}}>→ 次回：{a.nextDate||""}{a.nextTime ? " "+a.nextTime : ""}{a.next ? " "+a.next : ""}</div>}
-        {a.talkPoints?.length>0&&<div style={{marginTop:5,background:"#f0f9f5",borderRadius:6,padding:"6px 10px"}}><div style={{fontSize:10,color:"#059669",fontWeight:700,marginBottom:4}}>📞 次回架電トークポイント</div>{a.talkPoints.map((p,i)=><div key={i} style={{display:"flex",gap:6,alignItems:"flex-start",marginBottom:3}}><span style={{background:"#059669",color:"#fff",borderRadius:3,padding:"0px 5px",fontSize:10,fontWeight:700,flexShrink:0,lineHeight:"16px"}}>{i+1}</span><span style={{fontSize:11,color:"#174f35",lineHeight:1.5}}>{p}</span></div>)}</div>}
       </div>
     </div>
   );
