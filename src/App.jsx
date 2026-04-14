@@ -20,7 +20,7 @@ import { loadLeads, saveLeads, apiPost } from './lib/api.js';
 
 // ページ全体のコンテナスタイル
 const rootStyle = { display:"flex", height:"100vh", background:"#f0f5f2", fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif", color:"#1f5c40", overflow:"hidden" };
-const mainStyle = { flex:1, overflow:"auto", background:"#f0f5f2" };
+const mainStyle = { flex:1, overflow:"auto", background:"#f0f5f2", minHeight:0 };
 
 export function App() {
   const isMobile = useIsMobile();
