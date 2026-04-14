@@ -5,6 +5,7 @@ import { Header } from '../components/ui/Layout.jsx';
 import { CSVImport } from '../components/leads/CSVImport.jsx';
 import { LeadRow } from '../components/leads/LeadRow.jsx';
 import { LeadForm } from '../components/leads/LeadForm.jsx';
+import { ZohoImportPanel } from '../components/leads/ZohoImportPanel.jsx';
 import { ActionHistoryPanel } from '../components/actions/ActionHistoryPanel.jsx';
 import { TODAY } from '../lib/holidays.js';
 import { uid } from '../constants/index.js';
@@ -19,9 +20,6 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const [showImport, setShowImport] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [showZohoImport, setShowZohoImport] = useState(false);
-  const [zohoImportId, setZohoImportId] = useState('');
-  const [zohoImporting, setZohoImporting] = useState(false);
-  const [zohoImportMsg, setZohoImportMsg] = useState(null);
   const [fStatuses, setFStatuses] = useState(new Set());
   const [fSource, setFSrc] = useState("");
   const [fPortal, setFPortal] = useState("");
@@ -131,7 +129,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
             <button onClick={exportCSV} style={S.btnSec}>📤 CSVエクスポート</button>
             {!readOnly && <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={S.btnSec}>📥 CSVインポート</button>}
             {!readOnly && window.__appData?.zohoAuthenticated && (
-              <button onClick={() => { setShowZohoImport(v=>!v); setZohoImportId(''); setZohoImportMsg(null); }} style={S.btnSec}>🔗 Zohoから取込</button>
+              <button onClick={() => setShowZohoImport(v=>!v)} style={S.btnSec}>🔗 Zohoから取込</button>
             )}
             {!readOnly && <button onClick={() => { setEditing(null); setShowForm(true); }} style={{...S.btnP, background:"linear-gradient(135deg,#f97316,#ea580c)"}}>＋ 新規追加</button>}
           </div>
@@ -139,33 +137,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
 
         {/* Zoho手動取込パネル */}
         {showZohoImport && !readOnly && (
-          <div style={{background:'#f0f7ff',border:'1px solid #bfdbfe',borderRadius:8,padding:'12px 16px',marginBottom:8,display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
-            <span style={{fontSize:12,fontWeight:700,color:'#1e40af',flexShrink:0}}>🔗 ZohoリードIDで取込</span>
-            <input value={zohoImportId} onChange={e => setZohoImportId(e.target.value)}
-              placeholder="Zoho Lead ID（例：1234567890123456789）"
-              style={{...S.sel, width:280, flexShrink:0}}
-              onKeyDown={e => { if (e.key === 'Enter') document.getElementById('zoho-import-btn').click(); }} />
-            <button id="zoho-import-btn" disabled={zohoImporting || !zohoImportId.trim()}
-              onClick={async () => {
-                setZohoImporting(true); setZohoImportMsg(null);
-                try {
-                  const res = await fetch('/api/zoho/import-lead', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({zohoLeadId: zohoImportId.trim()}) });
-                  const data = await res.json();
-                  if (!res.ok) { setZohoImportMsg({ type:'err', text: data.error || '取込に失敗しました' }); }
-                  else { onAdd(data.lead); setZohoImportId(''); setZohoImportMsg({ type:'ok', text: `「${data.lead.company || data.lead.contact}」を取込みました` }); }
-                } catch (e) {
-                  setZohoImportMsg({ type:'err', text: 'ネットワークエラー: ' + e.message });
-                } finally { setZohoImporting(false); }
-              }}
-              style={{...S.btnP, opacity: (zohoImporting || !zohoImportId.trim()) ? 0.5 : 1}}>
-              {zohoImporting ? '取込中…' : '取込'}
-            </button>
-            {zohoImportMsg && (
-              <span style={{fontSize:12, fontWeight:700, color: zohoImportMsg.type === 'ok' ? '#059669' : '#dc2626'}}>
-                {zohoImportMsg.type === 'ok' ? '✓ ' : '✗ '}{zohoImportMsg.text}
-              </span>
-            )}
-          </div>
+          <ZohoImportPanel onAdd={onAdd} onClose={() => setShowZohoImport(false)} />
         )}
 
         {/* フィルター 1行目 */}
