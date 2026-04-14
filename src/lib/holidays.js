@@ -51,12 +51,13 @@ export const isDueSoon = (dateStr) => {
 };
 
 // 指定日から営業日数後の日付を返す（土日・祝日をスキップ）
+// toISOString()はUTC基準のため、JSTで正しい日付を得るにはtoLocaleDateStringを使う
 export const addBizDays = (dateStr, days) => {
   let d = new Date(dateStr + "T00:00:00"), c = 0;
   while (c < days) {
     d.setDate(d.getDate() + 1);
-    const s = d.toISOString().split("T")[0];
+    const s = d.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
     if (d.getDay() !== 0 && d.getDay() !== 6 && !JP_HOLIDAYS.has(s)) c++;
   }
-  return d.toISOString().split("T")[0];
+  return d.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
 };
