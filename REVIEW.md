@@ -1,6 +1,6 @@
 # IS進捗管理ツール レビュー記録
 
-レビュー開始：2026-03-23　／　最終更新：2026-04-14（Vite移行完了・デッドコード検出）
+レビュー開始：2026-03-23　／　最終更新：2026-04-14（Vite移行完了・デッドコード削除）
 
 ---
 
@@ -96,6 +96,7 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 | **server.js 分割完了**（`feature/file-split`）：983行のモノリスを `lib/`・`routes/` に8ファイル分割。`server.js` はエントリーポイント30行のみに |
 | **コンポーネント分割完了**（`feature/component-split`）：`src/main.jsx` 4,885行 → 192行に削減。19コンポーネントを `src/components/` に、ビジネスロジックを `src/lib/` に分離。41モジュール、ビルドエラーゼロ |
 | **API分離完了**（`feature/api-separation`）：7コンポーネントに直書きされていたfetch呼び出しを `src/lib/` に切り出し。`ai.js`, `account.js`, `zoho.js`, `authApi.js`, `gcal.js` に集約 |
+| **デッドコード削除完了**（`chore/remove-dead-components`、PR #130、2026-04-14）：Vite移行後に残存していた旧フラット構造コンポーネント20本（5,295行）を削除。ビルドエラーゼロ確認済み |
 
 ---
 
@@ -103,32 +104,9 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 
 ### 🔴 コード品質（CLAUDE.md違反）― 2026-04-14 時点
 
-#### デッドコード残存（優先対応）
+#### ~~デッドコード残存~~ ✅ 対応済み（2026-04-14、PR #130）
 
-Vite移行（PR #129）により `src/pages/` + 階層型 `src/components/` に移行済みだが、旧フラット構造のファイルが**どこからもインポートされていない状態**で残存している。「同じ処理を2箇所以上に書かない」ルール違反。
-
-| ファイル | 行数 | 状態 |
-|------|------|------|
-| `src/components/SettingsPage.jsx` | 952行 | 未使用・削除可 |
-| `src/components/CalendarPage.jsx` | 590行 | 未使用・削除可 |
-| `src/components/SetupWizard.jsx` | 449行 | 未使用・削除可 |
-| `src/components/AIPage.jsx` | 432行 | 未使用・削除可 |
-| `src/components/LeadList.jsx` | 332行 | 未使用・削除可 |
-| `src/components/EmailPage.jsx` | 331行 | 未使用・削除可 |
-| `src/components/LeadForms.jsx` | 326行 | 未使用・削除可 |
-| `src/components/Dashboard.jsx` | 212行 | 未使用・削除可 |
-| `src/components/ActionHistoryPanel.jsx` | 208行 | 未使用・削除可 |
-| `src/components/AccountManager.jsx` | 174行 | 未使用・削除可 |
-| `src/components/LoginScreen.jsx` | 166行 | 未使用・削除可 |
-| `src/components/Charts.jsx` | 158行 | 未使用・削除可 |
-| `src/components/Nav.jsx` | 128行 | 未使用・削除可 |
-| `src/components/styles.js` | 128行 | 未使用・削除可 |
-| `src/components/ui.jsx` | 未確認 | 未使用・削除可 |
-| `src/components/LeadRow.jsx` | 265行 | 未使用・削除可 |
-| `src/components/CSVImport.jsx` | 240行 | 未使用・削除可 |
-| `src/components/LeadCombobox.jsx` | 未確認 | 未使用・削除可 |
-| `src/components/SourceIconSVG.jsx` | 未確認 | 未使用・削除可 |
-| `src/components/icons.jsx` | 未確認 | 未使用・削除可 |
+旧フラット構造コンポーネント20本（5,295行）を削除済み。
 
 #### ファイル肥大化（300行超）― アクティブファイル
 
