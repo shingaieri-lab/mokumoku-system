@@ -31,6 +31,8 @@ export function getMaster() {
     portalSiteSource: {},
     sources: DEFAULT_SOURCES,
     statuses: DEFAULT_STATUSES_WITH_COLORS,
+    companyName: "",
+    calRegTitleTpl: "仮WEB営1）【{{会社名}}様】",
   };
   if (!s) return defaults;
   return {

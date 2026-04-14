@@ -2,16 +2,16 @@
 import { useState, useEffect } from 'react';
 import { PencilIcon, TrashIcon } from '../components/ui/Icons.jsx';
 import { LeadCombobox } from '../components/leads/LeadCombobox.jsx';
-import { getSalesMembers } from '../lib/master.js';
+import { getSalesMembers, getMaster } from '../lib/master.js';
 import { getEffectiveAiConfig } from '../lib/accounts.js';
 import { acquireGmailToken, buildGmailDraftRaw, postGmailDraft } from '../lib/oauth.js';
 import { apiPost } from '../lib/api.js';
 import { TemplateEditor } from '../components/email/TemplateEditor.jsx';
 
 const DEFAULT_EMAIL_TEMPLATES = [
-  { id:"t1", name:"初回フォロー", useSlots:false, subject:"【ダンドリワーク】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
-  { id:"t2", name:"商談日程調整", useSlots:true, subject:"【ダンドリワーク{{送信者名}}】ご説明日程候補日をお送りします", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n下記日程のご都合は、いかがでしょうか。\n\n============================\n【日程候補】\n{{候補日時}}\n============================\n\nご都合のよろしい日程をご返信いただけますと幸いです。\nよろしくお願いいたします。" },
-  { id:"t3", name:"ナーチャリング", useSlots:false, subject:"【ダンドリワーク】建設業の施工管理DX事例のご紹介", body:"{{担当者名}} 様\n\nお世話になっております。\nダンドリワークの{{送信者名}}でございます。\n\n以前お話しさせていただいた件で、成果が出た事例をご紹介します。" },
+  { id:"t1", name:"初回フォロー", useSlots:false, subject:"【{{送信者会社名}}】資料のご確認のお願い", body:"{{担当者名}} 様\n\nお世話になっております。\n{{送信者会社名}}の{{送信者名}}でございます。\n\n先日はお電話にてご対応いただきありがとうございました。\nご案内した資料をご確認いただけましたでしょうか？\n\n何かご不明な点がございましたら、お気軽にご連絡ください。\n\nよろしくお願いいたします。" },
+  { id:"t2", name:"商談日程調整", useSlots:true, subject:"【{{送信者会社名}}{{送信者名}}】ご説明日程候補日をお送りします", body:"{{担当者名}} 様\n\nお世話になっております。\n{{送信者会社名}}の{{送信者名}}でございます。\n\n下記日程のご都合は、いかがでしょうか。\n\n============================\n【日程候補】\n{{候補日時}}\n============================\n\nご都合のよろしい日程をご返信いただけますと幸いです。\nよろしくお願いいたします。" },
+  { id:"t3", name:"ナーチャリング", useSlots:false, subject:"【{{送信者会社名}}】事例のご紹介", body:"{{担当者名}} 様\n\nお世話になっております。\n{{送信者会社名}}の{{送信者名}}でございます。\n\n以前お話しさせていただいた件で、成果が出た事例をご紹介します。" },
 ];
 
 const loadTpls = () => window.__appData.emailTpls || DEFAULT_EMAIL_TEMPLATES;
@@ -30,7 +30,7 @@ export function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], i
     return loadTpls()[0]?.id || "";
   });
   const [selLead, setSelLead] = useState(initialLeadId);
-  const [vars, setVars] = useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
+  const [vars, setVars] = useState({担当者名:"",担当者苗字:"",会社名:"",送信者名:"",送信者会社名:getMaster().companyName||"",候補日時:"",商談月:"",商談日:"",商談曜日:"",商談時:"",商談分:"",商談担当:"",宛先メール:""});
   const [previewSubj, setPreviewSubj] = useState("");
   const [previewBody, setPreviewBody] = useState("");
   const [editMode, setEditMode] = useState(false);

@@ -36,7 +36,7 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
   }), [cfg, accountCalendarIds]);
 
   // 検索条件
-  const [selectedMembers, setSelectedMembers] = useState(["北原"]);
+  const [selectedMembers, setSelectedMembers] = useState(() => currentUser?.name ? [currentUser.name] : []);
   const [dateFrom, setDateFrom] = useState(TODAY);
   const [dateTo, setDateTo] = useState(() => {
     const d = new Date(TODAY + "T00:00:00"); d.setDate(d.getDate()+14);

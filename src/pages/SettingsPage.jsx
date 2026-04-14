@@ -1,16 +1,17 @@
-// 設定ページ（リード管理・ポータル・営業担当・API設定・Zoho CRM・アカウント管理）
+// 設定ページ（基本設定・リード管理・ポータル・API設定・Zoho CRM・アカウント管理）
 import { useState } from 'react';
 import { PencilIcon, TrashIcon } from '../components/ui/Icons.jsx';
 import { ZohoCrmSettings } from '../components/settings/ZohoCrmSettings.jsx';
 import { AccountManager } from '../components/settings/AccountManager.jsx';
 import { ApiKeyTab } from '../components/settings/ApiKeyTab.jsx';
 import { LeadMgmtTab } from '../components/settings/LeadMgmtTab.jsx';
+import { GeneralTab } from '../components/settings/GeneralTab.jsx';
 import { PALETTE } from '../constants/index.js';
 import { getMaster, saveMasterSettings } from '../lib/master.js';
 
 export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, initialTab, onLeadsChange, onMasterSave, onOpenWizard }) {
   const [master, setMaster] = useState(() => getMaster());
-  const [tab, setTab] = useState(initialTab || (currentUser?.role === "admin" ? "leadmgmt" : "apikey"));
+  const [tab, setTab] = useState(initialTab || (currentUser?.role === "admin" ? "general" : "apikey"));
   const [msg, setMsg] = useState("");
   const [profileForm, setProfileForm] = useState({ name: currentUser?.name||"", password: currentUser?.password||"", email: currentUser?.email||"", color: currentUser?.color||PALETTE[0], id: currentUser?.id||"", signature: currentUser?.signature||"", geminiKey: currentUser?.geminiKey||"", gmailClientId: currentUser?.gmailClientId||"", calendarId: currentUser?.calendarId||"" });
   const [profileMsg, setProfileMsg] = useState("");
@@ -84,24 +85,6 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
     save({ ...master, portalTypes: { ...master.portalTypes, [site]: plans } });
   };
 
-  // 営業担当
-  const [newSales, setNewSales] = useState("");
-  const [editSalesIdx, setEditSalesIdx] = useState(null);
-  const [editSalesName, setEditSalesName] = useState("");
-  const addSales = () => {
-    const s = newSales.trim(); if (!s) return;
-    if (master.salesMembers.includes(s)) { alert("既に存在します"); return; }
-    save({ ...master, salesMembers: [...master.salesMembers, s] });
-    setNewSales("");
-  };
-  const removeSales = (m) => { save({ ...master, salesMembers: master.salesMembers.filter(x=>x!==m) }); };
-  const renameSales = (idx) => {
-    const newName = editSalesName.trim(); if (!newName) return;
-    if (master.salesMembers.some((m,i) => m===newName && i!==idx)) { alert("既に存在します"); return; }
-    save({ ...master, salesMembers: master.salesMembers.map((m,i) => i===idx ? newName : m) });
-    setEditSalesIdx(null); setEditSalesName("");
-  };
-
   const tabBtn = (key, label) => (
     <button onClick={()=>setTab(key)} style={{padding:"7px 18px",borderRadius:"8px 8px 0 0",border:"1px solid #d8ede1",borderBottom: tab===key ? "1px solid #fff" : "1px solid #d8ede1", background: tab===key ? "#fff" : "#f0f5f2", color: tab===key ? "#174f35" : "#6a9a7a", fontWeight: tab===key ? 700 : 400, fontSize:12, cursor:"pointer", fontFamily:"inherit", marginRight:4, marginBottom:-1}}>
       {label}
@@ -116,9 +99,9 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
       <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "API設定・アカウントを管理できます。"}</div>
       {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
       <div className="settings-tabs" style={{display:"flex", flexWrap:"wrap", gap:0, marginBottom:0}}>
+        {currentUser?.role==="admin" && tabBtn("general","⚙️ 基本設定")}
         {currentUser?.role==="admin" && tabBtn("leadmgmt","📋 リード管理")}
         {currentUser?.role==="admin" && tabBtn("portal","🏢 ポータルサイト")}
-        {currentUser?.role==="admin" && tabBtn("sales","👤 営業担当")}
         {tabBtn("apikey","🔑 API設定")}
         {currentUser?.role==="admin" && tabBtn("zoho","🔗 Zoho CRM連携")}
         {currentUser?.role==="admin" && tabBtn("accounts","👥 アカウント管理（管理者）")}
@@ -182,33 +165,8 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
             ))}
           </div>
         )}
-        {tab === "sales" && (
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:8}}>{currentUser?.role==="admin" ? "営業担当一覧" : "営業設定"}</div>
-            <div style={addRow}>
-              <input value={newSales} onChange={e=>setNewSales(e.target.value)} placeholder="担当者名" style={{...inp,flex:1}} onKeyDown={e=>e.key==="Enter"&&addSales()} />
-              <button onClick={addSales} style={{padding:"7px 16px",borderRadius:7,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>追加</button>
-            </div>
-            <div style={{display:"flex",flexDirection:"column",gap:6}}>
-              {master.salesMembers.map((m, idx)=>(
-                <div key={m} style={{display:"flex",alignItems:"center",gap:6,background:"#f0f5f2",border:"1px solid #d8ede1",borderRadius:8,padding:"6px 10px"}}>
-                  {editSalesIdx===idx ? (
-                    <>
-                      <input value={editSalesName} onChange={e=>setEditSalesName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&renameSales(idx)} style={{...inp,flex:1,padding:"4px 8px"}} autoFocus />
-                      <button onClick={()=>renameSales(idx)} style={{fontSize:11,padding:"3px 10px",borderRadius:6,border:"none",background:"#10b981",color:"#fff",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>保存</button>
-                      <button onClick={()=>setEditSalesIdx(null)} style={{fontSize:11,padding:"3px 8px",borderRadius:6,border:"1px solid #c0dece",background:"#fff",color:"#6a9a7a",cursor:"pointer",fontFamily:"inherit",flexShrink:0}}>✕</button>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{fontSize:12,color:"#174f35",fontWeight:600,flex:1}}>{m}</span>
-                      <button onClick={()=>{setEditSalesIdx(idx);setEditSalesName(m)}} style={{padding:"3px 6px",borderRadius:6,background:"#f0fdf4",color:"#059669",border:"1px solid #86efac",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
-                      <button onClick={()=>removeSales(m)} style={{padding:"3px 6px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        {tab === "general" && currentUser?.role==="admin" && (
+          <GeneralTab master={master} save={save} />
         )}
         {tab === "apikey" && (
           <ApiKeyTab
