@@ -1,6 +1,6 @@
 # IS進捗管理ツール レビュー記録
 
-レビュー開始：2026-03-23　／　最終更新：2026-04-03
+レビュー開始：2026-03-23　／　最終更新：2026-04-09（API分離対応）
 
 ---
 
@@ -88,7 +88,40 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 
 ---
 
+### 🟢 リファクタリング（2026-04-08）
+
+| 対応内容 |
+|---------|
+| **Vite移行完了**（`feature/vite-migration`）：5,759行の単一 index.html を Vite + React ESM 構成に分割。54モジュール、ビルドエラーゼロ |
+| **server.js 分割完了**（`feature/file-split`）：983行のモノリスを `lib/`・`routes/` に8ファイル分割。`server.js` はエントリーポイント30行のみに |
+| **コンポーネント分割完了**（`feature/component-split`）：`src/main.jsx` 4,885行 → 192行に削減。19コンポーネントを `src/components/` に、ビジネスロジックを `src/lib/` に分離。41モジュール、ビルドエラーゼロ |
+| **API分離完了**（`feature/api-separation`）：7コンポーネントに直書きされていたfetch呼び出しを `src/lib/` に切り出し。`ai.js`, `account.js`, `zoho.js`, `authApi.js`, `gcal.js` に集約 |
+
+---
+
 ## ❌ 未対応・今後の課題
+
+### 🔴 コード品質（CLAUDE.md違反）― 2026-04-09 時点
+
+#### ファイル肥大化（300行超）
+
+`src/main.jsx` の分割は完了。抽出したコンポーネントの一部がまだ300行超。
+
+| ファイル | 行数 | 分割案 |
+|------|------|------|
+| `src/components/SettingsPage.jsx` | 955行 | タブ別にコンポーネント分割（PortalSettings, SalesSettings, ApiKeySettings 等） |
+| `src/components/CalendarPage.jsx` | 590行 | カレンダー登録UIを別コンポーネントに分割 |
+| `src/components/SetupWizard.jsx` | 449行 | ステップ別コンポーネントに分割 |
+| `src/components/AIPage.jsx` | 432行 | AIPage内のUI部分をさらに分割 |
+| `src/components/LeadList.jsx` | 332行 | フィルター・テーブルUIを別コンポーネントに |
+| `src/components/EmailPage.jsx` | 331行 | テンプレート編集UIを別コンポーネントに |
+| `src/components/LeadForms.jsx` | 326行 | LeadForm / ActionForm / ActEntry を別ファイルに分割 |
+
+#### ~~API呼び出しのコンポーネント直書き~~ ✅ 対応済み（2026-04-09）
+
+全7コンポーネントの fetch 直書きを `src/lib/` に移行済み。
+
+---
 
 ### 🟠 中優先度
 
@@ -108,7 +141,6 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 | 確認ダイアログがブラウザ標準のポップアップ | アプリ内モーダルに統一を検討 |
 | モバイル対応が一部不完全 | AIページ・メールテンプレート・設定ページで固定幅が残っている |
 | ボタンのタッチ領域が小さい | 高さ約20px。WCAG推奨の44px以上への対応を検討 |
-| 単一HTMLファイルの分割 | 5,700行超のファイルを将来的にコンポーネント分割する（Vite導入が前提） |
 
 ---
 
