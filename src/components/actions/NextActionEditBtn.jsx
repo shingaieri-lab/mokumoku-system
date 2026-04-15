@@ -70,6 +70,7 @@ export function NextActionEditBtn({ nad, lead, onUpdate, currentUser, compact = 
       }
       setCalSaved(true);
       setTimeout(() => setCalSaved(false), 3000);
+      onUpdate({ google_task_registered: true });
     } catch (e) {
       alert('GoogleタスクTODO作成エラー: ' + e.message);
     } finally {
@@ -88,7 +89,7 @@ export function NextActionEditBtn({ nad, lead, onUpdate, currentUser, compact = 
         <button onClick={() => createCalTodo(nad, lead.next_action_time)} disabled={calSaving}
           style={{ background:"none", border:"none", cursor: calSaving ? "not-allowed" : "pointer", padding:"4px", display:"flex", alignItems:"center", opacity: calSaving ? 0.5 : 1 }}
           title="GoogleタスクにTODO作成">
-          <TaskIcon size={18} color={calSaved ? "#3b82f6" : "#7c3aed"} />
+          <TaskIcon size={18} color={calSaved || lead.google_task_registered ? "#3b82f6" : "#7c3aed"} />
         </button>
       )}
       {!compact && (

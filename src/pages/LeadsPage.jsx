@@ -99,7 +99,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const handleEditAction = (lead, aid, updated) => {
     const newActions = (lead.actions||[]).map(a => a.id === aid ? { ...a, ...updated } : a);
     const patch = { actions: newActions };
-    if (updated.nextDate) { patch.next_action_date = updated.nextDate; patch.next_action_time = updated.nextTime||""; patch.next_action = updated.next||""; }
+    if (updated.nextDate) { patch.next_action_date = updated.nextDate; patch.next_action_time = updated.nextTime||""; patch.next_action = updated.next||""; patch.google_task_registered = false; }
     onUpdate(lead.id, patch);
   };
 
