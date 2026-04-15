@@ -82,7 +82,7 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
           {/* 編集・削除ボタン */}
           {!readOnly && <div style={{display:"flex", gap:3, alignItems:"center", marginLeft:4}}>
             <button onClick={e=>{e.stopPropagation();onEdit();}}
-              style={{width:26, height:26,borderRadius:6,border:"1px solid #86efac", background:"#f0fdf4",cursor:"pointer", display:"flex",alignItems:"center", justifyContent:"center"}}
+              style={{width:28, height:28,borderRadius:6,border:"1px solid #4ade80", background:"#bbf7d0",cursor:"pointer", display:"flex",alignItems:"center", justifyContent:"center"}}
               title="編集"><PencilIcon color="#059669"/></button>
             {confirmDelete ? (
               <div style={{display:"flex", gap:3, alignItems:"center"}} onClick={e=>e.stopPropagation()}>
@@ -92,7 +92,7 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
               </div>
             ) : (
               <button onClick={e=>{e.stopPropagation();setConfirmDelete(true);}}
-                style={{width:26, height:26,borderRadius:6,border:"1px solid #fca5a5", background:"#fef2f2",cursor:"pointer",color:"#ef4444", display:"flex",alignItems:"center", justifyContent:"center"}}
+                style={{width:28, height:28,borderRadius:6,border:"1px solid #f87171", background:"#fecaca",cursor:"pointer",color:"#ef4444", display:"flex",alignItems:"center", justifyContent:"center"}}
                 title="削除"><TrashIcon color="#ef4444"/></button>
             )}
           </div>}

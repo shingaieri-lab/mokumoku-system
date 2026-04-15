@@ -129,8 +129,8 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
                   ) : (
                     <>
                       <span style={{fontWeight:700,color:"#174f35",fontSize:13,flex:1}}>🏢 {site}</span>
-                      <button onClick={()=>{setEditSite(site);setEditSiteName(site)}} style={{padding:"3px 6px",borderRadius:6,background:"#f0fdf4",color:"#059669",border:"1px solid #86efac",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
-                      <button onClick={()=>removeSite(site)} style={{padding:"3px 6px",borderRadius:6,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
+                      <button onClick={()=>{setEditSite(site);setEditSiteName(site)}} style={{padding:"3px 6px",borderRadius:6,background:"#bbf7d0",color:"#059669",border:"1px solid #4ade80",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
+                      <button onClick={()=>removeSite(site)} style={{padding:"3px 6px",borderRadius:6,background:"#fecaca",color:"#dc2626",border:"1px solid #f87171",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
                     </>
                   )}
                 </div>
@@ -150,7 +150,7 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
                       <input value={plan.label} onChange={e=>updatePlanLabel(site,idx,e.target.value)} style={{...inp,flex:1,padding:"4px 8px"}} />
                       <span style={{fontSize:11,color:"#6a9a7a"}}>¥</span>
                       <input type="number" value={plan.price} onChange={e=>updatePlanPrice(site,idx,e.target.value)} style={{...inp,width:100,padding:"4px 8px"}} />
-                      <button onClick={()=>removePlan(site,idx)} style={{padding:"3px 6px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
+                      <button onClick={()=>removePlan(site,idx)} style={{padding:"3px 6px",borderRadius:5,background:"#fecaca",color:"#dc2626",border:"1px solid #f87171",cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
                     </div>
                   ))}
                   <div style={{display:"flex",gap:6,marginTop:8}} onClick={()=>setSelSite(site)}>

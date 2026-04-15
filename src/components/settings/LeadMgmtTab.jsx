@@ -181,8 +181,8 @@ export function LeadMgmtTab({ master, save, onLeadsChange }) {
                     <span title="ドラッグして並び替え" style={{cursor:"grab",color:"#c0dece",fontSize:18,flexShrink:0,lineHeight:1,userSelect:"none",paddingRight:2}}>⠿</span>
                     <SourceIconSVG iconKey={sIcon||"home"} size={28}/>
                     <span style={{fontSize:13,color:"#174f35",fontWeight:600,flex:1}}>{sLabel}</span>
-                    <button onClick={()=>startEditSource(idx)} style={{padding:"3px 6px",borderRadius:6,background:"#f0fdf4",color:"#059669",border:"1px solid #86efac",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
-                    <button onClick={()=>removeSource(sLabel)} style={{padding:"3px 6px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
+                    <button onClick={()=>startEditSource(idx)} style={{padding:"3px 6px",borderRadius:6,background:"#bbf7d0",color:"#059669",border:"1px solid #4ade80",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
+                    <button onClick={()=>removeSource(sLabel)} style={{padding:"3px 6px",borderRadius:5,background:"#fecaca",color:"#dc2626",border:"1px solid #f87171",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
                   </>
                 )}
               </div>
@@ -227,8 +227,8 @@ export function LeadMgmtTab({ master, save, onLeadsChange }) {
                 <span title="ドラッグして並び替え" style={{cursor:"grab",color:"#c0dece",fontSize:18,flexShrink:0,lineHeight:1,userSelect:"none",paddingRight:2}}>⠿</span>
                 <div style={{width:14,height:14,borderRadius:"50%",background:s.color,flexShrink:0,boxShadow:"0 1px 3px #0003"}} />
                 <span style={{flex:1,fontSize:13,fontWeight:600,color:"#174f35"}}>{s.label}</span>
-                <button onClick={()=>startEditStatus(idx)} style={{padding:"3px 6px",borderRadius:6,background:"#f0fdf4",color:"#059669",border:"1px solid #86efac",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
-                <button onClick={()=>removeStatus(idx)} style={{padding:"3px 6px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
+                <button onClick={()=>startEditStatus(idx)} style={{padding:"3px 6px",borderRadius:6,background:"#bbf7d0",color:"#059669",border:"1px solid #4ade80",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
+                <button onClick={()=>removeStatus(idx)} style={{padding:"3px 6px",borderRadius:5,background:"#fecaca",color:"#dc2626",border:"1px solid #f87171",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
               </>
             )}
           </div>
@@ -269,8 +269,8 @@ export function LeadMgmtTab({ master, save, onLeadsChange }) {
               ) : (
                 <>
                   <span style={{fontSize:12,color:"#174f35",fontWeight:600,flex:1}}>{m}</span>
-                  <button onClick={()=>{setEditSalesIdx(idx);setEditSalesName(m)}} style={{padding:"3px 6px",borderRadius:6,background:"#f0fdf4",color:"#059669",border:"1px solid #86efac",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
-                  <button onClick={()=>removeSales(m)} style={{padding:"3px 6px",borderRadius:5,background:"#fef2f2",color:"#dc2626",border:"1px solid #fca5a5",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
+                  <button onClick={()=>{setEditSalesIdx(idx);setEditSalesName(m)}} style={{padding:"3px 6px",borderRadius:6,background:"#bbf7d0",color:"#059669",border:"1px solid #4ade80",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="編集"><PencilIcon color="#059669"/></button>
+                  <button onClick={()=>removeSales(m)} style={{padding:"3px 6px",borderRadius:5,background:"#fecaca",color:"#dc2626",border:"1px solid #f87171",cursor:"pointer",fontFamily:"inherit",flexShrink:0,display:"flex",alignItems:"center"}} title="削除"><TrashIcon color="#dc2626"/></button>
                 </>
               )}
             </div>
