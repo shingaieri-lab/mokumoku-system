@@ -176,7 +176,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
                 editNA ? (
                   <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
                     <button onClick={() => setEditNA(false)} style={S.btnCancelXs}>✕</button>
-                    <button onClick={() => { onUpdate({ next_action_date: naDate, next_action_time: naTime, next_action: naMemo }); setEditNA(false); }}
+                    <button onClick={() => { onUpdate({ next_action_date: naDate, next_action_time: naTime, next_action: naMemo, google_task_registered: false }); setEditNA(false); }}
                       style={{ ...S.btnDelXs, background: "#059669" }}>保存</button>
                   </div>
                 ) : (
@@ -231,7 +231,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             onSave={a => {
               const actionWithRecorder = { ...a, recorded_by: currentUser?.name || "" };
               const patch = { actions: [actionWithRecorder, ...(lead.actions || [])] };
-              if (a.nextDate) { patch.next_action_date = a.nextDate; patch.next_action_time = a.nextTime || ""; patch.next_action = a.next || ""; }
+              if (a.nextDate) { patch.next_action_date = a.nextDate; patch.next_action_time = a.nextTime || ""; patch.next_action = a.next || ""; patch.google_task_registered = false; }
               onUpdate(patch);
               setShowAF(false);
             }}
