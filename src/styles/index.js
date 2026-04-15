@@ -71,7 +71,7 @@ export const S = {
   importPanel:{ background:"#ffffff",border:"1px solid #e2f0e8",borderRadius:12,padding:"16px 20px",marginBottom:16 },
   selectedLeadChip: { display:"flex",gap:8,alignItems:"center",flexWrap:"wrap",marginTop:6,padding:"6px 10px",background:"#d8ede1",borderRadius:7,border:"1px solid #c0dece" },
   meetingBar: { display:"flex",alignItems:"center",gap:10,padding:"5px 16px 6px",background:"transparent",borderTop:"1px solid #e8f5ee",flexWrap:"wrap" },
-  btnEditAct: { background:"#f0fdf4",border:"1px solid #86efac",borderRadius:5,cursor:"pointer",fontSize:13,padding:"3px 5px",lineHeight:1,marginLeft:2,color:"#059669",display:"flex",alignItems:"center" },
+  btnEditAct: { background:"none",border:"none",cursor:"pointer",padding:"4px",lineHeight:1,marginLeft:2,color:"#059669",display:"flex",alignItems:"center" },
   leadQuick:  { display:"flex",alignItems:"center",gap:10,padding:"5px 16px 7px",background:"transparent",borderTop:"1px solid #e8f5ee",flexWrap:"wrap" },
   nextActInline: { display:"flex",alignItems:"center",fontSize:12.5,color:"#059669",fontWeight:600,flex:1,minWidth:0,overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis" },
   zohoLinkSmall: { background:"#e0f2fe",color:"#0284c7",border:"1px solid #7dd3fc",borderRadius:5,padding:"3px 10px",fontSize:12,textDecoration:"none",whiteSpace:"nowrap",flexShrink:0 },

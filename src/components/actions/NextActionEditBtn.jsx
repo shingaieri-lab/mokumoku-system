@@ -80,8 +80,8 @@ export function NextActionEditBtn({ nad, lead, onUpdate, currentUser, compact = 
   return (
     <div style={{ display: "flex", gap: 4, marginLeft: 4, flexShrink: 0 }}>
       {!compact && onEdit && (
-        <button onClick={onEdit} style={S.btnIconSm} title="編集">
-          <PencilIcon size={11} color="#059669" />
+        <button onClick={onEdit} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="編集">
+          <PencilIcon size={16} color="#059669" />
         </button>
       )}
       {(currentUser?.gmailClientId || window.__appData?.aiConfig?.gmailClientId) && nad && (
@@ -91,8 +91,8 @@ export function NextActionEditBtn({ nad, lead, onUpdate, currentUser, compact = 
       )}
       {!compact && (
         <button onClick={() => onUpdate({ next_action: "", next_action_date: "", next_action_time: "" })}
-          style={{ ...S.btnIconSm, background: "#fef2f2", border: "1px solid #fca5a5" }} title="削除">
-          <TrashIcon size={11} color="#ef4444" />
+          style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="削除">
+          <TrashIcon size={16} color="#ef4444" />
         </button>
       )}
     </div>

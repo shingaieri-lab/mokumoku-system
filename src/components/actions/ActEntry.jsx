@@ -24,10 +24,10 @@ export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushin
               {zohoPushing ? "同期中" : "🔗"}
             </button>
           )}
-          {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集"><PencilIcon color="#059669"/></button>}
+          {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集"><PencilIcon size={16} color="#059669"/></button>}
           {!readOnly && (
-            <button onClick={onDelete} style={{ ...S.btnEditAct, background:"#fef2f2", border:"1px solid #fca5a5" }} title="削除">
-              <TrashIcon color="#ef4444"/>
+            <button onClick={onDelete} style={{ ...S.btnEditAct, color:"#ef4444" }} title="削除">
+              <TrashIcon size={16} color="#ef4444"/>
             </button>
           )}
         </div>
