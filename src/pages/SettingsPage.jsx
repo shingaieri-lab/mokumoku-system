@@ -84,8 +84,15 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
     save({ ...master, portalTypes: { ...master.portalTypes, [site]: plans } });
   };
 
-  const tabBtn = (key, label) => (
-    <button onClick={()=>setTab(key)} style={{padding:"7px 18px",borderRadius:"8px 8px 0 0",border:"1px solid #d8ede1",borderBottom: tab===key ? "1px solid #fff" : "1px solid #d8ede1", background: tab===key ? "#fff" : "#f0f5f2", color: tab===key ? "#174f35" : "#6a9a7a", fontWeight: tab===key ? 700 : 400, fontSize:12, cursor:"pointer", fontFamily:"inherit", marginRight:4, marginBottom:-1}}>
+  const menuItem = (key, label) => (
+    <button key={key} onClick={() => setTab(key)} style={{
+      display:"block", width:"100%", textAlign:"left",
+      padding:"10px 20px", border:"none", borderLeft: tab===key ? "3px solid #10b981" : "3px solid transparent",
+      background: tab===key ? "#e8f5ef" : "none",
+      color: tab===key ? "#059669" : "#6a9a7a",
+      fontWeight: tab===key ? 700 : 400,
+      fontSize:13, cursor:"pointer", fontFamily:"inherit",
+    }}>
       {label}
     </button>
   );
@@ -93,19 +100,25 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
   const addRow = { display:"flex", gap:8, marginBottom:12 };
 
   return (
-    <div className="settings-page" style={{padding:"24px 28px", width:"60vw", maxWidth:"100%"}}>
-      <div style={{fontSize:17,fontWeight:900,color:"#174f35",marginBottom:4}}>⚙️ 設定</div>
-      <div style={{fontSize:12,color:"#6a9a7a",marginBottom:20}}>{currentUser?.role === "admin" ? "リード管理・ポータルサイト・営業担当・API設定・アカウントを管理できます。" : "API設定・アカウントを管理できます。"}</div>
-      {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
-      <div className="settings-tabs" style={{display:"flex", flexWrap:"wrap", gap:0, marginBottom:0}}>
-        {currentUser?.role==="admin" && tabBtn("leadmgmt","📋 リード管理")}
-        {currentUser?.role==="admin" && tabBtn("portal","🏢 ポータルサイト")}
-        {tabBtn("apikey","🔑 API設定")}
-        {currentUser?.role==="admin" && tabBtn("zoho","🔗 Zoho CRM連携")}
-        {currentUser?.role==="admin" && tabBtn("accounts","👥 アカウント管理（管理者）")}
-        {tabBtn("myaccount","👤 アカウント管理")}
+    <div className="settings-page" style={{display:"flex", height:"100%", overflow:"hidden"}}>
+      {/* 左サイドバー */}
+      <div style={{width:200, flexShrink:0, borderRight:"1px solid #d8ede1", background:"#f8fbf9", overflowY:"auto", display:"flex", flexDirection:"column"}}>
+        <div style={{padding:"24px 20px 16px", fontSize:16, fontWeight:900, color:"#174f35"}}>⚙️ 設定</div>
+        <div style={{fontSize:11, color:"#6a9a7a", padding:"0 20px 16px", lineHeight:1.5}}>
+          {currentUser?.role === "admin" ? "リード管理・ポータルサイト・API設定・アカウントを管理できます。" : "API設定・アカウントを管理できます。"}
+        </div>
+        <nav style={{flex:1}}>
+          {currentUser?.role==="admin" && menuItem("leadmgmt","📋 リード管理")}
+          {currentUser?.role==="admin" && menuItem("portal","🏢 ポータルサイト")}
+          {menuItem("apikey","🔑 API設定")}
+          {currentUser?.role==="admin" && menuItem("zoho","🔗 Zoho CRM連携")}
+          {currentUser?.role==="admin" && menuItem("accounts","👥 アカウント管理（管理者）")}
+          {menuItem("myaccount","👤 アカウント管理")}
+        </nav>
       </div>
-      <div style={{background:"#fff",borderRadius:"0 8px 8px 8px",border:"1px solid #d8ede1",padding:"20px"}}>
+      {/* 右コンテンツ */}
+      <div style={{flex:1, overflowY:"auto", padding:"24px 28px"}}>
+        {msg && <div style={{background:"#d1fae5",color:"#059669",border:"1px solid #6ee7b7",borderRadius:8,padding:"8px 16px",marginBottom:16,fontSize:12,fontWeight:700}}>{msg}</div>}
         {tab === "portal" && (
           <div>
             <div style={{fontSize:12,fontWeight:700,color:"#174f35",marginBottom:8}}>ポータルサイト一覧</div>
@@ -225,3 +238,4 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
     </div>
   );
 }
+
