@@ -79,23 +79,6 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
               </select>
           }
 
-          {/* 編集・削除ボタン */}
-          {!readOnly && <div style={{display:"flex", gap:3, alignItems:"center", marginLeft:4}}>
-            <button onClick={e=>{e.stopPropagation();onEdit();}}
-              style={{background:"none",border:"none",cursor:"pointer",padding:"4px",display:"flex",alignItems:"center"}}
-              title="編集"><PencilIcon size={18} color="#059669"/></button>
-            {confirmDelete ? (
-              <div style={{display:"flex", gap:3, alignItems:"center"}} onClick={e=>e.stopPropagation()}>
-                <span style={{fontSize:10,color:"#ef4444"}}>削除?</span>
-                <button onClick={e=>{e.stopPropagation();onDelete();}} style={S.btnDelXs}>削除</button>
-                <button onClick={e=>{e.stopPropagation();setConfirmDelete(false);}} style={S.btnCancelXs}>✕</button>
-              </div>
-            ) : (
-              <button onClick={e=>{e.stopPropagation();setConfirmDelete(true);}}
-                style={{background:"none",border:"none",cursor:"pointer",padding:"4px",display:"flex",alignItems:"center"}}
-                title="削除"><TrashIcon size={18} color="#ef4444"/></button>
-            )}
-          </div>}
         </div>
       </div>
 
@@ -127,7 +110,6 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
                 {soon && !today && !overdue && <span style={{fontSize:11,background:"#f97316",color:"#fff",borderRadius:4,padding:"1px 6px", marginRight:6,fontWeight:700}}>まもなく</span>}
                 <span style={{color:dateColor, marginRight:4}}>→</span>
                 {nad && <span style={{fontWeight:700, marginRight:4,color:dateColor}}>{nad}{lead.next_action_time ? " "+lead.next_action_time : ""}</span>}
-                {lead.next_action && <span style={{color:"#174f35",fontSize:12}}>{lead.next_action}</span>}
               </div>
             )}
             {(nad || lead.next_action) && <NextActionEditBtn nad={nad} lead={lead} onUpdate={onUpdate} currentUser={currentUser} compact />}
