@@ -112,8 +112,8 @@ export function NextActionEditBtn({ nad, lead, onUpdate, currentUser }) {
           title="GoogleカレンダーにTODO作成">{calSaved ? "✅" : "☑️"}</button>
       )}
       <button onClick={() => onUpdate({ next_action: "", next_action_date: "", next_action_time: "" })}
-        style={{ ...S.btnIconSm, background: "#fecaca", border: "1px solid #f87171" }} title="削除">
-        <TrashIcon size={11} color="#ef4444" />
+        style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="削除">
+        <TrashIcon size={16} color="#ef4444" />
       </button>
     </div>
   );
