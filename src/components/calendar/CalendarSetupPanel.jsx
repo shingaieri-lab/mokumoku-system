@@ -11,12 +11,13 @@ export function CalendarSetupPanel({ editCfg, setEditCfg, onSave, onClose, membe
       <div style={{fontSize:13,fontWeight:700,color:"#d97706",marginBottom:12}}>⚙️ Google Calendar API 設定</div>
 
       <div style={{background:"#fff",border:"1px solid #fde68a",borderRadius:8,padding:"12px 14px",marginBottom:14,fontSize:12,color:"#92400e",lineHeight:1.8}}>
-        <div style={{fontWeight:700,marginBottom:6}}>📋 設定手順</div>
+        <div style={{fontWeight:700,marginBottom:6}}>📋 管理者の設定手順</div>
         <div>① <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer" style={{color:"#0284c7"}}>Google Cloud Console</a> でプロジェクトを作成</div>
         <div>② 「APIとサービス」→「ライブラリ」→ <b>Google Calendar API</b> を有効化</div>
-        <div>③ 「認証情報」→「APIキーを作成」→ APIキーをコピー</div>
-        <div>④ 各担当者のGoogleカレンダーを開き「設定」→「カレンダーのID」をコピー<br/>　　（例：<code style={{background:"#fef9c3",padding:"1px 4px",borderRadius:3}}>abcdef@gmail.com</code> または <code style={{background:"#fef9c3",padding:"1px 4px",borderRadius:3}}>xxx@group.calendar.google.com</code>）</div>
-        <div>⑤ カレンダーの「共有設定」で <b>「一般公開して誰でも閲覧できるようにする」</b> をON（または「予定の詳細を表示」を許可）</div>
+        <div>③ 「認証情報」→「APIキーを作成」→ APIキーをコピーして下の欄に入力</div>
+        <div style={{marginTop:8,fontWeight:700}}>📋 候補日の対象メンバーがやること</div>
+        <div>④ Googleカレンダー →「設定と共有」→「カレンダーの統合」→ <b>カレンダーID</b> をコピーして管理者に伝える<br/>　　（例：<code style={{background:"#fef9c3",padding:"1px 4px",borderRadius:3}}>tanaka@gmail.com</code> または <code style={{background:"#fef9c3",padding:"1px 4px",borderRadius:3}}>xxx@group.calendar.google.com</code>）</div>
+        <div>⑤ Googleカレンダー →「設定と共有」→「アクセス権限」→ <b>「[会社名] で利用できるようにする」</b> にチェック → <b>「予定の表示（時間枠のみ、詳細は非表示）」</b> を選択<br/>　　※ 一般公開は不要です。同じ Google Workspace 内であればこの設定だけでOKです。</div>
       </div>
 
       <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:8,padding:"12px 14px",marginBottom:14,fontSize:12,color:"#1e40af",lineHeight:1.9}}>
