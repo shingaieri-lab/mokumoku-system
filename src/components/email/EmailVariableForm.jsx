@@ -1,6 +1,7 @@
 // メールテンプレートの差し込み変数入力フォーム
 import { LeadCombobox } from '../leads/LeadCombobox.jsx';
 import { getSalesMembers } from '../../lib/master.js';
+import { CalendarNavIcon } from '../ui/Icons.jsx';
 
 const inpStyle = {width:"100%",padding:"7px 10px",borderRadius:7,border:"1px solid #c0dece",fontSize:12,outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#f8fffe"};
 const lblStyle = {fontSize:11,color:"#6a9a7a",display:"block",marginBottom:3};
@@ -74,7 +75,7 @@ export function EmailVariableForm({ leads, selLead, onLeadChange, vars, setVars,
       )}
       {showSlots && (
         <div>
-          <label style={lblStyle}>{"{{"+"候補日時"+"}}"} {candidateSlots.length > 0 && <span style={{color:"#10b981",fontSize:10,fontWeight:600}}>📅 候補日ツールから自動入力済</span>}</label>
+          <label style={lblStyle}>{"{{"+"候補日時"+"}}"} {candidateSlots.length > 0 && <span style={{color:"#10b981",fontSize:10,fontWeight:600,display:"inline-flex",alignItems:"center",gap:3}}><CalendarNavIcon size={10} color="#10b981" /> 候補日ツールから自動入力済</span>}</label>
           <textarea value={vars.候補日時||""} onChange={e=>setVars(v=>({...v,候補日時:e.target.value}))} rows={4} placeholder={"例：2026年3月20日（金）10:00〜11:00"} style={{...inpStyle,resize:"vertical",lineHeight:1.6}} />
         </div>
       )}

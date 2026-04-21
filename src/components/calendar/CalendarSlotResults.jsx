@@ -1,5 +1,6 @@
 // 商談候補日検索結果UI（空き時間スロット一覧・候補日選択）
 import { LeadCombobox } from '../leads/LeadCombobox.jsx';
+import { CheckCircleIcon, MailIcon, CalendarNavIcon, CheckIcon } from '../ui/Icons.jsx';
 
 const S = {
   card: { background:"#ffffff", border:"1px solid #e2f0e8", borderRadius:14, padding:"18px 20px", marginBottom:14, boxShadow:"0 2px 10px #0569690a" },
@@ -21,8 +22,8 @@ export function CalendarSlotResults({
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {candidateSlots.length > 0 && (
-            <span style={{fontSize:12,color:"#059669",fontWeight:700,background:"#ecfdf5",border:"1px solid #10b98144",borderRadius:8,padding:"4px 10px"}}>
-              ✅ {candidateSlots.length}件選択中
+            <span style={{fontSize:12,color:"#059669",fontWeight:700,background:"#ecfdf5",border:"1px solid #10b98144",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:4}}>
+              <CheckCircleIcon size={12} color="#059669" /> {candidateSlots.length}件選択中
             </span>
           )}
           <button onClick={()=>onSlotsChange([])} disabled={candidateSlots.length===0}
@@ -30,12 +31,12 @@ export function CalendarSlotResults({
             選択をクリア
           </button>
           <button onClick={()=>onGoEmail(emailLeadId)} disabled={candidateSlots.length===0}
-            style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",background:candidateSlots.length===0?"#d1d5db":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",fontWeight:700}}>
-            📧 メールに使う
+            style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",background:candidateSlots.length===0?"#d1d5db":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <MailIcon size={12} color="#fff" /> メールに使う
           </button>
           <button onClick={onShowCalReg} disabled={candidateSlots.length===0}
-            style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",background:candidateSlots.length===0?"#d1d5db":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",fontWeight:700}}>
-            📅 カレンダーに登録
+            style={{fontSize:12,padding:"6px 14px",borderRadius:8,border:"none",background:candidateSlots.length===0?"#d1d5db":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",cursor:candidateSlots.length===0?"default":"pointer",fontFamily:"inherit",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <CalendarNavIcon size={12} color="#fff" /> カレンダーに登録
           </button>
         </div>
       </div>
@@ -46,12 +47,12 @@ export function CalendarSlotResults({
             <LeadCombobox leads={leads} value={emailLeadId} onChange={setEmailLeadId}
               placeholder="会社名・担当者名で検索" inputStyle={{...S.inp,padding:"5px 10px",fontSize:12}} darkMode={false} />
           </div>
-          {emailLeadId && <span style={{fontSize:11,color:"#059669",fontWeight:700}}>✅ {leads.find(l=>l.id===emailLeadId)?.company||""}</span>}
+          {emailLeadId && <span style={{fontSize:11,color:"#059669",fontWeight:700,display:"flex",alignItems:"center",gap:3}}><CheckCircleIcon size={11} color="#059669" /> {leads.find(l=>l.id===emailLeadId)?.company||""}</span>}
         </div>
       )}
       {candidateSlots.length === 0 && (
         <div style={{fontSize:11,color:"#6b7280",background:"#f9fafb",borderRadius:7,padding:"6px 10px",marginBottom:10,border:"1px dashed #d1d5db"}}>
-          日時ボタンをクリックして候補日を選択（最大3つ）→「📧 メールに使う」でメールテンプレートに反映
+          日時ボタンをクリックして候補日を選択（最大3つ）→「メールに使う」でメールテンプレートに反映
         </div>
       )}
       {slots.length === 0 ? (
@@ -77,7 +78,7 @@ export function CalendarSlotResults({
                         color:selected?"#fff":"#059669",
                         opacity:maxed?0.4:1,
                         transition:"all 0.15s"}}>
-                      {selected ? "✓ " : ""}{slot.start}〜{slot.end}{selectedMembers.length > 1 && slot.members && slot.members.length > 0 ? `（${slot.members.join("・")}）` : ""}
+                      {selected && <CheckIcon size={11} color="#fff" />}{slot.start}〜{slot.end}{selectedMembers.length > 1 && slot.members && slot.members.length > 0 ? `（${slot.members.join("・")}）` : ""}
                     </button>
                   );
                 })}

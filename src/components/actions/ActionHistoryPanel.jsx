@@ -81,7 +81,19 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
   };
 
   const copyDealInfo = () => {
-    const meetingDateTime = [lead.meeting_date, lead.meeting_time].filter(Boolean).join(' ');
+    // 半角数字を全角数字に変換
+    const toZenkaku = (str) => String(str).replace(/[0-9]/g, c => String.fromCharCode(c.charCodeAt(0) + 0xFEE0));
+    let meetingDateTime = '';
+    if (lead.meeting_date) {
+      const d = new Date(lead.meeting_date + 'T00:00:00'); // JST基準でパース
+      const yy = toZenkaku(String(d.getFullYear()).slice(2));
+      const mm = toZenkaku(String(d.getMonth() + 1).padStart(2, '0'));
+      const dd = toZenkaku(String(d.getDate()).padStart(2, '0'));
+      const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+      // HH:MM → ＨＨ：ＭＭ（コロンも全角）
+      const timeStr = lead.meeting_time ? toZenkaku(lead.meeting_time).replace(':', '：') : '';
+      meetingDateTime = `${yy}/${mm}/${dd}（${dow}）${timeStr ? timeStr + '～' : ''}`;
+    }
     const text = `商談担当：${lead.sales_member ? lead.sales_member + 'さん' : ''}\n商談日時：${meetingDateTime}\n会社名：${lead.company || ''}\nHP：${lead.hp_url || ''}\nzoho：${lead.zoho_url || ''}\nIS確度：${lead.is_accuracy || ''}`;
     navigator.clipboard?.writeText(text);
     setDealCopied(true);
@@ -118,7 +130,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             {!readOnly && lead.status === "商談確定" && lead.zoho_deal_id && (
               <span style={{ fontSize: 11, color: "#0ea5e9", fontWeight: 700, padding: "3px 8px", background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 6, display:"flex", alignItems:"center", gap:3 }}><CheckCircleIcon size={11} color="#0ea5e9" /> Zoho商談済</span>
             )}
-            <button onClick={copyDealInfo} style={{ background: dealCopied ? "#10b981" : "none", border: `1px solid ${dealCopied ? "#10b981" : "#10b98166"}`, borderRadius: 6, cursor: "pointer", color: dealCopied ? "#fff" : "#059669", fontSize: 12, padding: "2px 8px", lineHeight: 1.4, fontWeight: 600, transition: "all 0.2s" }}>
+            <button onClick={copyDealInfo} style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", background: dealCopied ? "#10b981" : "none", border: `1px solid ${dealCopied ? "#10b981" : "#10b98166"}`, borderRadius: 6, cursor: "pointer", color: dealCopied ? "#fff" : "#059669", fontSize: 12, padding: "2px 8px", lineHeight: 1.4, fontWeight: 600, transition: "all 0.2s" }}>
               {dealCopied ? <><CheckIcon size={12} color={dealCopied ? "#fff" : "#059669"} /> コピー済み</> : <><ClipboardIcon size={12} color="#059669" /> 商談共有用</>}
             </button>
             {!readOnly && <button onClick={onEdit} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="編集"><PencilIcon size={18} color="#059669" /></button>}
