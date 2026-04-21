@@ -1,6 +1,7 @@
 // Googleカレンダー登録モーダル（候補日の一括登録）
 import { useState, useEffect } from 'react';
 import { LeadCombobox } from '../leads/LeadCombobox.jsx';
+import { CalendarNavIcon, CheckCircleIcon, XCircleIcon } from '../ui/Icons.jsx';
 import { acquireCalendarToken, isTokenValid } from '../../lib/oauth.js';
 import { loadGCalConfig } from '../../lib/gcal.js';
 
@@ -80,7 +81,7 @@ export function CalendarRegModal({ show, onClose, initialLeadId, candidateSlots,
     <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999}}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div style={{background:"#fff",borderRadius:16,padding:28,width:500,maxWidth:"95vw",boxShadow:"0 8px 40px rgba(0,0,0,0.2)",maxHeight:"85vh",overflowY:"auto"}}>
-        <div style={{fontSize:16,fontWeight:800,color:"#174f35",marginBottom:18}}>📅 Googleカレンダーに登録</div>
+        <div style={{fontSize:16,fontWeight:800,color:"#174f35",marginBottom:18,display:"flex",alignItems:"center",gap:7}}><CalendarNavIcon size={18} color="#174f35" /> Googleカレンダーに登録</div>
 
         <div style={{marginBottom:12}}>
           <label style={lbl}>会社名<span style={{fontWeight:400,color:"#6b7280",fontSize:11,marginLeft:6}}>（{"{{会社名}}"} に代入されます）</span></label>
@@ -106,7 +107,7 @@ export function CalendarRegModal({ show, onClose, initialLeadId, candidateSlots,
           <label style={lbl}>登録する候補日（{candidateSlots.length}件）</label>
           {candidateSlots.map((slot,i) => (
             <div key={i} style={{fontSize:12,background:"#ecfdf5",border:"1px solid #10b98144",borderRadius:8,padding:"7px 12px",marginBottom:6,color:"#174f35",display:"flex",alignItems:"center",gap:8}}>
-              <span>📅 {slot.date}（{["日","月","火","水","木","金","土"][new Date(slot.date+"T00:00:00").getDay()]}）{slot.start}〜{slot.end}</span>
+              <span style={{display:"flex",alignItems:"center",gap:5}}><CalendarNavIcon size={12} color="#174f35" /> {slot.date}（{["日","月","火","水","木","金","土"][new Date(slot.date+"T00:00:00").getDay()]}）{slot.start}〜{slot.end}</span>
               {slot.members?.length > 0 && <span style={{color:"#6a9a7a",fontSize:11}}>担当：{slot.members.join("・")}</span>}
             </div>
           ))}
@@ -119,7 +120,7 @@ export function CalendarRegModal({ show, onClose, initialLeadId, candidateSlots,
               <div key={i} style={{fontSize:12,borderRadius:8,padding:"5px 10px",marginBottom:4,
                 background:r.success?"#ecfdf5":"#fef2f2", border:`1px solid ${r.success?"#10b98144":"#fca5a544"}`,
                 color:r.success?"#065f46":"#b91c1c"}}>
-                {r.success ? "✅" : "❌"} {r.slot.date} {r.slot.start}〜{r.slot.end}
+                {r.success ? <CheckCircleIcon size={12} color="#065f46" /> : <XCircleIcon size={12} color="#b91c1c" />} {r.slot.date} {r.slot.start}〜{r.slot.end}
                 {r.member && <span style={{marginLeft:6,fontWeight:600}}>{r.member}</span>}
                 ：{r.success ? "登録完了" : r.error}
               </div>
@@ -131,7 +132,7 @@ export function CalendarRegModal({ show, onClose, initialLeadId, candidateSlots,
           <button onClick={onClose} style={btnSec}>閉じる</button>
           <button onClick={registerToCalendar} disabled={calRegLoading || !resolvedCalTitle.trim()}
             style={{...btnP, opacity:(calRegLoading||!resolvedCalTitle.trim())?0.6:1, cursor:(calRegLoading||!resolvedCalTitle.trim())?"not-allowed":"pointer"}}>
-            {calRegLoading ? "⏳ 登録中..." : calRegResults.length > 0 && calRegResults.every(r=>r.success) ? "✅ 登録済み（再登録）" : "📅 カレンダーに登録する"}
+            {calRegLoading ? "登録中..." : calRegResults.length > 0 && calRegResults.every(r=>r.success) ? <><CheckCircleIcon size={13} color="#fff" /> 登録済み（再登録）</> : <><CalendarNavIcon size={13} color="#fff" /> カレンダーに登録する</>}
           </button>
         </div>
       </div>

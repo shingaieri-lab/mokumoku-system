@@ -1,6 +1,7 @@
 // 商談候補日検索ページ（Google Calendar freeBusy API・候補日選択・カレンダー登録）
 import { useState, useMemo } from 'react';
 import { Header } from '../components/ui/Layout.jsx';
+import { CalendarNavIcon, GearIcon } from '../components/ui/Icons.jsx';
 import { loadGCalConfig, saveGCalConfig } from '../lib/gcal.js';
 import { acquireCalendarToken, isTokenValid } from '../lib/oauth.js';
 import { loadAccounts } from '../lib/accounts.js';
@@ -153,8 +154,8 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
 
   return (
     <div className="cal-page" style={{...S.page, width:"60vw", maxWidth:"100%"}}>
-      <Header title="📅 商談候補日検索" sub="Google Calendarの空き時間を自動検索します">
-        <button onClick={()=>{ setEditCfg(loadGCalConfig()); setShowSetup(v=>!v); }} style={{...S.btnSec, fontSize:12}}>⚙️ カレンダー設定</button>
+      <Header title={<span style={{display:"flex",alignItems:"center",gap:7}}><CalendarNavIcon size={18} color="#174f35" /> 商談候補日検索</span>} sub="Google Calendarの空き時間を自動検索します">
+        <button onClick={()=>{ setEditCfg(loadGCalConfig()); setShowSetup(v=>!v); }} style={{...S.btnSec, fontSize:12, display:"flex", alignItems:"center", gap:4}}><GearIcon size={13} color="#6a9a7a" /> カレンダー設定</button>
       </Header>
       {showSetup && (
         <CalendarSetupPanel editCfg={editCfg} setEditCfg={setEditCfg}
@@ -163,7 +164,7 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
       )}
       {!isConfigured && !showSetup && (
         <div style={{...S.card,textAlign:"center",padding:"32px",marginBottom:16}}>
-          <div style={{fontSize:32,marginBottom:10}}>⚙️</div>
+          <div style={{fontSize:32,marginBottom:10,display:"flex",justifyContent:"center"}}><GearIcon size={36} color="#6a9a7a" /></div>
           <div style={{fontSize:14,color:"#2d6b4a",marginBottom:8}}>まずカレンダーAPIの設定が必要です</div>
           <button onClick={()=>setShowSetup(true)} style={S.btnP}>設定を開く</button>
         </div>

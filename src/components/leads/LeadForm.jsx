@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { S } from '../../styles/index.js';
 import { Field, Row2 } from '../ui/Layout.jsx';
 import { TODAY } from '../../lib/holidays.js';
+import { CalendarNavIcon } from '../ui/Icons.jsx';
 import { normalizeDate } from '../../lib/date.js';
 import { uid } from '../../constants/index.js';
 import {
@@ -132,7 +133,7 @@ export function LeadForm({ initial, onSave, onClose }) {
 
           {(d.status === "商談確定" || d.status === "日程調整中") && (
             <div style={{marginTop:12, padding:"12px 14px", background:"#d1fae522", border:"1px solid #10b98144", borderRadius:8}}>
-              <div style={{fontSize:12, fontWeight:700, color:"#10b981", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.06em"}}>🤝 商談情報</div>
+              <div style={{fontSize:12, fontWeight:700, color:"#10b981", marginBottom:10, textTransform:"uppercase", letterSpacing:"0.06em", display:"flex", alignItems:"center", gap:5}}><CalendarNavIcon size={13} color="#10b981" /> 商談情報</div>
               <Row2>
                 <Field label="商談日" type="date" value={d.meeting_date||""} onChange={v => set("meeting_date", v)} />
                 <div>

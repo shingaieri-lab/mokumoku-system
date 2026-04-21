@@ -3,6 +3,7 @@
 
 import { SVGBarChart } from './SVGBarChart.jsx';
 import { SVGLineChart } from './SVGLineChart.jsx';
+import { TrendIcon, InboxIcon, ClipboardIcon } from '../ui/Icons.jsx';
 import { getSources, getSourceColor } from '../../lib/master.js';
 
 // 日付文字列を YYYY-MM 形式に正規化する
@@ -34,9 +35,9 @@ export function Trend({ leads }) {
 
   if (data.length === 0) return (
     <div style={{ padding: "24px 28px" }}>
-      <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", marginBottom: 16 }}>📈 月別推移レポート</div>
+      <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", marginBottom: 16, display:"flex", alignItems:"center", gap:8 }}><TrendIcon size={20} color="#174f35" /> 月別推移レポート</div>
       <div style={{ textAlign: "center", padding: 60, color: "#6a9a7a", background: "#fff", borderRadius: 14, border: "1px solid #e2f0e8" }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
+        <div style={{ fontSize: 36, marginBottom: 12, display:"flex", justifyContent:"center" }}><TrendIcon size={40} color="#6a9a7a" /></div>
         <div style={{ fontSize: 14, fontWeight: 600 }}>まだデータがありません</div>
         <div style={{ fontSize: 12, marginTop: 6 }}>リードを登録すると月別推移が表示されます</div>
       </div>
@@ -53,19 +54,19 @@ export function Trend({ leads }) {
 
   return (
     <div className="page-pad" style={{ padding: "24px 28px" }}>
-      <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", marginBottom: 20 }}>📈 月別推移レポート</div>
+      <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", marginBottom: 20, display:"flex", alignItems:"center", gap:8 }}><TrendIcon size={20} color="#174f35" /> 月別推移レポート</div>
       <div className="two-col trend-charts" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
         <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #e2f0e8" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12 }}>📊 反響数・商談数・MQL数</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12, display:"flex", alignItems:"center", gap:5 }}><InboxIcon size={14} color="#174f35" /> 反響数・商談数・MQL数</div>
           <SVGBarChart data={data} keys={["反響数", "商談数", "MQL数"]} colors={{ "反響数": "#10b981", "商談数": "#6366f1", "MQL数": "#ec4899" }} height={200} />
         </div>
         <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #e2f0e8" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12 }}>📉 流入元別推移</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12, display:"flex", alignItems:"center", gap:5 }}><TrendIcon size={14} color="#174f35" /> 流入元別推移</div>
           <SVGLineChart data={data} keys={sources} colors={srcColors} height={200} />
         </div>
       </div>
       <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #e2f0e8", overflowX: "auto" }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12 }}>📋 月別詳細データ</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12, display:"flex", alignItems:"center", gap:5 }}><ClipboardIcon size={14} color="#174f35" /> 月別詳細データ</div>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: "#f0f5f2" }}>
