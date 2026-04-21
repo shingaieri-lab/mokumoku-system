@@ -1,6 +1,6 @@
 // ナビゲーションコンポーネント（デスクトップ：左サイドバー / モバイル：下部タブバー）
 import { useState } from 'react';
-import { LeafIcon, DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon } from '../ui/Icons.jsx';
+import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon } from '../ui/Icons.jsx';
 
 const NAV_ITEMS = [
   { id: "dashboard", Icon: DashboardIcon,   label: "ダッシュボード" },
@@ -59,7 +59,7 @@ export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogou
 
   return (
     <nav style={{ width:120, background:"#134e3a", display:"flex", flexDirection:"column", alignItems:"center", padding:"14px 0 12px", flexShrink:0, zIndex:10 }}>
-      <div style={{ marginBottom:12, lineHeight:1 }}><LeafIcon size={22} color="#6ee7b7" /></div>
+      <div style={{ marginBottom:12, lineHeight:1 }}><img src="/mokumoku.png" alt="もくもくさん" style={{ width:60, height:60, objectFit:"contain", display:"block" }} /></div>
       <div style={{ width:36, height:1, background:"#ffffff22", marginBottom:8 }} />
       <div style={{ display:"flex", flexDirection:"column", gap:1, width:"100%", alignItems:"center", flex:1 }}>
         {NAV_ITEMS.map(item => (
