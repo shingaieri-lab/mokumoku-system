@@ -1,14 +1,22 @@
 // アクション履歴の1件表示コンポーネント
 import { S } from '../../styles/index.js';
-import { PencilIcon, TrashIcon } from '../ui/Icons.jsx';
+import { PencilIcon, TrashIcon, PhoneIcon, MailIcon, ChatIcon, FileTextIcon, ExternalLinkIcon } from '../ui/Icons.jsx';
 import { at } from '../../constants/index.js';
 import { USER_COLORS } from '../../lib/accounts.js';
 
+const ACTION_ICON_MAP = {
+  call:  PhoneIcon,
+  email: MailIcon,
+  sms:   ChatIcon,
+  other: FileTextIcon,
+};
+
 export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushing }) {
   const t = at(a.type);
+  const TypeIcon = ACTION_ICON_MAP[t.v] || PhoneIcon;
   return (
     <div style={{ ...S.actEntry, borderLeft: `3px solid ${t.color}` }}>
-      <span style={{ fontSize:15, flexShrink:0 }}>{t.icon}</span>
+      <span style={{ flexShrink:0, display:"flex", alignItems:"center" }}><TypeIcon size={15} color={t.color} /></span>
       <div style={{ flex:1 }}>
         <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap", marginBottom:2 }}>
           <span style={{ fontSize:11, fontWeight:700, color:t.color }}>{t.label}</span>
@@ -20,8 +28,8 @@ export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushin
           })()}
           {!readOnly && onPushZoho && (
             <button onClick={onPushZoho} disabled={zohoPushing} title="Zohoに同期"
-              style={{ ...S.btnEditAct, background: zohoPushing ? "#f0f9ff" : "#e0f2fe", border:"1px solid #7dd3fc", color:"#0284c7", fontSize:10, padding:"1px 6px", borderRadius:4, cursor: zohoPushing ? "default" : "pointer" }}>
-              {zohoPushing ? "同期中" : "🔗"}
+              style={{ ...S.btnEditAct, display:"flex", alignItems:"center", gap:3, background: zohoPushing ? "#f0f9ff" : "#e0f2fe", border:"1px solid #7dd3fc", color:"#0284c7", fontSize:10, padding:"1px 6px", borderRadius:4, cursor: zohoPushing ? "default" : "pointer" }}>
+              {zohoPushing ? "同期中" : <><ExternalLinkIcon size={12} color="#0284c7" /> Zoho</>}
             </button>
           )}
           {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集"><PencilIcon size={18} color="#059669"/></button>}
@@ -39,7 +47,9 @@ export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushin
         )}
         {a.talkPoints?.length > 0 && (
           <div style={{ marginTop:5, background:"#f0f9f5", borderRadius:6, padding:"6px 10px" }}>
-            <div style={{ fontSize:10, color:"#059669", fontWeight:700, marginBottom:4 }}>📞 次回架電トークポイント</div>
+            <div style={{ fontSize:10, color:"#059669", fontWeight:700, marginBottom:4, display:"flex", alignItems:"center", gap:4 }}>
+              <PhoneIcon size={11} color="#059669" /> 次回架電トークポイント
+            </div>
             {a.talkPoints.map((p, i) => (
               <div key={i} style={{ display:"flex", gap:6, alignItems:"flex-start", marginBottom:3 }}>
                 <span style={{ background:"#059669", color:"#fff", borderRadius:3, padding:"0px 5px", fontSize:10, fontWeight:700, flexShrink:0, lineHeight:"16px" }}>{i+1}</span>

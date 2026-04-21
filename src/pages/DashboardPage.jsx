@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { S } from '../styles/index.js';
 import { SourceIconSVG } from '../components/ui/SourceIconSVG.jsx';
 import { TODAY, THIS_MONTH } from '../lib/holidays.js';
+import { InboxIcon, CalendarNavIcon, BookIcon, FlameIcon, SparkleIcon, CheckCircleIcon } from '../components/ui/Icons.jsx';
 import {
   getSources, getStatuses, getStatusColor, getSourceColor, getSourceIcon,
   getPortalSites, getPortalPrice,
@@ -44,10 +45,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   const overdueActions = leads.filter(l => l.next_action_date && l.next_action_date < TODAY && l.is_member === currentUser?.name);
 
   const kpiItems = [
-    { icon:"📥", label:"総反響数",   value:fl.length+"件",               color:"#10b981", bg:"linear-gradient(135deg,#0ecf8a,#059669)", sub:`MQL ${fl.filter(l=>l.mql==="MQL").length}件 (${rate(fl.filter(l=>l.mql==="MQL").length, fl.length)}) / 有効リード ${validLeads.length}件`, filter:{ month } },
-    { icon:"📅", label:"商談設定数", value:fl.filter(isAppt).length+"件",color:"#f59e0b", bg:"linear-gradient(135deg,#fbbf24,#d97706)", sub:`商談化率 ${rate(fl.filter(isAppt).length, validLeads.length)}（有効リード ${validLeads.length}件）`, filter:{ month, statuses:["日程調整中","商談確定"] } },
-    { icon:"📒", label:"課金見込み", value:"¥"+cost.toLocaleString(),    color:"#8b5cf6", bg:"linear-gradient(135deg,#a78bfa,#7c3aed)", sub:`対象外申請済 ${applied.length}件`, filter:{ month, hasPortal: true } },
-    { icon:"🔥", label:"本日追客",   value:todayActions.length+"件",     color:"#0ea5e9", bg:"linear-gradient(135deg,#38bdf8,#0369a1)", sub:`期限切れ ${overdueActions.length}件`, filter:{ nextActionDate: TODAY } },
+    { Icon:InboxIcon,      label:"総反響数",   value:fl.length+"件",               color:"#10b981", bg:"linear-gradient(135deg,#0ecf8a,#059669)", sub:`MQL ${fl.filter(l=>l.mql==="MQL").length}件 (${rate(fl.filter(l=>l.mql==="MQL").length, fl.length)}) / 有効リード ${validLeads.length}件`, filter:{ month } },
+    { Icon:CalendarNavIcon,label:"商談設定数", value:fl.filter(isAppt).length+"件",color:"#f59e0b", bg:"linear-gradient(135deg,#fbbf24,#d97706)", sub:`商談化率 ${rate(fl.filter(isAppt).length, validLeads.length)}（有効リード ${validLeads.length}件）`, filter:{ month, statuses:["日程調整中","商談確定"] } },
+    { Icon:BookIcon,       label:"課金見込み", value:"¥"+cost.toLocaleString(),    color:"#8b5cf6", bg:"linear-gradient(135deg,#a78bfa,#7c3aed)", sub:`対象外申請済 ${applied.length}件`, filter:{ month, hasPortal: true } },
+    { Icon:FlameIcon,      label:"本日追客",   value:todayActions.length+"件",     color:"#0ea5e9", bg:"linear-gradient(135deg,#38bdf8,#0369a1)", sub:`期限切れ ${overdueActions.length}件`, filter:{ nextActionDate: TODAY } },
   ];
 
   return (
@@ -75,7 +76,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
               <div style={{position:"absolute", top:-16, right:-16, width:72, height:72, borderRadius:"50%", background:"#ffffff18"}} />
               <div style={{position:"absolute", bottom:-10, right:16, width:40, height:40, borderRadius:"50%", background:"#ffffff10"}} />
               <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10}}>
-                <div style={{fontSize:20, lineHeight:1, filter:"drop-shadow(0 2px 4px #0003)"}}>{k.icon}</div>
+                <div style={{filter:"drop-shadow(0 2px 4px #0003)"}}><k.Icon size={22} color="#ffffffcc" /></div>
                 <div style={{fontSize:11, color:"#ffffffcc", fontWeight:600, letterSpacing:0.3}}>{k.label}</div>
               </div>
               <div style={{fontSize:24, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-0.5, filter:"drop-shadow(0 1px 2px #0002)"}}>
@@ -120,11 +121,11 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
                     <span style={{fontSize:11, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:6, padding:"2px 8px", color:"#15803d", fontWeight:700}}>
                       有効リード <b>{validArr.length}</b>
                     </span>
-                    <span style={{fontSize:11, background:"#fff8eb", border:"1px solid #fde68a", borderRadius:6, padding:"2px 8px", color:"#d97706", fontWeight:700}}>
-                      📅 商談 {ap}件 ({rate(ap, validArr.length)})
+                    <span style={{fontSize:11, background:"#fff8eb", border:"1px solid #fde68a", borderRadius:6, padding:"2px 8px", color:"#d97706", fontWeight:700, display:"inline-flex", alignItems:"center", gap:3}}>
+                      <CalendarNavIcon size={11} color="#d97706" /> 商談 {ap}件 ({rate(ap, validArr.length)})
                     </span>
-                    <span style={{fontSize:11, background:"#ecfdf5", border:"1px solid #a7f3d0", borderRadius:6, padding:"2px 8px", color:"#059669", fontWeight:700}}>
-                      ✨ MQL {arr.filter(l=>l.mql==="MQL").length}件 ({rate(arr.filter(l=>l.mql==="MQL").length, arr.length)})
+                    <span style={{fontSize:11, background:"#ecfdf5", border:"1px solid #a7f3d0", borderRadius:6, padding:"2px 8px", color:"#059669", fontWeight:700, display:"inline-flex", alignItems:"center", gap:3}}>
+                      <SparkleIcon size={11} color="#059669" /> MQL {arr.filter(l=>l.mql==="MQL").length}件 ({rate(arr.filter(l=>l.mql==="MQL").length, arr.length)})
                     </span>
                   </div>
                 </div>
@@ -194,7 +195,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
             );
           })}
           <div style={{flex:"1 1 120px", background:"#ecfdf5", borderRadius:10, padding:"8px 10px", border:"1px solid #a7f3d0"}}>
-            <div style={{fontSize:11, fontWeight:700, color:"#059669", marginBottom:6}}>✅ 対象外申請済</div>
+            <div style={{fontSize:11, fontWeight:700, color:"#059669", marginBottom:6, display:"flex", alignItems:"center", gap:4}}><CheckCircleIcon size={12} color="#059669" /> 対象外申請済</div>
             <div style={{fontSize:16, fontWeight:900, color:"#059669"}}>{applied.length}<span style={{fontSize:10}}>件</span></div>
             <div style={{fontSize:13, fontWeight:700, color:"#10b981", marginTop:4}}>
               節約 ¥{applied.reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0).toLocaleString()}

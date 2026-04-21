@@ -1,6 +1,18 @@
 // AI解析結果パネル（ネクストアクション・フォローメール・トークポイント表示）
 import { ACTION_TYPES } from '../../constants/index.js';
 import { addBizDays } from '../../lib/holidays.js';
+import {
+  SparkleIcon, SaveIcon, CheckCircleIcon, CheckIcon,
+  PhoneIcon, MailIcon, ChatIcon, FileTextIcon,
+  CalendarNavIcon, ClipboardIcon, SendIcon,
+} from '../ui/Icons.jsx';
+
+const ACTION_ICON_MAP = {
+  call:  PhoneIcon,
+  email: MailIcon,
+  sms:   ChatIcon,
+  other: FileTextIcon,
+};
 
 export function AIResultPanel({
   result, actionDate, selLead, lead, saved,
@@ -15,33 +27,44 @@ export function AIResultPanel({
   const isEmailNext = nat === "email";
   const isScheduleNext = nat === "schedule";
   const isCallNext = nat === "call" || nat === "sms";
-  const natIcon = isEmailNext ? "✉️" : isScheduleNext ? "📅" : isCallNext ? "📞" : "📋";
+  const NatIcon = isEmailNext ? MailIcon : isScheduleNext ? CalendarNavIcon : isCallNext ? PhoneIcon : ClipboardIcon;
   const natLabel = isEmailNext ? "メール送信" : isScheduleNext ? "候補日提案" : nat === "call" ? "架電" : nat === "sms" ? "SMS送信" : "その他";
   const natAccent = isEmailNext ? "#2563eb" : isScheduleNext ? "#0891b2" : isCallNext ? "#059669" : "#7c3aed";
   const natBg = isEmailNext ? "#eff6ff" : isScheduleNext ? "#ecfeff" : isCallNext ? "#f0fdf4" : "#faf5ff";
   const natBorder = isEmailNext ? "#bfdbfe" : isScheduleNext ? "#a5f3fc" : isCallNext ? "#bbf7d0" : "#e9d5ff";
   const iLvColor = { "高": "#10b981", "中": "#f59e0b", "低": "#ef4444" };
 
+  const ActionTypeIcon = ACTION_ICON_MAP[result.action_type] || PhoneIcon;
+  const actionTypeLabel = ACTION_TYPES.find(t=>t.v===result.action_type)?.label || "電話";
+
   return (
     <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
       {/* ヘッダー：保存ボタン */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 20px",borderBottom:"1px solid #e2f0e8",background:"#fff",flexShrink:0}}>
         <div>
-          <span style={{fontSize:13,fontWeight:700,color:"#059669"}}>🤖 AI解析結果</span>
+          <span style={{fontSize:13,fontWeight:700,color:"#059669",display:"flex",alignItems:"center",gap:5}}>
+            <SparkleIcon size={14} color="#059669" /> AI解析結果
+          </span>
           <div style={{fontSize:10,color:"#9ca3af",marginTop:2}}>解析結果をリードの活動履歴に保存できます</div>
         </div>
         {!selLead
           ? <div style={{textAlign:"right"}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#d1d5db"}}>💾 活動履歴に保存</div>
+              <div style={{fontSize:12,fontWeight:700,color:"#d1d5db",display:"flex",alignItems:"center",gap:4,justifyContent:"flex-end"}}>
+                <SaveIcon size={13} color="#d1d5db" /> 活動履歴に保存
+              </div>
               <div style={{fontSize:10,color:"#d1d5db",marginTop:2}}>← まずリードを選択してください</div>
             </div>
           : saved
             ? <div style={{textAlign:"right"}}>
-                <button onClick={onSave} style={{background:"#f0fdf4",color:"#059669",border:"1.5px solid #6ee7b7",borderRadius:8,padding:"6px 16px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>✅ 保存済み（再保存する）</button>
+                <button onClick={onSave} style={{background:"#f0fdf4",color:"#059669",border:"1.5px solid #6ee7b7",borderRadius:8,padding:"6px 16px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                  <CheckCircleIcon size={13} color="#059669" /> 保存済み（再保存する）
+                </button>
                 <div style={{fontSize:10,color:"#6a9a7a",marginTop:2}}>活動履歴に記録されました</div>
               </div>
             : <div style={{textAlign:"right"}}>
-                <button onClick={onSave} style={{background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>💾 アクション履歴に保存</button>
+                <button onClick={onSave} style={{background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                  <SaveIcon size={14} color="#fff" /> アクション履歴に保存
+                </button>
                 <div style={{fontSize:10,color:"#6a9a7a",marginTop:2}}>この解析結果をリードに紐づけます</div>
               </div>
         }
@@ -56,7 +79,9 @@ export function AIResultPanel({
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",borderBottom:"1px solid #f0f5f2"}}>
             <div style={{padding:"12px 14px",borderRight:"1px solid #f0f5f2"}}>
               <div style={{fontSize:10,color:"#6a9a7a",marginBottom:4}}>手段</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>{ACTION_TYPES.find(t=>t.v===result.action_type)?.icon||"📞"} {ACTION_TYPES.find(t=>t.v===result.action_type)?.label||"電話"}</div>
+              <div style={{fontSize:15,fontWeight:700,color:"#374151",display:"flex",alignItems:"center",gap:6}}>
+                <ActionTypeIcon size={15} color="#374151" /> {actionTypeLabel}
+              </div>
             </div>
             <div style={{padding:"12px 14px",borderRight:"1px solid #f0f5f2"}}>
               <div style={{fontSize:10,color:"#6a9a7a",marginBottom:4}}>結果</div>
@@ -72,7 +97,9 @@ export function AIResultPanel({
         {/* ② AIが提案するネクストアクション */}
         <div style={{background:natBg,borderRadius:10,border:`1.5px solid ${natBorder}`,overflow:"hidden"}}>
           <div style={{padding:"10px 16px",borderBottom:`1px solid ${natBorder}`,display:"flex",alignItems:"center",gap:8}}>
-            <span style={{background:natAccent,color:"#fff",borderRadius:20,padding:"3px 14px",fontSize:12,fontWeight:700}}>{natIcon} {natLabel}</span>
+            <span style={{background:natAccent,color:"#fff",borderRadius:20,padding:"3px 14px",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+              <NatIcon size={13} color="#fff" /> {natLabel}
+            </span>
             <span style={{fontSize:12,color:natAccent,fontWeight:700}}>← AIが推奨するネクストアクション</span>
           </div>
           <div style={{padding:"14px 16px",display:"flex",flexDirection:"column",gap:10}}>
@@ -89,9 +116,18 @@ export function AIResultPanel({
             </div>
             {result.next_action_memo&&<div style={{background:"#fff",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#059669",fontWeight:600,lineHeight:1.6}}>{result.next_action_memo}</div>}
             <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center",justifyContent:"space-between",paddingTop:4}}>
-              <button onClick={onSaveCalTodo} disabled={aiCalSaving||!selLead||!result?.next_action_date_offset} style={{background:aiCalSaved?"#7c3aed":aiCalSaving?"#4c1d9566":"#7c3aed22",color:aiCalSaved?"#fff":"#7c3aed",border:"1px solid #c4b5fd",borderRadius:7,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:(aiCalSaving||!selLead||!result?.next_action_date_offset)?"not-allowed":"pointer",fontFamily:"inherit",opacity:(aiCalSaving||!selLead||!result?.next_action_date_offset)?0.5:1}}>{aiCalSaving?"作成中...":aiCalSaved?"✅ タスク作成済":"☑️ GoogleタスクTODO"}</button>
-              {isScheduleNext&&<button onClick={onGoCalendar} style={{background:"#0891b2",color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>📅 候補日を探す（カレンダーへ）</button>}
-              {saved&&isCallNext&&<button onClick={()=>onGoLeads(selLead)} style={{background:natAccent,color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>📞 リード詳細へ</button>}
+              <button onClick={onSaveCalTodo} disabled={aiCalSaving||!selLead||!result?.next_action_date_offset}
+                style={{background:aiCalSaved?"#7c3aed":aiCalSaving?"#4c1d9566":"#7c3aed22",color:aiCalSaved?"#fff":"#7c3aed",border:"1px solid #c4b5fd",borderRadius:7,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:(aiCalSaving||!selLead||!result?.next_action_date_offset)?"not-allowed":"pointer",fontFamily:"inherit",opacity:(aiCalSaving||!selLead||!result?.next_action_date_offset)?0.5:1,display:"flex",alignItems:"center",gap:5}}>
+                {aiCalSaving ? "作成中..." : aiCalSaved
+                  ? <><CheckCircleIcon size={13} color="#fff" /> タスク作成済</>
+                  : <><CheckIcon size={13} color="#7c3aed" /> GoogleタスクTODO</>}
+              </button>
+              {isScheduleNext&&<button onClick={onGoCalendar} style={{background:"#0891b2",color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                <CalendarNavIcon size={13} color="#fff" /> 候補日を探す
+              </button>}
+              {saved&&isCallNext&&<button onClick={()=>onGoLeads(selLead)} style={{background:natAccent,color:"#fff",border:"none",borderRadius:7,padding:"7px 18px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                <PhoneIcon size={13} color="#fff" /> リード詳細へ
+              </button>}
             </div>
           </div>
         </div>
@@ -115,10 +151,20 @@ export function AIResultPanel({
         {isEmailNext&&(
           <div style={{background:"#fff",borderRadius:10,border:"1px solid #bfdbfe",overflow:"hidden"}}>
             <div style={{padding:"10px 16px",background:"#eff6ff",borderBottom:"1px solid #bfdbfe",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-              <span style={{fontSize:12,fontWeight:700,color:"#2563eb"}}>✉️ フォローメール</span>
+              <span style={{fontSize:12,fontWeight:700,color:"#2563eb",display:"flex",alignItems:"center",gap:5}}>
+                <MailIcon size={13} color="#2563eb" /> フォローメール
+              </span>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={onSaveGmailDraft} disabled={aiGmailSaving} style={{background:aiGmailSaved?"#2563eb":aiGmailSaving?"#1e40af66":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",border:"none",borderRadius:7,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:aiGmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:aiGmailSaving?0.7:1}}>{aiGmailSaving?"保存中...":aiGmailSaved?"✅ 下書き保存済":"📨 Gmailに下書き保存"}</button>
-                <button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}\n\n${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}} style={{background:copiedEmail?"#dbeafe":"#f0f5f2",color:copiedEmail?"#2563eb":"#6a9a7a",border:"1px solid #bfdbfe",borderRadius:7,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{copiedEmail?"✓ コピー済":"📋 コピー"}</button>
+                <button onClick={onSaveGmailDraft} disabled={aiGmailSaving}
+                  style={{background:aiGmailSaved?"#2563eb":aiGmailSaving?"#1e40af66":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",border:"none",borderRadius:7,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:aiGmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:aiGmailSaving?0.7:1,display:"flex",alignItems:"center",gap:5}}>
+                  {aiGmailSaving ? "保存中..." : aiGmailSaved
+                    ? <><CheckCircleIcon size={12} color="#fff" /> 下書き保存済</>
+                    : <><SendIcon size={12} color="#fff" /> Gmailに下書き保存</>}
+                </button>
+                <button onClick={()=>{navigator.clipboard?.writeText(`件名: ${editEmail.subject}\n\n${editEmail.body}`);setCopiedEmail(true);setTimeout(()=>setCopiedEmail(false),2000);}}
+                  style={{background:copiedEmail?"#dbeafe":"#f0f5f2",color:copiedEmail?"#2563eb":"#6a9a7a",border:"1px solid #bfdbfe",borderRadius:7,padding:"6px 14px",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
+                  {copiedEmail ? <><CheckIcon size={12} color="#2563eb" /> コピー済</> : <><ClipboardIcon size={12} color="#6a9a7a" /> コピー</>}
+                </button>
               </div>
             </div>
             <div style={{padding:"12px 16px",display:"flex",flexDirection:"column",gap:10}}>

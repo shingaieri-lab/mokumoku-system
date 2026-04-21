@@ -1,7 +1,7 @@
 // リード一覧の1行表示コンポーネント
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
-import { PencilIcon, TrashIcon } from '../ui/Icons.jsx';
+import { PencilIcon, TrashIcon, ExternalLinkIcon, GlobeIcon } from '../ui/Icons.jsx';
 import { SourceIconSVG } from '../ui/SourceIconSVG.jsx';
 import { NextActionEditBtn } from '../actions/NextActionEditBtn.jsx';
 import { ActionHistoryPanel } from '../actions/ActionHistoryPanel.jsx';
@@ -93,14 +93,14 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
           <div style={{...S.leadQuick,background:"transparent", borderTop:"1px solid #e8f5ee",padding:"5px 14px"}} onClick={e=>e.stopPropagation()}>
             {lead.zoho_url && (
               <a href={lead.zoho_url} target="_blank" rel="noopener noreferrer"
-                style={{...S.zohoLinkSmall, fontSize:11, padding:"3px 9px", flexShrink:0}} onClick={e=>e.stopPropagation()}>
-                🔗 Zoho
+                style={{...S.zohoLinkSmall, fontSize:11, padding:"3px 9px", flexShrink:0, display:"flex", alignItems:"center", gap:4}} onClick={e=>e.stopPropagation()}>
+                <ExternalLinkIcon size={12} color="#0284c7" /> Zoho
               </a>
             )}
             {lead.hp_url && (
               <a href={lead.hp_url} target="_blank" rel="noopener noreferrer"
-                style={{...S.zohoLinkSmall, fontSize:11, padding:"3px 9px", flexShrink:0, background:"#e0f2fe", borderColor:"#7dd3fc", color:"#0369a1"}} onClick={e=>e.stopPropagation()}>
-                🌐 HP
+                style={{...S.zohoLinkSmall, fontSize:11, padding:"3px 9px", flexShrink:0, background:"#e0f2fe", borderColor:"#7dd3fc", color:"#0369a1", display:"flex", alignItems:"center", gap:4}} onClick={e=>e.stopPropagation()}>
+                <GlobeIcon size={12} color="#0369a1" /> HP
               </a>
             )}
             {(nad || lead.next_action) && (

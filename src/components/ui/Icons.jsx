@@ -223,3 +223,190 @@ export function EyeOffIcon({ size = 18, color = "currentColor" }) {
     </svg>
   );
 }
+
+// ── アクション種別アイコン ──────────────────────────────
+
+// 電話（📞）
+export function PhoneIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12 19.79 19.79 0 0 1 1.65 3.35 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.06 6.06l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  );
+}
+
+// チャット/SMS（💬）
+export function ChatIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  );
+}
+
+// ノート/その他（📝）
+export function FileTextIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+    </svg>
+  );
+}
+
+// ── ステータス・フィードバックアイコン ──────────────────────────────
+
+// チェック丸（✅ 成功）
+export function CheckCircleIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="9 12 11 14 15 10"/>
+    </svg>
+  );
+}
+
+// 警告三角（⚠️）
+export function AlertIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  );
+}
+
+// ── KPI・ダッシュボードアイコン ──────────────────────────────
+
+// 受信トレイ（📥 総反響数）
+export function InboxIcon({ size = 20, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
+      <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+    </svg>
+  );
+}
+
+// 帳簿（📒 課金見込み）
+export function BookIcon({ size = 20, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    </svg>
+  );
+}
+
+// 炎（🔥 本日追客）
+export function FlameIcon({ size = 20, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+    </svg>
+  );
+}
+
+// ── リンク・ナビゲーションアイコン ──────────────────────────────
+
+// 外部リンク（🔗）
+export function ExternalLinkIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>
+  );
+}
+
+// 地球（🌐 HP）
+export function GlobeIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="2" y1="12" x2="22" y2="12"/>
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+    </svg>
+  );
+}
+
+// ── AIページ用アイコン ──────────────────────────────
+
+// リフレッシュ（🔄 リセット）
+export function RefreshIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <polyline points="1 4 1 10 7 10"/>
+      <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+    </svg>
+  );
+}
+
+// ビル（🏢 会社）
+export function BuildingIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <rect x="4" y="2" width="16" height="20" rx="1"/>
+      <path d="M9 22V12h6v10"/>
+      <rect x="8" y="6" width="2" height="2"/>
+      <rect x="14" y="6" width="2" height="2"/>
+      <rect x="8" y="11" width="2" height="2"/>
+      <rect x="14" y="11" width="2" height="2"/>
+    </svg>
+  );
+}
+
+// クリップボード（📋 アクション種別）
+export function ClipboardIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <rect x="8" y="2" width="8" height="4" rx="1"/>
+    </svg>
+  );
+}
+
+// 時計（🕐 時刻）
+export function ClockIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  );
+}
+
+// 保存（💾）
+export function SaveIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+  );
+}
+
+// 送信（📨 Gmail）
+export function SendIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  );
+}
+
+// チェック（✓ コピー済み等）
+export function CheckIcon({ size = 14, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display:"block" }}>
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  );
+}
