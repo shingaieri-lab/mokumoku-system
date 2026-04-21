@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AIResultPanel } from '../components/ai/AIResultPanel.jsx';
 import { AIInputPanel } from '../components/ai/AIInputPanel.jsx';
+import { SparkleIcon, CheckCircleIcon, AlertIcon } from '../components/ui/Icons.jsx';
 import { JP_HOLIDAYS, addBizDays } from '../lib/holidays.js';
 import { getEffectiveAiConfig } from '../lib/accounts.js';
 import { acquireGmailToken, buildGmailDraftRaw, postGmailDraft, isTokenValid, handleOAuthCallbackError, handleOAuthPopupError } from '../lib/oauth.js';
@@ -240,13 +241,15 @@ export function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, 
   return (
     <div style={{minHeight:"100vh",background:"#f0f5f2",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#174f35"}}>
       <div className="ai-header" style={{background:"linear-gradient(135deg,#10b981,#059669)",borderBottom:"1px solid #059669",padding:"18px 28px",display:"flex",alignItems:"center",gap:14}}>
-        <div style={{width:38,height:38,background:"#ffffff33",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>🤖</div>
+        <div style={{width:38,height:38,background:"#ffffff33",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SparkleIcon size={22} color="#fff" /></div>
         <div style={{minWidth:0, flex:1}}>
           <div style={{fontSize:17,fontWeight:700,color:"#fff"}}>AIアシスタント</div>
           <div className="ai-header-sub" style={{fontSize:11,color:"#d1fae5",marginTop:2}}>アクション記録 → 自動解析 → 履歴登録・ネクストアクション提案</div>
         </div>
         <div style={{marginLeft:"auto"}}>
-          {geminiConfigured?<div style={{background:"#ffffff33",border:"1px solid #ffffff66",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff"}}>✅ APIキー設定済み</div>:<div style={{background:"#ffffff22",border:"1px solid #fca5a5",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff"}}>⚠️ APIキー未設定</div>}
+          {geminiConfigured
+            ? <div style={{background:"#ffffff33",border:"1px solid #ffffff66",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff",display:"flex",alignItems:"center",gap:5}}><CheckCircleIcon size={13} color="#fff" /> APIキー設定済み</div>
+            : <div style={{background:"#ffffff22",border:"1px solid #fca5a5",borderRadius:8,padding:"6px 14px",fontSize:12,color:"#fff",display:"flex",alignItems:"center",gap:5}}><AlertIcon size={13} color="#fca5a5" /> APIキー未設定</div>}
         </div>
       </div>
       <div className="ai-layout" style={{display:"flex",height: isMobile ? "auto" : "calc(100vh - 77px)"}}>
@@ -265,9 +268,9 @@ export function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, 
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           {!result&&!loading&&(
             <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"#334155",gap:14}}>
-              <div style={{fontSize:52}}>🤖</div>
+              <SparkleIcon size={52} color="#94a3b8" />
               <div style={{fontSize:15,fontWeight:600,color:"#475569"}}>アクションメモを入力して解析</div>
-              <div style={{fontSize:13,color:"#334155",textAlign:"center",lineHeight:1.8}}>📋 アクション履歴に自動登録<br/>📅 ネクストアクションを自動設定<br/>✉️ フォローメールを自動生成</div>
+              <div style={{fontSize:13,color:"#334155",textAlign:"center",lineHeight:1.8}}>アクション履歴に自動登録<br/>ネクストアクションを自動設定<br/>フォローメールを自動生成</div>
             </div>
           )}
           {loading&&(
