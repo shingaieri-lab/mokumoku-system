@@ -13,7 +13,7 @@ import {
   getSources, getStatuses, getStatusColor, getISMembers,
   getPortalSitesForSource, sourceHasPortal,
 } from '../lib/master.js';
-import { FlameIcon, ExternalLinkIcon, UploadIcon, InboxIcon } from '../components/ui/Icons.jsx';
+import { FlameIcon, ExternalLinkIcon, UploadIcon, InboxIcon, BuildingIcon } from '../components/ui/Icons.jsx';
 
 export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile }) {
   const [showForm, setShowForm]     = useState(false);
@@ -144,13 +144,13 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
         {/* フィルター 1行目 */}
         <div className="filter-bar" style={{display:"flex", gap:8, marginBottom:6, alignItems:"center"}}>
           <input value={fQ} onChange={e => setFQ(e.target.value)}
-            placeholder="🔍 会社名・担当者" style={{...S.sel, width:220, flexShrink:0}} />
+            placeholder="会社名・担当者" style={{...S.sel, width:220, flexShrink:0}} />
           <select value={fSource} onChange={e => { setFSrc(e.target.value); setFPortal(""); }} style={{...S.sel, flexShrink:0}}>
             <option value="">全流入元</option>
             {getSources().map(s => <option key={s}>{s}</option>)}
           </select>
           {fHasPortal && (
-            <button onClick={() => setFHasPortal(false)} style={{fontSize:11,padding:"3px 9px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",flexShrink:0, background:"#8b5cf633", color:"#7c3aed", border:"1px solid #8b5cf666", fontWeight:700}}>🏢 ポータル ✕</button>
+            <button onClick={() => setFHasPortal(false)} style={{fontSize:11,padding:"3px 9px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",flexShrink:0, background:"#8b5cf633", color:"#7c3aed", border:"1px solid #8b5cf666", fontWeight:700, display:"flex", alignItems:"center", gap:4}}><BuildingIcon size={11} color="#7c3aed" /> ポータル ✕</button>
           )}
           {sourceHasPortal(fSource) && (
             <select value={fPortal} onChange={e => setFPortal(e.target.value)} style={{...S.sel, flexShrink:0}}>

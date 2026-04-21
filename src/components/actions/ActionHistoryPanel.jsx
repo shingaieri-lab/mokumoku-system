@@ -1,7 +1,7 @@
 // アクション履歴パネル（リード詳細 + アクション一覧 + Zoho連携）
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
-import { PencilIcon, TrashIcon, MailIcon, ExternalLinkIcon, ClipboardIcon, CheckIcon, CheckCircleIcon, MapPinIcon, InboxIcon, CalendarNavIcon, FileTextIcon } from '../ui/Icons.jsx';
+import { PencilIcon, TrashIcon, MailIcon, ExternalLinkIcon, ClipboardIcon, CheckIcon, CheckCircleIcon, XCircleIcon, InfoIcon, MapPinIcon, InboxIcon, CalendarNavIcon, FileTextIcon } from '../ui/Icons.jsx';
 import { NextActionEditBtn } from './NextActionEditBtn.jsx';
 import { ActionForm } from './ActionForm.jsx';
 import { ActEntry } from './ActEntry.jsx';
@@ -18,7 +18,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [dealCopied, setDealCopied] = useState(false);
   const [zohoCreating, setZohoCreating] = useState(false);
-  const [zohoMsg, setZohoMsg] = useState('');
+  const [zohoMsg, setZohoMsg] = useState(null);
   const [zohoPushingId, setZohoPushingId] = useState(null);
   const actions = lead.actions || [];
 
@@ -38,21 +38,21 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
       if (res.ok && data.ok) {
         onUpdate({ zoho_account_id: data.accountId, zoho_contact_id: data.contactId, zoho_deal_id: data.dealId });
         if (data.warn === 'kv_save_failed') {
-          setZohoMsg('✅ Zohoへの作成は完了しました。ページを再読み込みして「Zoho商談済」になっているか確認してください。');
+          setZohoMsg({ text: 'Zohoへの作成は完了しました。ページを再読み込みして「Zoho商談済」になっているか確認してください。', ok: true });
         } else {
-          setZohoMsg('✅ Zohoに取引先・取引先責任者・商談を作成しました');
+          setZohoMsg({ text: 'Zohoに取引先・取引先責任者・商談を作成しました', ok: true });
         }
       } else if (res.status === 409) {
         onUpdate({ zoho_account_id: data.zoho_account_id, zoho_contact_id: data.zoho_contact_id, zoho_deal_id: data.zoho_deal_id });
-        setZohoMsg('ℹ️ この商談はすでにZohoに作成済みです');
+        setZohoMsg({ text: 'この商談はすでにZohoに作成済みです', ok: null });
       } else {
-        setZohoMsg('❌ 作成失敗: ' + (data.error || '不明なエラー'));
+        setZohoMsg({ text: '作成失敗: ' + (data.error || '不明なエラー'), ok: false });
       }
     } catch (e) {
-      setZohoMsg('❌ 通信エラー: ' + e.message);
+      setZohoMsg({ text: '通信エラー: ' + e.message, ok: false });
     } finally {
       setZohoCreating(false);
-      setTimeout(() => setZohoMsg(''), 5000);
+      setTimeout(() => setZohoMsg(null), 5000);
     }
   };
 
@@ -68,15 +68,15 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        setZohoMsg('✅ アクション履歴をZohoに同期しました');
+        setZohoMsg({ text: 'アクション履歴をZohoに同期しました', ok: true });
       } else {
-        setZohoMsg('❌ 同期失敗: ' + (data.error || '不明なエラー'));
+        setZohoMsg({ text: '同期失敗: ' + (data.error || '不明なエラー'), ok: false });
       }
     } catch (e) {
-      setZohoMsg('❌ 通信エラー: ' + e.message);
+      setZohoMsg({ text: '通信エラー: ' + e.message, ok: false });
     } finally {
       setZohoPushingId(null);
-      setTimeout(() => setZohoMsg(''), 4000);
+      setTimeout(() => setZohoMsg(null), 4000);
     }
   };
 
@@ -116,7 +116,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
               </button>
             )}
             {!readOnly && lead.status === "商談確定" && lead.zoho_deal_id && (
-              <span style={{ fontSize: 11, color: "#0ea5e9", fontWeight: 700, padding: "3px 8px", background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 6 }}>✅ Zoho商談済</span>
+              <span style={{ fontSize: 11, color: "#0ea5e9", fontWeight: 700, padding: "3px 8px", background: "#e0f2fe", border: "1px solid #7dd3fc", borderRadius: 6, display:"flex", alignItems:"center", gap:3 }}><CheckCircleIcon size={11} color="#0ea5e9" /> Zoho商談済</span>
             )}
             <button onClick={copyDealInfo} style={{ background: dealCopied ? "#10b981" : "none", border: `1px solid ${dealCopied ? "#10b981" : "#10b98166"}`, borderRadius: 6, cursor: "pointer", color: dealCopied ? "#fff" : "#059669", fontSize: 12, padding: "2px 8px", lineHeight: 1.4, fontWeight: 600, transition: "all 0.2s" }}>
               {dealCopied ? <><CheckIcon size={12} color={dealCopied ? "#fff" : "#059669"} /> コピー済み</> : <><ClipboardIcon size={12} color="#059669" /> 商談共有用</>}
@@ -202,8 +202,9 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
 
       {/* Zoho操作メッセージ */}
       {zohoMsg && (
-        <div style={{ padding: "6px 16px", background: zohoMsg.startsWith('✅') ? "#d1fae5" : "#fef2f2", borderBottom: "1px solid #e2f0e8", fontSize: 12, fontWeight: 700, color: zohoMsg.startsWith('✅') ? "#059669" : "#dc2626" }}>
-          {zohoMsg}
+        <div style={{ padding: "6px 16px", background: zohoMsg.ok === true ? "#d1fae5" : zohoMsg.ok === null ? "#f0f9ff" : "#fef2f2", borderBottom: "1px solid #e2f0e8", fontSize: 12, fontWeight: 700, color: zohoMsg.ok === true ? "#059669" : zohoMsg.ok === null ? "#0284c7" : "#dc2626", display:"flex", alignItems:"center", gap:5 }}>
+          {zohoMsg.ok === true ? <CheckCircleIcon size={12} color="#059669" /> : zohoMsg.ok === null ? <InfoIcon size={12} color="#0284c7" /> : <XCircleIcon size={12} color="#dc2626" />}
+          {zohoMsg.text}
         </div>
       )}
 
