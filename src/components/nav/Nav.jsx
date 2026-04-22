@@ -68,7 +68,7 @@ export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogou
   );
 
   return (
-    <nav style={{ width:96, background:"#0f3d2a", display:"flex", flexDirection:"column", alignItems:"center", padding:"12px 0 10px", flexShrink:0, zIndex:10 }}>
+    <nav style={{ width:110, background:"#0f3d2a", display:"flex", flexDirection:"column", alignItems:"center", padding:"12px 0 10px", flexShrink:0, zIndex:10 }}>
       <div style={{ marginBottom:10 }}><img src={getMokumokuImg()} alt="もくもくさん" style={{ width:64, height:64, objectFit:"contain", display:"block" }} /></div>
       <div style={{ width:48, height:1, background:"#ffffff18", marginBottom:6 }} />
       <div style={{ display:"flex", flexDirection:"column", gap:2, width:"100%", padding:"0 8px", alignItems:"center", flex:1, boxSizing:"border-box" }}>
@@ -89,7 +89,7 @@ export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogou
               <span style={{ fontSize:9.5, color: page===item.id ? "#d1fae5" : "#7db89a", fontWeight: page===item.id ? 700 : 400, fontFamily:"inherit", letterSpacing:"0.02em" }}>{item.label}</span>
             </button>
             {tooltip === item.id && (
-              <div style={{ position:"absolute", left:100, top:"50%", transform:"translateY(-50%)", background:"#0d3d2b", color:"#fff", fontSize:12, fontWeight:600, padding:"5px 10px", borderRadius:7, whiteSpace:"nowrap", zIndex:300, pointerEvents:"none", boxShadow:"0 4px 14px #0005", border:"1px solid #10b98133" }}>
+              <div style={{ position:"absolute", left:114, top:"50%", transform:"translateY(-50%)", background:"#0d3d2b", color:"#fff", fontSize:12, fontWeight:600, padding:"5px 10px", borderRadius:7, whiteSpace:"nowrap", zIndex:300, pointerEvents:"none", boxShadow:"0 4px 14px #0005", border:"1px solid #10b98133" }}>
                 {item.label}
                 <div style={{ position:"absolute", left:-4, top:"50%", transform:"translateY(-50%)", borderTop:"4px solid transparent", borderBottom:"4px solid transparent", borderRight:"4px solid #0d3d2b", width:0, height:0 }} />
               </div>
