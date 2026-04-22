@@ -1,5 +1,5 @@
 // ナビゲーションコンポーネント（デスクトップ：左サイドバー / モバイル：下部タブバー）
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon } from '../ui/Icons.jsx';
 import mokumokuImg from '../../assets/mokumoku.png';
 import mokumokuMorningImg from '../../assets/mokumoku-morning.png';
@@ -25,6 +25,11 @@ const NAV_ITEMS = [
 export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUpdateProfile, isMobile }) {
   const [tooltip, setTooltip] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [currentMokumokuImg, setCurrentMokumokuImg] = useState(getMokumokuImg());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentMokumokuImg(getMokumokuImg()), 60 * 1000);
+    return () => clearInterval(timer);
+  }, []);
   const openUserMenu = () => setShowUserMenu(v => !v);
   const goPage = (id) => { if (id === "settings") setSettingsTab(null); setPage(id); setShowUserMenu(false); };
 
@@ -69,7 +74,7 @@ export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogou
 
   return (
     <nav style={{ width:110, background:"#0f3d2a", display:"flex", flexDirection:"column", alignItems:"center", padding:"12px 0 10px", flexShrink:0, zIndex:10 }}>
-      <div style={{ marginBottom:10 }}><img src={getMokumokuImg()} alt="もくもくさん" style={{ width:64, height:64, objectFit:"contain", display:"block" }} /></div>
+      <div style={{ marginBottom:10 }}><img src={currentMokumokuImg} alt="もくもくさん" style={{ width:64, height:64, objectFit:"contain", display:"block" }} /></div>
       <div style={{ width:48, height:1, background:"#ffffff18", marginBottom:6 }} />
       <div style={{ display:"flex", flexDirection:"column", gap:2, width:"100%", padding:"0 8px", alignItems:"center", flex:1, boxSizing:"border-box" }}>
         {NAV_ITEMS.map(item => (
