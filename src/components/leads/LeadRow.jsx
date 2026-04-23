@@ -107,7 +107,7 @@ export function LeadRow({ lead, onEdit, onDelete, onStatusChange, onUpdate, open
               <div style={{...S.nextActInline, flex:1}}>
                 {overdue && <span style={{fontSize:11,background:"#ef4444",color:"#fff",borderRadius:4,padding:"1px 6px", marginRight:6,fontWeight:700}}>期限切れ</span>}
                 {today   && <span style={{fontSize:11,background:"#f97316",color:"#fff",borderRadius:4,padding:"1px 6px", marginRight:6,fontWeight:700}}>本日</span>}
-                {soon && !today && !overdue && <span style={{fontSize:11,background:"#10b981",color:"#fff",borderRadius:4,padding:"1px 6px", marginRight:6,fontWeight:700}}>まもなく</span>}
+                {soon && !today && !overdue && <span style={{fontSize:11,background:"#a78bfa",color:"#fff",borderRadius:4,padding:"1px 6px", marginRight:6,fontWeight:700}}>まもなく</span>}
                 <span style={{color:dateColor, marginRight:4}}>→</span>
                 {nad && <span style={{fontWeight:700, marginRight:4,color:dateColor}}>{nad}{lead.next_action_time ? " "+lead.next_action_time : ""}</span>}
               </div>

@@ -164,7 +164,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
               <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 4, minWidth: 0, flex: 1 }}>
                 {!editNA && overdue && <span style={{ fontSize: 10, background: "#ef4444", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>期限切れ</span>}
                 {!editNA && today   && <span style={{ fontSize: 10, background: "#f97316", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>本日</span>}
-                {!editNA && soon && !today && !overdue && <span style={{ fontSize: 10, background: "#10b981", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>まもなく</span>}
+                {!editNA && soon && !today && !overdue && <span style={{ fontSize: 10, background: "#a78bfa", color: "#fff", borderRadius: 4, padding: "1px 5px", fontWeight: 700 }}>まもなく</span>}
                 <span style={{ color: overdue ? "#dc2626" : today ? "#ea580c" : "#059669" }}>→</span>
                 {editNA ? (
                   <>
