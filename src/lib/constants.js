@@ -64,14 +64,5 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 // アカウントカラーパレット（ユーザー登録時に使用）
 export const PALETTE = ["#7c3aed","#0369a1","#059669","#d97706","#dc2626","#0891b2","#db2777","#65a30d","#ea580c","#0f766e","#6d28d9","#1d4ed8","#047857","#b45309","#991b1b","#0e7490","#9d174d","#3f6212","#c2410c","#134e4a"];
 
-// アクション結果に基づく次アクション自動提案ルール
-export const NEXT_ACTION_RULES = [
-  { result:"繋がった",  type:"call",    days:7,  memo:"状況確認の架電",      label:"1週間後に状況確認" },
-  { result:"不在",      type:"call",    days:3,  memo:"再架電",              label:"3営業日後に再架電" },
-  { result:"不通",      type:"call",    days:5,  memo:"再架電（別時間帯）",   label:"5営業日後に別時間帯で架電" },
-  { result:"送信済",    type:"email",   days:2,  memo:"開封・返信確認",       label:"2日後に開封確認" },
-  { result:"その他",    type:"call",    days:5,  memo:"フォローアップ",       label:"5営業日後にフォロー" },
-];
-
 // ACTION_TYPES からアクション種別を検索するヘルパー
 export const at = (v) => ACTION_TYPES.find(a => a.v === v) || ACTION_TYPES[0];
