@@ -35,6 +35,7 @@ router.get('/api/zoho/auth', requireAuth, async (req, res) => {
     'ZohoCRM.modules.Accounts.CREATE',
     'ZohoCRM.modules.Contacts.CREATE',
     'ZohoCRM.modules.Deals.CREATE',
+    'ZohoCRM.settings.fields.ALL',
   ].join(',');
 
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
