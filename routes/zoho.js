@@ -72,7 +72,7 @@ router.get('/api/zoho/callback', async (req, res) => {
       refresh_token: data.refresh_token,
       expires_at: Date.now() + (data.expires_in - 60) * 1000,
     });
-    const origin = `${req.protocol}://${req.headers.host}`;
+    const origin = `${req.headers['x-forwarded-proto'] || req.protocol}://${req.headers.host}`;
     res.send(`<html><body><script>window.opener&&window.opener.postMessage("zoho_auth_success",${JSON.stringify(origin)});window.close();</script><p>認証完了。このウィンドウを閉じてください。</p></body></html>`);
   } catch (e) {
     res.status(500).send('トークン取得エラー: ' + e.message);
