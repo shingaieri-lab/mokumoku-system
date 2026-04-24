@@ -31,7 +31,6 @@ router.get('/api/zoho/auth', requireAuth, async (req, res) => {
   const domain = getZohoDomain(cfg.dataCenter);
   const scopes = [
     'ZohoCRM.modules.ALL',
-    'ZohoCRM.settings.fields.ALL',
   ].join(',');
 
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -191,16 +190,6 @@ router.post('/api/zoho/push-action', requireAuth, rateLimit, async (req, res) =>
     } else {
       res.status(500).json({ error: '行動作成失敗', detail: data });
     }
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// [DEBUG] Eventモジュールのフィールド一覧取得（確認後に削除）
-router.get('/api/zoho/debug-fields', requireAuth, async (req, res) => {
-  try {
-    const data = await zohoApi('GET', '/settings/fields?module=Event');
-    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
