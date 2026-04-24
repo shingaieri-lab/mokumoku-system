@@ -37,7 +37,8 @@ router.get('/api/zoho/auth', requireAuth, async (req, res) => {
     'ZohoCRM.modules.Deals.CREATE',
   ].join(',');
 
-  const redirectUri = `${req.protocol}://${req.headers.host}/api/zoho/callback`;
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const redirectUri = `${protocol}://${req.headers.host}/api/zoho/callback`;
   const url = `https://accounts.${domain}/oauth/v2/auth?response_type=code&client_id=${cfg.clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`;
   res.redirect(url);
 });
@@ -51,7 +52,8 @@ router.get('/api/zoho/callback', async (req, res) => {
   if (!cfg?.clientId) return res.status(400).send('Zoho設定が未完了です');
 
   const domain = getZohoDomain(cfg.dataCenter);
-  const redirectUri = `${req.protocol}://${req.headers.host}/api/zoho/callback`;
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const redirectUri = `${protocol}://${req.headers.host}/api/zoho/callback`;
   const params = new URLSearchParams({
     code,
     client_id: cfg.clientId,
