@@ -31,7 +31,7 @@ router.get('/api/zoho/auth', requireAuth, async (req, res) => {
   const domain = getZohoDomain(cfg.dataCenter);
   const scopes = [
     'ZohoCRM.modules.Leads.ALL',
-    'ZohoCRM.modules.Events.CREATE',
+    'ZohoCRM.modules.Event.CREATE',
     'ZohoCRM.modules.Accounts.CREATE',
     'ZohoCRM.modules.Contacts.CREATE',
     'ZohoCRM.modules.Deals.CREATE',
@@ -184,7 +184,7 @@ router.post('/api/zoho/push-action', requireAuth, rateLimit, async (req, res) =>
     const typeToMethod = { call: '電話', email: 'メール', sms: 'SMS', other: 'その他' };
     const method = typeToMethod[action.type] || 'その他';
 
-    const data = await zohoApi('POST', '/Events', {
+    const data = await zohoApi('POST', '/Event', {
       data: [{
         Event_Title: '電話）インバウンド',
         Start_DateTime: startDateTime,
