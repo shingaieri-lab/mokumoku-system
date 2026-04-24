@@ -172,9 +172,8 @@ router.post('/api/zoho/push-action', requireAuth, rateLimit, async (req, res) =>
     const endDate = new Date(`${dateStr}T${timeStr}:00+09:00`);
     endDate.setMinutes(endDate.getMinutes() + 30);
     const endDateStr = endDate.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
-    const endHH = String(endDate.getHours()).padStart(2, '0');
-    const endMM = String(endDate.getMinutes()).padStart(2, '0');
-    const endDateTime = `${endDateStr}T${endHH}:${endMM}:00+09:00`;
+    const endTimeStr = endDate.toLocaleTimeString('sv', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
+    const endDateTime = `${endDateStr}T${endTimeStr}:00+09:00`;
 
     const lines = [action.summary || ''];
     if (action.result) lines.push(`結果: ${action.result}`);
