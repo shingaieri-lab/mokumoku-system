@@ -7,6 +7,9 @@ import { ActionForm } from './ActionForm.jsx';
 import { ActEntry } from './ActEntry.jsx';
 import { getStatusColor, getSourceColor } from '../../lib/master.js';
 import { isOverdue, isDueToday, isDueSoon } from '../../lib/holidays.js';
+import { acquireCalendarToken } from '../../lib/oauth.js';
+import { loadGCalConfig } from '../../lib/gcal.js';
+import { loadAccounts } from '../../lib/accounts.js';
 
 export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser, readOnly }) {
   const [showAF, setShowAF] = useState(false);
@@ -20,6 +23,9 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
   const [zohoCreating, setZohoCreating] = useState(false);
   const [zohoMsg, setZohoMsg] = useState(null);
   const [zohoPushingId, setZohoPushingId] = useState(null);
+  const [calToken, setCalToken] = useState(null);
+  const [calMsg, setCalMsg] = useState(null);
+  const [calLoading, setCalLoading] = useState(false);
   const [editingZohoId, setEditingZohoId] = useState(false);
   const [zohoIdInput, setZohoIdInput] = useState(lead.zoho_lead_id || '');
   const actions = lead.actions || [];
@@ -103,6 +109,68 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
     setTimeout(() => setDealCopied(false), 2000);
   };
 
+  const addDealToCalendar = async () => {
+    const aiCfg = window.__appData?.aiConfig || {};
+    const clientId = currentUser?.gmailClientId || aiCfg.gmailClientId || "";
+    if (!clientId) {
+      alert(currentUser?.role === "admin"
+        ? "設定 > APIキー設定 で Gmail Client ID を入力してください"
+        : "管理者にGmail OAuth Client IDの設定を依頼してください");
+      return;
+    }
+    setCalLoading(true);
+    try {
+      const tokenObj = await acquireCalendarToken(clientId, calToken);
+      setCalToken(tokenObj);
+      const token = tokenObj.token;
+
+      const gcalCfg = loadGCalConfig();
+      const calendarIds = { ...(gcalCfg.calendarIds || {}) };
+      loadAccounts().forEach(a => { if (a.calendarId) calendarIds[a.name] = a.calendarId; });
+
+      const attendees = [];
+      if (lead.sales_member && calendarIds[lead.sales_member]) {
+        attendees.push({ email: calendarIds[lead.sales_member] });
+      }
+
+      const startTime = lead.meeting_time || "09:00";
+      const [sh, sm] = startTime.split(":").map(Number);
+      const totalMin = sh * 60 + sm + 90;
+      const endTime = `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")}`;
+
+      const resp = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=none`,
+        {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            summary: `WEB営1）【${lead.company || ""}様】`,
+            start: { dateTime: `${lead.meeting_date}T${startTime}:00+09:00`, timeZone: "Asia/Tokyo" },
+            end:   { dateTime: `${lead.meeting_date}T${endTime}:00+09:00`,   timeZone: "Asia/Tokyo" },
+            attendees,
+          }),
+        }
+      );
+      if (!resp.ok) {
+        const err = await resp.json();
+        if (err.error?.code === 401) { setCalToken(null); throw new Error("認証の期限が切れました。再度お試しください。"); }
+        throw new Error(err.error?.message || "登録失敗");
+      }
+      const noGuest = lead.sales_member && !calendarIds[lead.sales_member];
+      setCalMsg({
+        text: noGuest
+          ? `カレンダーに登録しました（${lead.sales_member}のカレンダーIDが未設定のためゲスト追加なし）`
+          : `Googleカレンダーに登録しました${lead.sales_member ? `（${lead.sales_member}をゲスト追加）` : ""}`,
+        ok: noGuest ? null : true,
+      });
+    } catch (e) {
+      setCalMsg({ text: e.message, ok: false });
+    } finally {
+      setCalLoading(false);
+      setTimeout(() => setCalMsg(null), 6000);
+    }
+  };
+
   const sc = getStatusColor(lead.status);
   const nad = lead.next_action_date;
   const overdue = isOverdue(nad);
@@ -149,6 +217,12 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             return <span style={{ fontSize: 11, color: srcColor, background: srcColor + "1a", border: `1px solid ${srcColor}33`, borderRadius: 6, padding: "1px 7px", fontWeight: 600, display:"flex", alignItems:"center", gap:3 }}><InboxIcon size={11} color={srcColor} /> {lead.source}{lead.portal_site ? " / " + lead.portal_site : ""}</span>;
           })()}
           {lead.meeting_date && <span style={{ fontSize: 11, color: "#10b981", fontWeight: 600, display:"flex", alignItems:"center", gap:3 }}><CalendarNavIcon size={11} color="#10b981" /> {lead.meeting_date}</span>}
+          {lead.meeting_date && !readOnly && (
+            <button onClick={addDealToCalendar} disabled={calLoading}
+              style={{ fontSize: 10, padding: "2px 8px", background: "none", border: "1px solid #10b98166", borderRadius: 6, cursor: calLoading ? "not-allowed" : "pointer", color: "#10b981", fontWeight: 600, display:"flex", alignItems:"center", gap:3, opacity: calLoading ? 0.6 : 1 }}>
+              <CalendarNavIcon size={10} color="#10b981" />{calLoading ? "登録中..." : "カレンダー追加"}
+            </button>
+          )}
           {lead.zoho_url && <a href={lead.zoho_url} target="_blank" rel="noopener noreferrer" style={{ ...S.zohoLinkSmall, fontSize: 10, padding: "2px 8px", display:"flex", alignItems:"center", gap:3 }}><ExternalLinkIcon size={10} color="#0284c7" /> Zoho</a>}
           {!readOnly && !editingZohoId && !lead.zoho_lead_id && (
             <button onClick={() => setEditingZohoId(true)}
@@ -237,6 +311,13 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
         )}
       </div>
 
+      {/* カレンダー登録メッセージ */}
+      {calMsg && (
+        <div style={{ padding: "6px 16px", background: calMsg.ok === true ? "#d1fae5" : calMsg.ok === null ? "#f0f9ff" : "#fef2f2", borderBottom: "1px solid #e2f0e8", fontSize: 12, fontWeight: 700, color: calMsg.ok === true ? "#059669" : calMsg.ok === null ? "#0284c7" : "#dc2626", display:"flex", alignItems:"center", gap:5 }}>
+          {calMsg.ok === true ? <CheckCircleIcon size={12} color="#059669" /> : calMsg.ok === null ? <InfoIcon size={12} color="#0284c7" /> : <XCircleIcon size={12} color="#dc2626" />}
+          {calMsg.text}
+        </div>
+      )}
       {/* Zoho操作メッセージ */}
       {zohoMsg && (
         <div style={{ padding: "6px 16px", background: zohoMsg.ok === true ? "#d1fae5" : zohoMsg.ok === null ? "#f0f9ff" : "#fef2f2", borderBottom: "1px solid #e2f0e8", fontSize: 12, fontWeight: 700, color: zohoMsg.ok === true ? "#059669" : zohoMsg.ok === null ? "#0284c7" : "#dc2626", display:"flex", alignItems:"center", gap:5 }}>
