@@ -29,7 +29,7 @@ export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushin
           {!readOnly && onPushZoho && (
             <button onClick={onPushZoho} disabled={zohoPushing} title="Zohoに同期"
               style={{ ...S.btnEditAct, display:"flex", alignItems:"center", gap:3, background: zohoPushing ? "#f0f9ff" : "#e0f2fe", border:"1px solid #7dd3fc", color:"#0284c7", fontSize:10, padding:"1px 6px", borderRadius:4, cursor: zohoPushing ? "default" : "pointer" }}>
-              {zohoPushing ? "同期中" : <><ExternalLinkIcon size={12} color="#0284c7" /> Zoho</>}
+              {zohoPushing ? "同期中..." : <><ExternalLinkIcon size={12} color="#0284c7" /> 行動を同期</>}
             </button>
           )}
           {!readOnly && <button onClick={onEdit} style={S.btnEditAct} title="編集"><PencilIcon size={18} color="#059669"/></button>}
