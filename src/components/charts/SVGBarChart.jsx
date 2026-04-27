@@ -11,7 +11,7 @@ export function SVGBarChart({ data, keys, colors, height = 200 }) {
   const padL = 36, padR = 12, padT = 16, padB = 28, W = 560, H = height;
   const chartW = W - padL - padR, chartH = H - padT - padB;
   const groupW = chartW / data.length;
-  const barW = Math.max(6, Math.min(30, groupW / keys.length - 5));
+  const barW = Math.max(6, Math.min(30, groupW / keys.length - 2));
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map(r => Math.round(maxVal * r));
 
   return (
@@ -31,13 +31,13 @@ export function SVGBarChart({ data, keys, colors, height = 200 }) {
         })}
         {data.map((d, di) => {
           const gx = padL + di * groupW + groupW / 2;
-          const tw = barW * keys.length + (keys.length - 1) * 4;
+          const tw = barW * keys.length + (keys.length - 1) * 3;
           return (
             <g key={di}>
               {keys.map((k, ki) => {
                 const val = d[k] || 0;
                 const bh = Math.max((val / maxVal) * chartH, val > 0 ? 3 : 0);
-                const x = gx - tw / 2 + ki * (barW + 4);
+                const x = gx - tw / 2 + ki * (barW + 3);
                 const y = padT + chartH - bh;
                 return (
                   <g key={k}>
