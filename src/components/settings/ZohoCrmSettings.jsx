@@ -1,7 +1,7 @@
 // Zoho CRM連携設定（認証・マッピング・Webhook情報）
 import { useState } from 'react';
-import { getISMembers, getStatuses } from '../../lib/master.js';
-import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, InboxIcon, UploadIcon, PinIcon } from '../ui/Icons.jsx';
+import { getISMembers } from '../../lib/master.js';
+import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, PinIcon } from '../ui/Icons.jsx';
 
 export function ZohoCrmSettings() {
   const stored = window.__appData?.zohoConfig || {};
@@ -14,17 +14,13 @@ export function ZohoCrmSettings() {
     leadStatusFieldApiName: stored.leadStatusFieldApiName || 'Lead_Status',
     meetingDateFieldApiName: stored.meetingDateFieldApiName || '',
     closingDateFieldApiName: stored.closingDateFieldApiName || '',
-    statusMap: stored.statusMap || {},        // Zoho → 本ツール
-    reverseStatusMap: stored.reverseStatusMap || {}, // 本ツール → Zoho
+    statusMap: stored.statusMap || {},
+    reverseStatusMap: stored.reverseStatusMap || {},
     isMemberMap: stored.isMemberMap || {},
   });
   const [authenticated, setAuthenticated] = useState(window.__appData?.zohoAuthenticated || false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
-  const [newStatusZoho, setNewStatusZoho] = useState('');
-  const [newStatusLocal, setNewStatusLocal] = useState('');
-  const [newReverseLocal, setNewReverseLocal] = useState('');
-  const [newReverseZoho, setNewReverseZoho] = useState('');
   const [newMemberZoho, setNewMemberZoho] = useState('');
   const [newMemberLocal, setNewMemberLocal] = useState('');
 
@@ -68,29 +64,6 @@ export function ZohoCrmSettings() {
       }
     };
     window.addEventListener('message', handler);
-  };
-
-  // ステータスマッピング追加
-  const addStatusMap = () => {
-    if (!newStatusZoho.trim() || !newStatusLocal.trim()) return;
-    const next = { ...cfg.statusMap, [newStatusZoho.trim()]: newStatusLocal.trim() };
-    setCfg(c => ({ ...c, statusMap: next }));
-    setNewStatusZoho(''); setNewStatusLocal('');
-  };
-  const removeStatusMap = (k) => {
-    const next = { ...cfg.statusMap }; delete next[k];
-    setCfg(c => ({ ...c, statusMap: next }));
-  };
-
-  // 逆ステータスマッピング操作（本ツール → Zoho）
-  const addReverseMap = () => {
-    if (!newReverseLocal.trim() || !newReverseZoho.trim()) return;
-    setCfg(c => ({ ...c, reverseStatusMap: { ...c.reverseStatusMap, [newReverseLocal.trim()]: newReverseZoho.trim() } }));
-    setNewReverseLocal(''); setNewReverseZoho('');
-  };
-  const removeReverseMap = (k) => {
-    const next = { ...cfg.reverseStatusMap }; delete next[k];
-    setCfg(c => ({ ...c, reverseStatusMap: next }));
   };
 
   // IS担当マッピング操作
@@ -183,64 +156,6 @@ export function ZohoCrmSettings() {
           <button onClick={addMemberMap} style={{...btnP,padding:'7px 12px',fontSize:11,flexShrink:0}}>追加</button>
         </div>
         <div style={{fontSize:10,color:'#9ca3af',marginTop:6}}>※ マッピングが未設定の場合、Zohoの値をそのまま使用します</div>
-      </div>
-
-      {/* ステータスマッピング（双方向） */}
-      <div style={{background:'#f8fbf9',border:'1px solid #e2f0e8',borderRadius:8,padding:'14px',marginBottom:14}}>
-        <div style={{fontSize:12,fontWeight:700,color:'#174f35',marginBottom:4}}>ステータスマッピング（双方向）</div>
-        <div style={{fontSize:11,color:'#6a9a7a',marginBottom:12}}>取込時と更新時でそれぞれ変換ルールを設定します。同じ名称の場合は設定不要です。</div>
-
-        {/* Zoho → 本ツール（取込時） */}
-        <div style={{marginBottom:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:'#6a9a7a',marginBottom:6,display:"flex",alignItems:"center",gap:4}}><InboxIcon size={11} color="#6a9a7a" /> Zoho → 本ツール（リード取込・Webhook受信時）</div>
-          {Object.entries(cfg.statusMap).length > 0 && (
-            <div style={{marginBottom:8}}>
-              {Object.entries(cfg.statusMap).map(([zohoSt, localSt]) => (
-                <div key={zohoSt} style={{display:'flex',alignItems:'center',gap:6,marginBottom:5,fontSize:12}}>
-                  <span style={{flex:1,padding:'3px 8px',background:'#fff',border:'1px solid #e2f0e8',borderRadius:5,color:'#6a9a7a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>Zoho: {zohoSt}</span>
-                  <span style={{color:'#9ca3af',flexShrink:0}}>→</span>
-                  <span style={{flex:1,padding:'3px 8px',background:'#fff',border:'1px solid #e2f0e8',borderRadius:5,color:'#174f35',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>本ツール: {localSt}</span>
-                  <button onClick={()=>removeStatusMap(zohoSt)} style={{...btnS,padding:'2px 8px',color:'#ef4444',borderColor:'#fca5a5',fontSize:11,flexShrink:0}}>削除</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-            <input value={newStatusZoho} onChange={e=>setNewStatusZoho(e.target.value)} placeholder="Zohoのステータス名" style={{...inp,flex:1,minWidth:110}} onKeyDown={e=>e.key==='Enter'&&addStatusMap()} />
-            <span style={{color:'#9ca3af',fontSize:13,flexShrink:0}}>→</span>
-            <select value={newStatusLocal} onChange={e=>setNewStatusLocal(e.target.value)} style={{...inp,flex:1,minWidth:110}}>
-              <option value="">本ツールのステータス選択</option>
-              {getStatuses().map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-            <button onClick={addStatusMap} style={{...btnP,padding:'6px 10px',fontSize:11,flexShrink:0}}>追加</button>
-          </div>
-        </div>
-
-        <div style={{borderTop:'1px solid #e2f0e8',paddingTop:12}}>
-          <div style={{fontSize:11,fontWeight:700,color:'#6a9a7a',marginBottom:6,display:"flex",alignItems:"center",gap:4}}><UploadIcon size={11} color="#6a9a7a" /> 本ツール → Zoho（ステータス変更時に自動反映）</div>
-          {Object.entries(cfg.reverseStatusMap).length > 0 && (
-            <div style={{marginBottom:8}}>
-              {Object.entries(cfg.reverseStatusMap).map(([localSt, zohoSt]) => (
-                <div key={localSt} style={{display:'flex',alignItems:'center',gap:6,marginBottom:5,fontSize:12}}>
-                  <span style={{flex:1,padding:'3px 8px',background:'#fff',border:'1px solid #e2f0e8',borderRadius:5,color:'#174f35',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>本ツール: {localSt}</span>
-                  <span style={{color:'#9ca3af',flexShrink:0}}>→</span>
-                  <span style={{flex:1,padding:'3px 8px',background:'#fff',border:'1px solid #e2f0e8',borderRadius:5,color:'#6a9a7a',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>Zoho: {zohoSt}</span>
-                  <button onClick={()=>removeReverseMap(localSt)} style={{...btnS,padding:'2px 8px',color:'#ef4444',borderColor:'#fca5a5',fontSize:11,flexShrink:0}}>削除</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
-            <select value={newReverseLocal} onChange={e=>setNewReverseLocal(e.target.value)} style={{...inp,flex:1,minWidth:110}}>
-              <option value="">本ツールのステータス選択</option>
-              {getStatuses().map(s=><option key={s} value={s}>{s}</option>)}
-            </select>
-            <span style={{color:'#9ca3af',fontSize:13,flexShrink:0}}>→</span>
-            <input value={newReverseZoho} onChange={e=>setNewReverseZoho(e.target.value)} placeholder="Zohoのステータス名" style={{...inp,flex:1,minWidth:110}} onKeyDown={e=>e.key==='Enter'&&addReverseMap()} />
-            <button onClick={addReverseMap} style={{...btnP,padding:'6px 10px',fontSize:11,flexShrink:0}}>追加</button>
-          </div>
-          <div style={{fontSize:10,color:'#9ca3af',marginTop:6}}>※ マッピング未設定のステータスはそのままZohoに送信します</div>
-        </div>
       </div>
 
       <div style={{display:'flex',gap:8}}>
