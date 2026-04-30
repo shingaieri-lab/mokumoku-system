@@ -128,7 +128,7 @@ router.post('/api/zoho/import-lead', requireAuth, rateLimit, async (req, res) =>
       zoho_synced_at: new Date().toISOString(),
     };
 
-    res.json({ lead });
+    res.json({ lead, _debug: { isField, zohoIsValue, statusField, zohoStatus } });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
