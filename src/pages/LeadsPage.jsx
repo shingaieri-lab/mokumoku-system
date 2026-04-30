@@ -150,7 +150,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
 
         {/* Zoho手動取込パネル */}
         {showZohoImport && !readOnly && (
-          <ZohoImportPanel onAdd={onAdd} onClose={() => setShowZohoImport(false)} />
+          <ZohoImportPanel onAdd={lead => { onAdd(lead); setEditing(lead); setShowForm(true); }} onClose={() => setShowZohoImport(false)} />
         )}
 
         {/* フィルター 1行目 */}
