@@ -216,13 +216,6 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             const srcColor = getSourceColor(lead.source, 0);
             return <span style={{ fontSize: 11, color: srcColor, background: srcColor + "1a", border: `1px solid ${srcColor}33`, borderRadius: 6, padding: "1px 7px", fontWeight: 600, display:"flex", alignItems:"center", gap:3 }}><InboxIcon size={11} color={srcColor} /> {lead.source}{lead.portal_site ? " / " + lead.portal_site : ""}</span>;
           })()}
-          {lead.meeting_date && <span style={{ fontSize: 11, color: "#10b981", fontWeight: 600, display:"flex", alignItems:"center", gap:3 }}><CalendarNavIcon size={11} color="#10b981" /> {lead.meeting_date}</span>}
-          {lead.meeting_date && !readOnly && (
-            <button onClick={addDealToCalendar} disabled={calLoading}
-              style={{ fontSize: 10, padding: "2px 8px", background: "none", border: "1px solid #10b98166", borderRadius: 6, cursor: calLoading ? "not-allowed" : "pointer", color: "#10b981", fontWeight: 600, display:"flex", alignItems:"center", gap:3, opacity: calLoading ? 0.6 : 1 }}>
-              <CalendarNavIcon size={10} color="#10b981" />{calLoading ? "登録中..." : "カレンダー追加"}
-            </button>
-          )}
           {lead.zoho_url && <a href={lead.zoho_url} target="_blank" rel="noopener noreferrer" style={{ ...S.zohoLinkSmall, fontSize: 10, padding: "2px 8px", display:"flex", alignItems:"center", gap:3 }}><ExternalLinkIcon size={10} color="#0284c7" /> Zoho</a>}
           {!readOnly && !editingZohoId && !lead.zoho_lead_id && (
             <button onClick={() => setEditingZohoId(true)}
@@ -256,6 +249,23 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             </div>
           )}
         </div>
+        {/* カレンダー追加アクション行（商談日時設定後のみ表示） */}
+        {lead.meeting_date && !readOnly && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, padding: "6px 10px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: 8 }}>
+            <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              <CalendarNavIcon size={13} color="#64748b" />
+              商談日：{lead.meeting_date}{lead.meeting_time ? " " + lead.meeting_time : ""}
+            </span>
+            <button
+              onClick={addDealToCalendar}
+              disabled={calLoading}
+              style={{ display: "flex", alignItems: "center", gap: 5, background: calLoading ? "#6ee7b7" : "#10b981", border: "none", borderRadius: 6, cursor: calLoading ? "not-allowed" : "pointer", color: "#fff", fontSize: 12, fontWeight: 700, padding: "4px 12px", opacity: calLoading ? 0.7 : 1, transition: "background 0.2s", whiteSpace: "nowrap" }}
+            >
+              <CalendarNavIcon size={12} color="#fff" />
+              {calLoading ? "登録中..." : "Googleカレンダーに追加"}
+            </button>
+          </div>
+        )}
         {/* ネクストアクション */}
         {(nad || lead.next_action) && (
           <div style={{ marginTop: 8, padding: "5px 8px", background: overdue ? "#fef2f2" : today ? "#fff7ed" : "#ffffff", borderRadius: 6, border: `1px solid ${overdue ? "#ef444466" : today ? "#f9731666" : "#c0dece"}`, fontSize: 12 }}>

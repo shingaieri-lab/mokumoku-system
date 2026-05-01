@@ -1,4 +1,5 @@
 // エントリーポイント：Expressの設定とルートの登録のみ行う
+require('dotenv').config({ path: '.env.local' }); // ローカルの環境変数を読み込む
 const express = require('express');
 const cookieParser = require('cookie-parser');
 
