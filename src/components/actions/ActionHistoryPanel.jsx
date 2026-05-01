@@ -193,9 +193,6 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, flexWrap: "wrap" }}>
-            <button onClick={copyDealInfo} style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", background: dealCopied ? "#10b981" : "none", border: `1px solid ${dealCopied ? "#10b981" : "#10b98166"}`, borderRadius: 6, cursor: "pointer", color: dealCopied ? "#fff" : "#059669", fontSize: 12, padding: "2px 8px", lineHeight: 1.4, fontWeight: 600, transition: "all 0.2s" }}>
-              {dealCopied ? <><CheckIcon size={12} color={dealCopied ? "#fff" : "#059669"} /> コピー済み</> : <><ClipboardIcon size={12} color="#059669" /> 商談共有用</>}
-            </button>
             {!readOnly && <button onClick={onEdit} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="編集"><PencilIcon size={18} color="#059669" /></button>}
             {!readOnly && (confirmDelete
               ? <>
@@ -256,14 +253,21 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
               <CalendarNavIcon size={13} color="#64748b" />
               商談日：{lead.meeting_date}{lead.meeting_time ? " " + lead.meeting_time : ""}
             </span>
-            <button
-              onClick={addDealToCalendar}
-              disabled={calLoading}
-              style={{ display: "flex", alignItems: "center", gap: 5, background: calLoading ? "#6ee7b7" : "#10b981", border: "none", borderRadius: 6, cursor: calLoading ? "not-allowed" : "pointer", color: "#fff", fontSize: 12, fontWeight: 700, padding: "4px 12px", opacity: calLoading ? 0.7 : 1, transition: "background 0.2s", whiteSpace: "nowrap" }}
-            >
-              <CalendarNavIcon size={12} color="#fff" />
-              {calLoading ? "登録中..." : "Googleカレンダーに追加"}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {lead.status === '商談確定' && (
+                <button onClick={copyDealInfo} style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", background: dealCopied ? "#10b981" : "none", border: `1px solid ${dealCopied ? "#10b981" : "#10b98166"}`, borderRadius: 6, cursor: "pointer", color: dealCopied ? "#fff" : "#059669", fontSize: 12, padding: "4px 10px", lineHeight: 1.4, fontWeight: 600, transition: "all 0.2s" }}>
+                  {dealCopied ? <><CheckIcon size={12} color="#fff" /> コピー済み</> : <><ClipboardIcon size={12} color="#059669" /> 商談共有用</>}
+                </button>
+              )}
+              <button
+                onClick={addDealToCalendar}
+                disabled={calLoading}
+                style={{ display: "flex", alignItems: "center", gap: 5, background: calLoading ? "#6ee7b7" : "#10b981", border: "none", borderRadius: 6, cursor: calLoading ? "not-allowed" : "pointer", color: "#fff", fontSize: 12, fontWeight: 700, padding: "4px 12px", opacity: calLoading ? 0.7 : 1, transition: "background 0.2s", whiteSpace: "nowrap" }}
+              >
+                <CalendarNavIcon size={12} color="#fff" />
+                {calLoading ? "登録中..." : "Googleカレンダーに追加"}
+              </button>
+            </div>
           </div>
         )}
         {/* ネクストアクション */}
