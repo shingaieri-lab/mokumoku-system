@@ -148,7 +148,7 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
         </div>
       </div>
       {/* 右コンテンツ */}
-      <div style={{flex:1, overflowY:"auto", padding:"32px 36px", background:"#fff"}}>
+      <div style={{flex:1, overflowY:"auto", padding:"32px 36px 12px 36px", background:"#fff"}}>
         {activeMenu && (
           <div style={{display:"flex", alignItems:"center", gap:12, marginBottom:24, paddingBottom:16, borderBottom:"2px solid #e2f0e8"}}>
             <div style={{width:44, height:44, borderRadius:12, background:activeMenu.color+"18", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0}}>
@@ -300,13 +300,13 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
                   ))}
                 </div>
               </div>
-              <div style={{marginBottom:16}}>
+              <div style={{marginBottom:8}}>
                 <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"flex",alignItems:"center",gap:4,marginBottom:4}}><PencilIcon size={11} color="#6a9a7a" /> メール署名</label>
                 <textarea value={profileForm.signature||""} onChange={e=>setProfileForm(p=>({...p,signature:e.target.value}))}
                   placeholder={"例：\n---\n田中 太郎\n〇〇株式会社\nTEL: 03-xxxx-xxxx"}
-                  style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff",resize:"vertical",minHeight:100,lineHeight:1.5}} />
+                  style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff",resize:"vertical",height:"calc(100vh - 640px)",minHeight:140,maxHeight:420,overflowY:"auto",lineHeight:1.5}} />
               </div>
-              {profileMsg && <div style={{fontSize:12,color:"#059669",fontWeight:700,marginBottom:10}}>{profileMsg}</div>}
+              {profileMsg && <div style={{fontSize:12,color:"#059669",fontWeight:700,marginBottom:6}}>{profileMsg}</div>}
               <button onClick={saveProfile}
                 style={{padding:"8px 28px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
                 保存
