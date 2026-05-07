@@ -109,15 +109,17 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 
 旧フラット構造コンポーネント20本（5,295行）を削除済み。
 
-#### ~~ファイル肥大化（300行超）~~ ✅ 対応済み（2026-04-15、PR #140）
+#### ~~ファイル肥大化（300行超）~~ ⚠️ 再発（2026-05-01 監査で確認）
 
-`src/pages/` 内の300行超ファイルをすべて分割済み。現在300行超のファイルはゼロ。
+PR #140 で一度解消したが、その後の機能追加により再び肥大化。
 
-| ファイル | 対応内容 |
+| ファイル | 現在の行数 |
 |------|------|
-| `src/pages/CalendarPage.jsx` | CalendarSearchForm / CalendarSlotResults に分割（187行） |
-| `src/pages/AIPage.jsx` | AIInputPanel に左パネルを抽出（294行） |
-| `src/pages/EmailPage.jsx` | EmailVariableForm に差し込み変数フォームを抽出（239行） |
+| `src/components/ui/Icons.jsx` | 579行 |
+| `src/components/actions/ActionHistoryPanel.jsx` | 391行 |
+| `src/pages/AIPage.jsx` | 327行 |
+| `src/pages/SettingsPage.jsx` | 321行 |
+| `src/pages/LeadsPage.jsx` | 314行 |
 
 #### ~~API呼び出しのコンポーネント直書き~~ ✅ 再対応済み（2026-05-07、PR #238）
 
@@ -126,6 +128,14 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 `lib/ai.js` に `testGeminiKey` を追加し、全fetch直書きをゼロに。
 
 ---
+
+### 🔴 コード品質（2026-05-01 監査で新規発覚）
+
+| 問題 | 詳細 |
+|------|------|
+| `date.js` と `holidays.js` で関数が二重定義 | `isBusinessDay` `isOverdue` `isDueToday` `isDueSoon` が両ファイルに存在。バグの温床。どちらかに統一して片方から再エクスポートする構成にすべき |
+| `toZenkaku` がコンポーネントにインライン定義 | `ActionHistoryPanel.jsx:94` に定義。`lib/format.js` 等に切り出して共通化すべき |
+| `normDate` が `LeadsPage.jsx` にインライン定義 | `lib/date.js` の `normalizeDate` と重複。統一すべき |
 
 ### 🟠 中優先度
 
