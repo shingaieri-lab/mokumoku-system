@@ -1,6 +1,6 @@
 # IS進捗管理ツール レビュー記録
 
-レビュー開始：2026-03-23　／　最終更新：2026-05-07（fetch直書き再発対応）
+レビュー開始：2026-03-23　／　最終更新：2026-05-07（date.js重複削除）
 
 ---
 
@@ -133,7 +133,7 @@ PR #140 で一度解消したが、その後の機能追加により再び肥大
 
 | 問題 | 詳細 |
 |------|------|
-| `date.js` と `holidays.js` で関数が二重定義 | `isBusinessDay` `isOverdue` `isDueToday` `isDueSoon` が両ファイルに存在。バグの温床。どちらかに統一して片方から再エクスポートする構成にすべき |
+| ~~`date.js` と `holidays.js` で関数が二重定義~~ | ✅ 対応済み（2026-05-07、PR #239）：`date.js` から重複コードを全削除。`normalizeDate` のみ残し60行削減。`addBusinessDays`（UTC バグあり）も同時に除去 |
 | `toZenkaku` がコンポーネントにインライン定義 | `ActionHistoryPanel.jsx:94` に定義。`lib/format.js` 等に切り出して共通化すべき |
 | `normDate` が `LeadsPage.jsx` にインライン定義 | `lib/date.js` の `normalizeDate` と重複。統一すべき |
 
