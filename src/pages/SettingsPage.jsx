@@ -43,7 +43,7 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
     <div className="settings-page" style={{display:"flex", height:"100%", overflow:"hidden"}}>
       {/* 左サイドバー */}
       <div style={{width:260, flexShrink:0, borderRight:"1px solid #d8ede1", background:"#f8fbf9", overflowY:"auto", padding:"24px 14px"}}>
-        <div style={{fontSize:15, fontWeight:900, color:"#174f35", marginBottom:20, paddingLeft:4, display:"flex", alignItems:"center", gap:7}}><GearIcon size={16} color="#174f35" /> 設定</div>
+        <div style={{fontSize:22, fontWeight:800, color:"#174f35", letterSpacing:"-0.02em", marginBottom:20, paddingLeft:4, display:"flex", alignItems:"center", gap:7}}><GearIcon size={20} color="#174f35" /> 設定</div>
         <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
           {MENU.filter(m => !m.adminOnly || currentUser?.role==="admin").map(({ key, Icon, color, label }) => (
             <button key={key} onClick={() => setTab(key)} style={{

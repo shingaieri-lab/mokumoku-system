@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { S } from '../styles/index.js';
 import { SourceIconSVG } from '../components/ui/SourceIconSVG.jsx';
 import { TODAY, THIS_MONTH } from '../lib/holidays.js';
-import { InboxIcon, CalendarNavIcon, BookIcon, FlameIcon, SparkleIcon, CheckCircleIcon } from '../components/ui/Icons.jsx';
+import { InboxIcon, CalendarNavIcon, BookIcon, FlameIcon, SparkleIcon, CheckCircleIcon, DashboardIcon } from '../components/ui/Icons.jsx';
 import {
   getSources, getStatuses, getStatusColor, getSourceColor, getSourceIcon,
   getPortalSites, getPortalPrice,
@@ -52,11 +52,11 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   ];
 
   return (
-    <div className="dash-container" style={{padding:"14px 20px", height: isMobile ? "auto" : "calc(100vh - 60px)", display:"flex", flexDirection:"column", gap:10, overflow: isMobile ? "visible" : "hidden"}}>
+    <div className="dash-container" style={{padding:"24px 28px", height: isMobile ? "auto" : "calc(100vh - 60px)", display:"flex", flexDirection:"column", gap:10, overflow: isMobile ? "visible" : "hidden"}}>
       {/* ヘッダー */}
       <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0}}>
         <div style={{display:"flex", alignItems:"center", gap:10}}>
-          <div style={{fontSize:17, fontWeight:900, color:"#174f35"}}>ダッシュボード</div>
+          <div style={{fontSize:22, fontWeight:800, color:"#174f35", letterSpacing:"-0.02em", display:"flex", alignItems:"center", gap:7}}><DashboardIcon size={20} color="#174f35" /> ダッシュボード</div>
           <div style={{fontSize:11, color:"#6a9a7a"}}>月次・流入元別レポート</div>
         </div>
         <select value={month} onChange={e => setMonth(e.target.value)} style={{...S.sel, fontSize:12}}>

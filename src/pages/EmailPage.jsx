@@ -168,7 +168,7 @@ export function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], i
   return (
     <div className="page-pad" style={{padding:"24px 28px"}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-        <div style={{fontSize:17,fontWeight:900,color:"#174f35",display:"flex",alignItems:"center",gap:7}}><MailIcon size={18} color="#174f35" /> メールテンプレート</div>
+        <div style={{fontSize:22,fontWeight:800,color:"#174f35",letterSpacing:"-0.02em",display:"flex",alignItems:"center",gap:7}}><MailIcon size={20} color="#174f35" /> メールテンプレート</div>
         <button onClick={addTpl} style={{padding:"7px 16px",borderRadius:8,border:"none",background:"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>＋ テンプレート追加</button>
       </div>
       <div className="email-grid" style={{display:"grid",gridTemplateColumns:"260px 1fr",gap:16}}>

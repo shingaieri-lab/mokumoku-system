@@ -12,6 +12,7 @@ import { AIPage } from './pages/AIPage.jsx';
 import { CalendarPage } from './pages/CalendarPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
 import { EmailPage } from './pages/EmailPage.jsx';
+import { ConsultationPage } from './pages/ConsultationPage.jsx';
 import { CSS } from './styles/css.js';
 import { USER_COLORS } from './lib/accounts.js';
 import { IS_COLORS } from './lib/master.js';
@@ -124,7 +125,7 @@ export function App() {
     init();
   }, []);
 
-  const mut = (next) => { setLeads(next); saveLeads(next); };
+const mut = (next) => { setLeads(next); saveLeads(next); };
   const addLead    = (l)       => mut([l, ...leads]);
   const updateLead = (id, p)   => mut(leads.map(l => l.id === id ? { ...l, ...p } : l));
   const deleteLead = (id)      => mut(leads.filter(l => l.id !== id));
@@ -137,7 +138,7 @@ export function App() {
   return (
     <div style={{...rootStyle, flexDirection: isMobile ? "column" : "row"}}>
       <style>{CSS}</style>
-      <Nav page={page} setPage={navigate} setSettingsTab={setSettingsTab} count={leads.length} currentUser={currentUser} onLogout={logout} onUpdateProfile={updateMyProfile} isMobile={isMobile} />
+      <Nav page={page} setPage={navigate} setSettingsTab={setSettingsTab} count={leads.length} currentUser={currentUser} onLogout={logout} onUpdateProfile={updateMyProfile} isMobile={isMobile}/>
       {showWizard && <SetupWizard currentUser={currentUser} onUpdateProfile={updateMyProfile} onSave={saveAiConfig} aiConfig={effectiveAiConfig} onClose={() => setShowWizard(false)} />}
       <main style={{...mainStyle, paddingBottom: isMobile ? 65 : 0, ...(page === "trend" ? { overflow: "hidden", display: "flex", flexDirection: "column" } : {})}}>
         {page === "dashboard" && <DashboardPage leads={leads} currentUser={currentUser} onNavigate={(f)=>{ setDashFilter(f); navigate("leads"); }} masterVer={masterVer} isMobile={isMobile} />}
@@ -148,7 +149,8 @@ export function App() {
         {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={(leadId) => { setAiOpenLeadId(leadId||null); navigate("leads"); }} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
         {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} onGoEmail={(leadId)=>{ setCalendarLeadId(leadId); navigate("email"); }} currentUser={currentUser} leads={leads} />}
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} onOpenWizard={() => setShowWizard(true)} />}
-        {page === "email"     && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} initialLeadId={calendarLeadId} isMobile={isMobile} />}
+        {page === "email"        && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} initialLeadId={calendarLeadId} isMobile={isMobile} />}
+        {page === "consultation" && (currentUser?.isStaff || currentUser?.role === 'admin') && <ConsultationPage leads={leads} onOpenLead={(id) => { setAiOpenLeadId(id); navigate("leads"); }} onUpdate={updateLead} />}
       </main>
     </div>
   );

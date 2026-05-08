@@ -242,10 +242,10 @@ export function AIPage({ leads, onAdd, onUpdate, goLeads, goCalendar, aiConfig, 
 
   return (
     <div style={{minHeight:"100vh",background:"#f0f5f2",fontFamily:"'Noto Sans JP','Hiragino Sans',sans-serif",color:"#174f35"}}>
-      <div className="ai-header" style={{background:"linear-gradient(135deg,#10b981,#059669)",borderBottom:"1px solid #059669",padding:"18px 28px",display:"flex",alignItems:"center",gap:14}}>
+      <div className="ai-header" style={{background:"linear-gradient(135deg,#10b981,#059669)",borderBottom:"1px solid #059669",padding:"24px 28px 8px",display:"flex",alignItems:"center",gap:14}}>
         <div style={{width:38,height:38,background:"#ffffff33",borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><SparkleIcon size={22} color="#fff" /></div>
         <div style={{minWidth:0, flex:1}}>
-          <div style={{fontSize:17,fontWeight:700,color:"#fff"}}>AIアシスタント</div>
+          <div style={{fontSize:22,fontWeight:800,color:"#fff",letterSpacing:"-0.02em"}}>AIアシスタント</div>
           <div className="ai-header-sub" style={{fontSize:11,color:"#d1fae5",marginTop:2}}>アクション記録 → 自動解析 → 履歴登録・ネクストアクション提案</div>
         </div>
         <div style={{marginLeft:"auto"}}>

@@ -1,7 +1,7 @@
 // アクション履歴パネル（リード詳細 + アクション一覧 + Zoho連携）
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
-import { PencilIcon, TrashIcon, MailIcon, ExternalLinkIcon, ClipboardIcon, CheckCircleIcon, XCircleIcon, InfoIcon, MapPinIcon, InboxIcon, FileTextIcon } from '../ui/Icons.jsx';
+import { PencilIcon, TrashIcon, MailIcon, ExternalLinkIcon, ClipboardIcon, CheckCircleIcon, XCircleIcon, InfoIcon, MapPinIcon, InboxIcon, FileTextIcon, PinIcon } from '../ui/Icons.jsx';
 import { ActionForm } from './ActionForm.jsx';
 import { ActEntry } from './ActEntry.jsx';
 import { DealActionBar } from './DealActionBar.jsx';
@@ -17,6 +17,8 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
   const [showAF, setShowAF] = useState(false);
   const [editingAction, setEditingAction] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showConsultInput, setShowConsultInput] = useState(false);
+  const [consultNote, setConsultNote] = useState('');
   const [zohoMsg, setZohoMsg] = useState(null);
   const [zohoPushingId, setZohoPushingId] = useState(null);
   const [calToken, setCalToken] = useState(null);
@@ -115,6 +117,25 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0, flexWrap: "wrap" }}>
+            {/* 相談フラグボタン */}
+            {!readOnly && !lead.consultation_flag && (
+              <button
+                onClick={() => setShowConsultInput(v => !v)}
+                title="相談ボードに追加"
+                style={{ background: showConsultInput ? "#fef3c7" : "none", border: showConsultInput ? "1px solid #f59e0b44" : "none", borderRadius: 5, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}
+              >
+                <PinIcon size={18} color="#f59e0b" />
+              </button>
+            )}
+            {!readOnly && lead.consultation_flag && (
+              <button
+                onClick={() => onUpdate({ consultation_flag: false, consultation_note: '' })}
+                title="相談フラグを解除"
+                style={{ background: "#fef3c7", border: "1px solid #f59e0b44", borderRadius: 5, cursor: "pointer", padding: "4px", display: "flex", alignItems: "center" }}
+              >
+                <PinIcon size={18} color="#f59e0b" />
+              </button>
+            )}
             {!readOnly && <button onClick={onEdit} style={{ background:"none", border:"none", cursor:"pointer", padding:"4px", display:"flex", alignItems:"center" }} title="編集"><PencilIcon size={18} color="#059669" /></button>}
             {!readOnly && (confirmDelete
               ? <>
@@ -126,6 +147,38 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
             <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#6a9a7a", fontSize: 16, flexShrink: 0, lineHeight: 1, padding: 0, marginLeft: 2 }}>✕</button>
           </div>
         </div>
+        {/* 相談メモ入力（フラグ未設定時のみ表示） */}
+        {showConsultInput && !lead.consultation_flag && (
+          <div style={{ marginTop: 8, display: "flex", gap: 6, alignItems: "center" }}>
+            <input
+              autoFocus
+              value={consultNote}
+              onChange={e => setConsultNote(e.target.value)}
+              placeholder="相談したい内容（任意）"
+              style={{ flex: 1, fontSize: 12, padding: "5px 10px", border: "1px solid #f59e0b66", borderRadius: 6, outline: "none", fontFamily: "inherit", color: "#174f35" }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  onUpdate({ consultation_flag: true, consultation_note: consultNote });
+                  setShowConsultInput(false);
+                  setConsultNote('');
+                }
+                if (e.key === 'Escape') { setShowConsultInput(false); setConsultNote(''); }
+              }}
+            />
+            <button
+              onClick={() => { onUpdate({ consultation_flag: true, consultation_note: consultNote }); setShowConsultInput(false); setConsultNote(''); }}
+              style={{ fontSize: 11, color: "#fff", background: "#f59e0b", border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}
+            >相談に追加</button>
+          </div>
+        )}
+        {/* 相談フラグ表示 */}
+        {lead.consultation_flag && (
+          <div style={{ marginTop: 6, fontSize: 11, color: "#92400e", background: "#fef3c7", border: "1px solid #f59e0b44", borderRadius: 6, padding: "4px 10px", display: "flex", alignItems: "center", gap: 6 }}>
+            <PinIcon size={12} color="#f59e0b" />
+            相談ボードに追加中
+            {lead.consultation_note && <span style={{ color: "#78350f" }}>— {lead.consultation_note}</span>}
+          </div>
+        )}
         {/* ステータス・情報チップ */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8, alignItems: "center" }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: sc, background: sc + "15", border: `1px solid ${sc}44`, borderRadius: 8, padding: "2px 8px" }}>{lead.status || "新規"}</span>

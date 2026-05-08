@@ -1,6 +1,6 @@
 // ナビゲーションコンポーネント（デスクトップ：左サイドバー / モバイル：下部タブバー）
 import { useState, useEffect } from 'react';
-import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon } from '../ui/Icons.jsx';
+import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon, ChatIcon } from '../ui/Icons.jsx';
 import mokumokuImg from '../../assets/mokumoku.png';
 import mokumokuMorningImg from '../../assets/mokumoku-morning.png';
 import mokumokuEveningImg from '../../assets/mokumoku-evening.png';
@@ -12,17 +12,20 @@ function getMokumokuImg() {
   return mokumokuImg;
 }
 
-const NAV_ITEMS = [
-  { id: "dashboard", Icon: DashboardIcon,   label: "ダッシュボード" },
-  { id: "trend",     Icon: TrendIcon,       label: "月別推移" },
-  { id: "leads",     Icon: UsersIcon,       label: "リード管理" },
-  { id: "ai",        Icon: SparkleIcon,     label: "AI" },
-  { id: "calendar",  Icon: CalendarNavIcon, label: "候補日" },
-  { id: "email",     Icon: MailIcon,        label: "メール" },
-  { id: "settings",  Icon: GearIcon,        label: "設定" },
+const BASE_NAV_ITEMS = [
+  { id: "dashboard",    Icon: DashboardIcon,   label: "ダッシュボード" },
+  { id: "trend",        Icon: TrendIcon,       label: "月別推移" },
+  { id: "leads",        Icon: UsersIcon,       label: "リード管理" },
+  { id: "consultation", Icon: ChatIcon,        label: "相談" },
+  { id: "ai",           Icon: SparkleIcon,     label: "AI" },
+  { id: "calendar",     Icon: CalendarNavIcon, label: "候補日" },
+  { id: "email",        Icon: MailIcon,        label: "メール" },
+  { id: "settings",     Icon: GearIcon,        label: "設定" },
 ];
 
 export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUpdateProfile, isMobile }) {
+  const canSeeConsultation = currentUser?.isStaff || currentUser?.role === 'admin';
+  const NAV_ITEMS = BASE_NAV_ITEMS.filter(item => item.id !== 'consultation' || canSeeConsultation);
   const [tooltip, setTooltip] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentMokumokuImg, setCurrentMokumokuImg] = useState(getMokumokuImg());
