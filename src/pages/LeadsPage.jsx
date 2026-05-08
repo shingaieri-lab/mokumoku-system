@@ -12,7 +12,7 @@ import { TODAY } from '../lib/holidays.js';
 import { normalizeDate } from '../lib/date.js';
 import { uid } from '../constants/index.js';
 import { getStatuses } from '../lib/master.js';
-import { ExternalLinkIcon, UploadIcon, InboxIcon } from '../components/ui/Icons.jsx';
+import { ExternalLinkIcon, UploadIcon, InboxIcon, UsersIcon } from '../components/ui/Icons.jsx';
 import { updateZohoLeadStatus } from '../lib/zoho.js';
 
 export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile, onGoToZohoSettings }) {
@@ -121,7 +121,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   return (
     <div className="lead-list-container" style={{paddingLeft:28, paddingRight:28, height: isMobile ? "auto" : "100%", overflow: isMobile ? "visible" : "hidden", display:"flex", flexDirection:"column", minHeight: isMobile ? "calc(100vh - 130px)" : undefined}}>
       <div className="page-pad" style={{flexShrink:0, background:"#f0f5f2", paddingTop:24, paddingBottom:8, marginLeft:-28, marginRight:-28, paddingLeft:28, paddingRight:28, borderBottom:"1px solid #d8ede1"}}>
-        <Header title="リード一覧" sub={`${leads.length}件 / 表示 ${list.length}件`}>
+        <Header title={<span style={{display:"flex",alignItems:"center",gap:7}}><UsersIcon size={20} color="#174f35" /> リード一覧</span>} sub={`${leads.length}件 / 表示 ${list.length}件`}>
           <div className="lead-header-actions" style={{display:"flex", gap:8}}>
             <button onClick={exportCSV} style={{...S.btnSec, display:"flex", alignItems:"center", gap:4}}><UploadIcon size={12} color="#6a9a7a" /> CSVエクスポート</button>
             {!readOnly && <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={{...S.btnSec, display:"flex", alignItems:"center", gap:4}}><InboxIcon size={12} color="#6a9a7a" /> CSVインポート</button>}

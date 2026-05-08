@@ -43,7 +43,7 @@ export function Trend({ leads }) {
 
   if (leads.length === 0) return (
     <div style={{ padding: "24px 28px" }}>
-      <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "#174f35", letterSpacing: "-0.02em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
         <TrendIcon size={20} color="#174f35" /> 月別推移レポート
       </div>
       <div style={{ textAlign: "center", padding: 60, color: "#6a9a7a", background: "#fff", borderRadius: 14, border: "1px solid #e2f0e8" }}>
@@ -73,7 +73,7 @@ export function Trend({ leads }) {
 
       {/* ヘッダー + 年選択 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexShrink: 0 }}>
-        <div style={{ fontSize: 17, fontWeight: 900, color: "#174f35", display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: "#174f35", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
           <TrendIcon size={20} color="#174f35" /> 月別推移レポート
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
