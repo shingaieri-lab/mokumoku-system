@@ -11,31 +11,45 @@ function normYM(s) {
   return m ? m[1] + "-" + m[2].padStart(2, "0") : "";
 }
 
+function DiffBadge({ diff, hasPrev, suffix = "" }) {
+  if (!hasPrev) return null;
+  const n = parseFloat(diff);
+  if (isNaN(n)) return null;
+  const color = n > 0 ? "#10b981" : n < 0 ? "#ef4444" : "#9ca3af";
+  const val   = n > 0 ? `+${diff}${suffix}` : `${diff}${suffix}`;
+  return <div style={{ fontSize: 10, color, marginTop: 2, fontWeight: 500, whiteSpace: "nowrap" }}>前年比：{val}</div>;
+}
+
 export function Trend({ leads }) {
   const currentYear = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }).slice(0, 4);
   const currentYM   = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }).slice(0, 7);
 
-  const dataYears = [...new Set(leads.map(l => normYM(l.date).slice(0, 4)).filter(Boolean))].sort();
+  const dataYears      = [...new Set(leads.map(l => normYM(l.date).slice(0, 4)).filter(Boolean))].sort();
   const availableYears = [...new Set([...dataYears, currentYear])].sort();
 
-  const [selectedYear, setSelectedYear] = useState(() => availableYears[availableYears.length - 1]);
+  const [selectedYear, setSelectedYear]   = useState(() => availableYears[availableYears.length - 1]);
+  const [expandedMonths, setExpandedMonths] = useState(new Set());
+
+  const toggleMonth = (ym) => setExpandedMonths(prev => {
+    const next = new Set(prev);
+    next.has(ym) ? next.delete(ym) : next.add(ym);
+    return next;
+  });
 
   const sources   = getSources();
   const srcColors = Object.fromEntries(sources.map((src, i) => [src, getSourceColor(src, i)]));
   const prevYear  = String(Number(selectedYear) - 1);
-
-  const months = Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`);
+  const months    = Array.from({ length: 12 }, (_, i) => `${selectedYear}-${String(i + 1).padStart(2, '0')}`);
 
   const buildData = (ym) => {
     const fl = leads.filter(l => normYM(l.date) === ym);
-    const srcCounts = Object.fromEntries(sources.map(src => [src, fl.filter(l => l.source === src).length]));
     return {
       month: ym.slice(5) + "月",
       反響数: fl.length,
       有効リード数: fl.filter(l => l.status !== "育成対象外").length,
       商談数: fl.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length,
       MQL数: fl.filter(l => l.mql === "MQL").length,
-      ...srcCounts,
+      ...Object.fromEntries(sources.map(src => [src, fl.filter(l => l.source === src).length])),
     };
   };
 
@@ -58,15 +72,163 @@ export function Trend({ leads }) {
   const canPrev = yearIdx > 0;
   const canNext = yearIdx < availableYears.length - 1;
 
-  const btnStyle = (enabled) => ({
+  const navBtn = (enabled) => ({
     background: "none", border: "1px solid #c0dece", borderRadius: 6,
     padding: "3px 10px", fontSize: 13, fontWeight: 700,
     color: enabled ? "#059669" : "#c0dece",
     cursor: enabled ? "pointer" : "default",
   });
 
-  const thC = { padding: "6px 10px", textAlign: "center", color: "#6a9a7a", fontWeight: 700, borderBottom: "1px solid #e2f0e8", whiteSpace: "nowrap", background: "#f0f5f2", fontSize: 11 };
-  const thCB = { ...thC, borderBottom: "none", borderRight: "1px solid #e2f0e8" };
+  const thS = {
+    padding: "11px 14px", textAlign: "center", fontWeight: 700,
+    background: "#174f35", color: "#fff", fontSize: 12,
+    whiteSpace: "nowrap", borderRight: "1px solid #1e6645",
+  };
+
+  const tdC = { padding: "10px 14px", textAlign: "center", verticalAlign: "middle" };
+
+  const sortedMonths = (() => {
+    const reversed = [...months].reverse();
+    if (selectedYear === currentYear) {
+      const idx = reversed.findIndex(m => m === currentYM);
+      return idx >= 0 ? reversed.slice(idx) : reversed;
+    }
+    return reversed;
+  })();
+
+  const rows = sortedMonths.flatMap((monthKey, mi) => {
+    const d           = data[months.indexOf(monthKey)];
+    const isCurrent   = monthKey === currentYM && selectedYear === currentYear;
+    const monthLeads  = leads.filter(l => normYM(l.date) === monthKey);
+    const prevLeads   = leads.filter(l => normYM(l.date) === `${prevYear}-${monthKey.slice(5)}`);
+
+    const totalCnt   = monthLeads.length;
+    const totalValid = monthLeads.filter(l => l.status !== "育成対象外").length;
+    const totalDeals = monthLeads.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
+    const totalMql   = monthLeads.filter(l => l.mql === "MQL").length;
+    const totalDR    = totalValid ? (totalDeals / totalValid * 100).toFixed(1) : "0.0";
+    const totalMR    = totalCnt   ? (totalMql   / totalCnt   * 100).toFixed(1) : "0.0";
+
+    const prevCnt    = prevLeads.length;
+    const prevValid  = prevLeads.filter(l => l.status !== "育成対象外").length;
+    const prevDeals  = prevLeads.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
+    const prevDR     = prevValid ? (prevDeals / prevValid * 100).toFixed(1) : "0.0";
+
+    const diffCnt    = totalCnt   - prevCnt;
+    const diffValid  = totalValid - prevValid;
+    const diffDeals  = totalDeals - prevDeals;
+    const diffDR     = (parseFloat(totalDR) - parseFloat(prevDR)).toFixed(1);
+    const hasPrev    = prevCnt > 0 || totalCnt > 0;
+
+    const rowBg      = isCurrent ? "#f0fdf4" : mi % 2 === 0 ? "#fff" : "#f8fbf9";
+    const isExpanded = expandedMonths.has(monthKey);
+
+    const totalRow = (
+      <tr key={`${monthKey}-tot`} style={{ borderBottom: "1px solid #e2f0e8", background: rowBg }}>
+        {/* 月 + 展開ボタン */}
+        <td style={{ ...tdC, fontWeight: 700, color: "#174f35", borderRight: "1px solid #e2f0e8", width: 96, padding: "10px 10px 10px 8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button
+              onClick={() => toggleMonth(monthKey)}
+              style={{
+                background: isExpanded ? "#e2f0e8" : "transparent",
+                border: "1px solid #d8ede1", borderRadius: 5,
+                padding: "2px 6px", cursor: "pointer",
+                fontSize: 10, color: "#6a9a7a", fontFamily: "inherit", flexShrink: 0,
+              }}
+            >
+              {isExpanded ? "▲" : "▼"}
+            </button>
+            <div>
+              <div style={{ fontSize: 14 }}>{d.month}</div>
+              {isCurrent && <span style={{ fontSize: 9, background: "#10b981", color: "#fff", borderRadius: 3, padding: "1px 5px", marginTop: 3, display: "inline-block" }}>今月</span>}
+            </div>
+          </div>
+        </td>
+        {/* 反響数 */}
+        <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#059669" }}>{totalCnt}</div>
+          <DiffBadge diff={diffCnt} hasPrev={hasPrev} />
+        </td>
+        {/* 有効リード数 */}
+        <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#15803d" }}>{totalValid}</div>
+          <DiffBadge diff={diffValid} hasPrev={hasPrev} />
+        </td>
+        {/* 商談数 */}
+        <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#f59e0b" }}>{totalDeals}</div>
+          <DiffBadge diff={diffDeals} hasPrev={hasPrev} />
+        </td>
+        {/* 商談化率 */}
+        <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#d97706" }}>{totalDR}%</div>
+          <DiffBadge diff={diffDR} hasPrev={hasPrev} suffix="pt" />
+        </td>
+        {/* MQL率 */}
+        <td style={{ ...tdC }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: "#7c3aed" }}>{totalMR}%</div>
+          <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{totalMql}件</div>
+        </td>
+      </tr>
+    );
+
+    const srcRows = isExpanded ? sources.map((src) => {
+      const fl      = monthLeads.filter(l => l.source === src);
+      const cnt     = fl.length;
+      const pfl     = prevLeads.filter(l => l.source === src);
+      const pCnt    = pfl.length;
+      if (cnt === 0 && pCnt === 0) return null;
+      const valid   = fl.filter(l => l.status !== "育成対象外").length;
+      const deals   = fl.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
+      const mql     = fl.filter(l => l.mql === "MQL").length;
+      const dr      = valid ? (deals / valid * 100).toFixed(1) : "0.0";
+      const mr      = cnt   ? (mql   / cnt   * 100).toFixed(1) : "0.0";
+
+      const pValid  = pfl.filter(l => l.status !== "育成対象外").length;
+      const pDeals  = pfl.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
+      const pDR     = pValid ? (pDeals / pValid * 100).toFixed(1) : "0.0";
+      const hasSP   = cnt > 0 || pCnt > 0;
+      const dCnt    = cnt   - pCnt;
+      const dValid  = valid - pValid;
+      const dDeals  = deals - pDeals;
+      const dDR     = (parseFloat(dr) - parseFloat(pDR)).toFixed(1);
+
+      const color   = srcColors[src];
+      const srcBg   = isCurrent ? "#e8faf2" : mi % 2 === 0 ? "#f5f9f7" : "#edf3ef";
+      return (
+        <tr key={`${monthKey}-${src}`} style={{ background: srcBg, borderBottom: "1px solid #eef5f0" }}>
+          <td style={{ ...tdC, borderRight: "1px solid #e2f0e8", paddingLeft: 24, textAlign: "left", width: 96 }}>
+            <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: "pre-line" }}>
+              {src.length > 4 ? src.slice(0, 4) + '\n' + src.slice(4) : src}
+            </span>
+          </td>
+          <td style={{ ...tdC }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color }}>{cnt}</div>
+            <DiffBadge diff={dCnt} hasPrev={hasSP} />
+          </td>
+          <td style={{ ...tdC }}>
+            <div style={{ fontSize: 13, color: "#4a8060" }}>{valid}</div>
+            <DiffBadge diff={dValid} hasPrev={hasSP} />
+          </td>
+          <td style={{ ...tdC }}>
+            <div style={{ fontSize: 13, color: "#d97706" }}>{deals}</div>
+            <DiffBadge diff={dDeals} hasPrev={hasSP} />
+          </td>
+          <td style={{ ...tdC }}>
+            <div style={{ fontSize: 12, color: "#9ca3af" }}>{dr}%</div>
+            <DiffBadge diff={dDR} hasPrev={hasSP} suffix="pt" />
+          </td>
+          <td style={{ ...tdC }}>
+            <div style={{ fontSize: 12, color: "#9ca3af" }}>{mr}%</div>
+            <div style={{ fontSize: 10, color: "#c0ccc6" }}>{mql}件</div>
+          </td>
+        </tr>
+      );
+    }).filter(Boolean) : [];
+
+    return [totalRow, ...srcRows];
+  });
 
   return (
     <div className="page-pad" style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden", padding: "24px 28px", boxSizing: "border-box" }}>
@@ -77,9 +239,9 @@ export function Trend({ leads }) {
           <TrendIcon size={20} color="#174f35" /> 月別推移レポート
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button style={btnStyle(canPrev)} disabled={!canPrev} onClick={() => canPrev && setSelectedYear(availableYears[yearIdx - 1])}>◀</button>
+          <button style={navBtn(canPrev)} disabled={!canPrev} onClick={() => canPrev && setSelectedYear(availableYears[yearIdx - 1])}>◀</button>
           <span style={{ fontSize: 15, fontWeight: 700, color: "#174f35", minWidth: 68, textAlign: "center" }}>{selectedYear}年</span>
-          <button style={btnStyle(canNext)} disabled={!canNext} onClick={() => canNext && setSelectedYear(availableYears[yearIdx + 1])}>▶</button>
+          <button style={navBtn(canNext)} disabled={!canNext} onClick={() => canNext && setSelectedYear(availableYears[yearIdx + 1])}>▶</button>
         </div>
       </div>
 
@@ -99,158 +261,25 @@ export function Trend({ leads }) {
         </div>
       </div>
 
-      {/* 月別詳細テーブル（flex:1 で残り高さを埋める、縦スクロール） */}
-      <div style={{ flex: 1, minHeight: 0, background: "#fff", borderRadius: 14, border: "1px solid #e2f0e8", overflowX: "auto", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "18px 20px 12px", fontSize: 13, fontWeight: 700, color: "#174f35", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+      {/* 月別詳細テーブル */}
+      <div style={{ flex: 1, minHeight: 0, background: "#fff", borderRadius: 14, border: "1px solid #e2f0e8", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "14px 20px 10px", fontSize: 13, fontWeight: 700, color: "#174f35", display: "flex", alignItems: "center", gap: 5, flexShrink: 0, borderBottom: "1px solid #e2f0e8" }}>
           <ClipboardIcon size={14} color="#174f35" /> 月別詳細データ（{selectedYear}年）
+          <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 400, marginLeft: 6 }}>▼ で流入元内訳を展開</span>
         </div>
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
-              {/* 1行目：グループヘッダー */}
-              <tr style={{ background: "#f0f5f2" }}>
-                <th rowSpan={2} style={{ ...thC, verticalAlign: "middle", borderRight: "1px solid #e2f0e8" }}>月</th>
-                <th rowSpan={2} style={{ ...thC, verticalAlign: "middle", borderRight: "1px solid #e2f0e8" }}>流入元</th>
-                {["反響数", "有効リード数", "商談数", "商談化率"].map(h => (
-                  <th key={h} colSpan={3} style={{ ...thCB, borderBottom: "1px solid #e2f0e8" }}>{h}</th>
-                ))}
-                <th rowSpan={2} style={{ ...thC, verticalAlign: "middle" }}>MQL数</th>
-                <th rowSpan={2} style={{ ...thC, verticalAlign: "middle" }}>MQL率</th>
-              </tr>
-              {/* 2行目：今年/前年/差 */}
-              <tr style={{ background: "#f0f5f2" }}>
-                {["反響数", "有効リード数", "商談数", "商談化率"].flatMap(h => (
-                  ["今年", "前年", "差"].map(sub => (
-                    <th key={`${h}-${sub}`} style={{ ...thC, color: sub === "差" ? "#9ca3af" : sub === "前年" ? "#9ca3af" : "#6a9a7a", fontSize: 10 }}>{sub}</th>
-                  ))
-                ))}
+              <tr>
+                <th style={{ ...thS, textAlign: "left", paddingLeft: 16, width: 96 }}>月</th>
+                <th style={thS}>反響数</th>
+                <th style={thS}>有効リード数</th>
+                <th style={thS}>商談数</th>
+                <th style={thS}>商談化率</th>
+                <th style={{ ...thS, borderRight: "none" }}>MQL率</th>
               </tr>
             </thead>
-            <tbody>
-              {(() => {
-                const reversed = [...months].reverse();
-                if (selectedYear === currentYear) {
-                  const idx = reversed.findIndex(m => m === currentYM);
-                  return idx >= 0 ? reversed.slice(idx) : reversed;
-                }
-                return reversed;
-              })().flatMap((monthKey, mi) => {
-                const d = data[months.indexOf(monthKey)];
-                const isCurrentMonth = monthKey === currentYM && selectedYear === currentYear;
-                const monthLeads = leads.filter(l => normYM(l.date) === monthKey);
-                const srcList = sources.map(src => ({ key: src, label: src, color: srcColors[src] }));
-                const bgMonth = isCurrentMonth ? "#f0fdf4" : mi % 2 === 0 ? "#fff" : "#f8fbf9";
-
-                const totalCnt   = monthLeads.length;
-                const totalValid = monthLeads.filter(l => l.status !== "育成対象外").length;
-                const totalDeals = monthLeads.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
-                const totalMql   = monthLeads.filter(l => l.mql === "MQL").length;
-                const totalDealRate = totalValid ? (totalDeals / totalValid * 100).toFixed(1) : "0.0";
-                const totalMqlRate  = totalCnt   ? (totalMql   / totalCnt   * 100).toFixed(1) : "0.0";
-
-                const prevYM    = `${prevYear}-${monthKey.slice(5)}`;
-                const prevLeads = leads.filter(l => normYM(l.date) === prevYM);
-                const prevCnt   = prevLeads.length;
-                const prevValid = prevLeads.filter(l => l.status !== "育成対象外").length;
-                const prevDeals = prevLeads.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
-                const prevDealRate = prevValid ? (prevDeals / prevValid * 100).toFixed(1) : "0.0";
-
-                const diffCnt   = totalCnt   - prevCnt;
-                const diffValid = totalValid - prevValid;
-                const diffDeals = totalDeals - prevDeals;
-                const diffDealRate = (parseFloat(totalDealRate) - parseFloat(prevDealRate)).toFixed(1);
-
-                const hasPrev = prevCnt > 0 || totalCnt > 0;
-
-                const diffColor = (v) => parseFloat(v) > 0 ? "#10b981" : parseFloat(v) < 0 ? "#ef4444" : "#9ca3af";
-                const diffStr  = (v) => hasPrev ? (parseFloat(v) > 0 ? `+${v}` : String(v)) : "—";
-                const prevStr  = (v) => hasPrev ? v : "—";
-
-                const srcRows = srcList.map((src, si) => {
-                  const fl         = monthLeads.filter(l => l.source === src.key);
-                  const cnt        = fl.length;
-                  const validCnt   = fl.filter(l => l.status !== "育成対象外").length;
-                  const deals      = fl.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
-                  const mql        = fl.filter(l => l.mql === "MQL").length;
-                  const dealRate   = validCnt ? (deals / validCnt * 100).toFixed(1) : "0.0";
-                  const mqlRate    = cnt ? (mql / cnt * 100).toFixed(1) : "0.0";
-
-                  const pfl        = prevLeads.filter(l => l.source === src.key);
-                  const pCnt       = pfl.length;
-                  const pValid     = pfl.filter(l => l.status !== "育成対象外").length;
-                  const pDeals     = pfl.filter(l => ["日程調整中", "商談確定"].includes(l.status)).length;
-                  const pDealRate  = pValid ? (pDeals / pValid * 100).toFixed(1) : "0.0";
-                  const hasSrcPrev = pCnt > 0 || cnt > 0;
-
-                  const sDiffColor = (v) => parseFloat(v) > 0 ? "#10b981" : parseFloat(v) < 0 ? "#ef4444" : "#9ca3af";
-                  const sDiffStr   = (v) => hasSrcPrev ? (parseFloat(v) > 0 ? `+${v}` : String(v)) : "—";
-                  const sPrevStr   = (v) => hasSrcPrev ? v : "—";
-
-                  const dCnt   = cnt   - pCnt;
-                  const dValid = validCnt - pValid;
-                  const dDeals = deals - pDeals;
-                  const dDealRate = (parseFloat(dealRate) - parseFloat(pDealRate)).toFixed(1);
-
-                  return (
-                    <tr key={`${mi}-${si}`} style={{ borderBottom: "1px solid #f0f5f2", background: bgMonth }}>
-                      {si === 0 && (
-                        <td rowSpan={srcList.length + 1} style={{ padding: "8px 12px", textAlign: "center", fontWeight: 700, color: "#174f35", borderRight: "1px solid #e2f0e8", verticalAlign: "middle" }}>
-                          {d.month}
-                          {isCurrentMonth && <span style={{ fontSize: 9, marginLeft: 4, background: "#10b981", color: "#fff", borderRadius: 3, padding: "1px 4px" }}>今月</span>}
-                        </td>
-                      )}
-                      <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: src.color, borderRight: "1px solid #e2f0e8" }}>{src.label}</td>
-                      {/* 反響数 */}
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: src.color, fontWeight: 700 }}>{cnt}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af" }}>{sPrevStr(pCnt)}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: sDiffColor(dCnt), borderRight: "1px solid #f0f5f2" }}>{sDiffStr(dCnt)}</td>
-                      {/* 有効リード数 */}
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#15803d", fontWeight: 700 }}>{validCnt}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af" }}>{sPrevStr(pValid)}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: sDiffColor(dValid), borderRight: "1px solid #f0f5f2" }}>{sDiffStr(dValid)}</td>
-                      {/* 商談数 */}
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#f59e0b", fontWeight: 700 }}>{deals}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af" }}>{sPrevStr(pDeals)}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: sDiffColor(dDeals), borderRight: "1px solid #f0f5f2" }}>{sDiffStr(dDeals)}</td>
-                      {/* 商談化率 */}
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#d97706" }}>{dealRate}%</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af" }}>{sPrevStr(`${pDealRate}%`)}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: sDiffColor(dDealRate), borderRight: "1px solid #f0f5f2" }}>{hasSrcPrev ? (parseFloat(dDealRate) > 0 ? `+${dDealRate}%` : `${dDealRate}%`) : "—"}</td>
-                      {/* MQL */}
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#f472b6", fontWeight: 700 }}>{mql}</td>
-                      <td style={{ padding: "6px 8px", textAlign: "center", color: "#f472b6" }}>{cnt ? `${mqlRate}%` : "0%"}</td>
-                    </tr>
-                  );
-                });
-
-                const totalRow = (
-                  <tr key={`${mi}-total`} style={{ borderBottom: "2px solid #e2f0e8", background: isCurrentMonth ? "#d1fae5" : "#f0f5f2" }}>
-                    <td style={{ padding: "8px 10px", textAlign: "center", fontWeight: 700, color: "#174f35", borderRight: "1px solid #e2f0e8" }}>合計</td>
-                    {/* 反響数 */}
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#174f35" }}>{totalCnt}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af", fontWeight: 600 }}>{prevStr(prevCnt)}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: diffColor(diffCnt), borderRight: "1px solid #e2f0e8" }}>{diffStr(diffCnt)}</td>
-                    {/* 有効リード数 */}
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#15803d" }}>{totalValid}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af", fontWeight: 600 }}>{prevStr(prevValid)}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: diffColor(diffValid), borderRight: "1px solid #e2f0e8" }}>{diffStr(diffValid)}</td>
-                    {/* 商談数 */}
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#f59e0b" }}>{totalDeals}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af", fontWeight: 600 }}>{prevStr(prevDeals)}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: diffColor(diffDeals), borderRight: "1px solid #e2f0e8" }}>{diffStr(diffDeals)}</td>
-                    {/* 商談化率 */}
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#d97706" }}>{totalDealRate}%</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", color: "#9ca3af", fontWeight: 600 }}>{prevStr(`${prevDealRate}%`)}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: diffColor(diffDealRate), borderRight: "1px solid #e2f0e8" }}>{hasPrev ? (parseFloat(diffDealRate) > 0 ? `+${diffDealRate}%` : `${diffDealRate}%`) : "—"}</td>
-                    {/* MQL */}
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#f472b6" }}>{totalMql}</td>
-                    <td style={{ padding: "6px 8px", textAlign: "center", fontWeight: 700, color: "#f472b6" }}>{totalMqlRate}%</td>
-                  </tr>
-                );
-
-                return [...srcRows, totalRow];
-              })}
-            </tbody>
+            <tbody>{rows}</tbody>
           </table>
         </div>
       </div>
