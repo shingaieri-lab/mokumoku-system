@@ -303,7 +303,7 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
                       onSave={updated => { onEditAction(a.id, updated); setEditingAction(null); }}
                       onClose={() => setEditingAction(null)} />
                   : <ActEntry key={a.id || i} a={a} onEdit={() => setEditingAction(a)} onDelete={() => onDeleteAction(a.id)} readOnly={readOnly}
-                      onPushZoho={lead.zoho_lead_id && zohoAuthenticated ? () => pushActionToZoho(a) : null}
+                      onPushZoho={a.type !== 'consultation' && lead.zoho_lead_id && zohoAuthenticated ? () => pushActionToZoho(a) : null}
                       zohoPushing={zohoPushingId === a.id} />
               ))}
             </div>

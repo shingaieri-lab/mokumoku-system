@@ -5,10 +5,11 @@ import { at } from '../../constants/index.js';
 import { USER_COLORS } from '../../lib/accounts.js';
 
 const ACTION_ICON_MAP = {
-  call:  PhoneIcon,
-  email: MailIcon,
-  sms:   ChatIcon,
-  other: FileTextIcon,
+  call:         PhoneIcon,
+  email:        MailIcon,
+  sms:          ChatIcon,
+  other:        FileTextIcon,
+  consultation: ChatIcon,
 };
 
 export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushing }) {
@@ -20,7 +21,7 @@ export function ActEntry({ a, onEdit, onDelete, onPushZoho, readOnly, zohoPushin
       <div style={{ flex:1 }}>
         <div style={{ display:"flex", gap:6, alignItems:"center", flexWrap:"wrap", marginBottom:2 }}>
           <span style={{ fontSize:11, fontWeight:700, color:t.color }}>{t.label}</span>
-          <span style={{ fontSize:10, background:t.color+"22", color:t.color, borderRadius:4, padding:"1px 6px" }}>{a.result}</span>
+          {a.result && <span style={{ fontSize:10, background:t.color+"22", color:t.color, borderRadius:4, padding:"1px 6px" }}>{a.result}</span>}
           <span style={{ fontSize:10, color:"#3d7a5e", marginLeft:"auto" }}>{a.date}{a.time ? " " + a.time : ""}</span>
           {a.recorded_by && (() => {
             const uc = USER_COLORS[a.recorded_by] || "#059669";

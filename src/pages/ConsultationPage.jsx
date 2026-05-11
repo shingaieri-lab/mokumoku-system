@@ -1,10 +1,11 @@
 // 相談ボードページ（手動フラグ + 自動ピックアップ）
 import { useState, useMemo } from 'react';
-import { IS_COLORS, getStatusColor } from '../lib/master.js';
+import { IS_COLORS, getStatusColor, getStatuses } from '../lib/master.js';
 import { TODAY } from '../lib/holidays.js';
 import { detectUnreachable, detectStalled, buildConsultationPrompt, extractText, ACTION_TYPE_LABEL } from '../lib/isReport.js';
 import { analyzeWithAI } from '../lib/ai.js';
 import { GearIcon, ChatIcon, SparkleIcon } from '../components/ui/Icons.jsx';
+import { uid } from '../constants/index.js';
 
 const STORAGE_KEY = 'consultation_settings';
 
@@ -12,11 +13,18 @@ function loadSettings() {
   try {
     const s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     return {
-      stalledDays:    typeof s.stalledDays    === 'number' ? s.stalledDays    : 14,
-      minUnreachable: typeof s.minUnreachable === 'number' ? s.minUnreachable : 2,
+      stalledDays:          typeof s.stalledDays          === 'number'  ? s.stalledDays          : 14,
+      minUnreachable:       typeof s.minUnreachable       === 'number'  ? s.minUnreachable       : 2,
+      minActions:           typeof s.minActions           === 'number'  ? s.minActions           : 2,
+      excludeStatuses:      Array.isArray(s.excludeStatuses)            ? s.excludeStatuses      : [],
+      stalledNoNextAction:  typeof s.stalledNoNextAction  === 'boolean' ? s.stalledNoNextAction  : false,
+      stalledOverdueAction: typeof s.stalledOverdueAction === 'boolean' ? s.stalledOverdueAction : false,
+      stalledLastFailed:    typeof s.stalledLastFailed    === 'boolean' ? s.stalledLastFailed    : false,
+      minNurturing:         typeof s.minNurturing         === 'number'  ? s.minNurturing         : 3,
+      minFollowupEnd:       typeof s.minFollowupEnd       === 'number'  ? s.minFollowupEnd       : 3,
     };
   } catch {
-    return { stalledDays: 14, minUnreachable: 2 };
+    return { stalledDays: 14, minUnreachable: 2, minActions: 2, minNurturing: 3, minFollowupEnd: 3, excludeStatuses: [], stalledNoNextAction: false, stalledOverdueAction: false, stalledLastFailed: false };
   }
 }
 
@@ -25,9 +33,11 @@ function saveSettings(s) {
 }
 
 const SECTIONS = [
-  { key: 'flagged',     label: '相談フラグあり', color: '#f59e0b', bg: '#fffbeb', border: '#f59e0b33' },
-  { key: 'unreachable', label: '繋がらない',     color: '#ef4444', bg: '#fef2f2', border: '#ef444433' },
-  { key: 'stalled',     label: '停滞中',         color: '#8b5cf6', bg: '#faf5ff', border: '#8b5cf633' },
+  { key: 'flagged',     label: '相談フラグあり',     color: '#f59e0b', bg: '#fffbeb', border: '#f59e0b33' },
+  { key: 'unreachable', label: '繋がらない',         color: '#ef4444', bg: '#fef2f2', border: '#ef444433' },
+  { key: 'stalled',     label: '停滞中',             color: '#8b5cf6', bg: '#faf5ff', border: '#8b5cf633' },
+  { key: 'nurturing',   label: 'ナーチャリング候補', color: '#0891b2', bg: '#ecfeff', border: '#0891b233' },
+  { key: 'followupEnd', label: '追客終了候補',       color: '#64748b', bg: '#f8fafc', border: '#64748b33' },
 ];
 
 function buildCardSummary(actions) {
@@ -56,6 +66,7 @@ function extractAIText(data) {
 function ConsultEditor({ lead, section, onUpdate, onClose }) {
   const [aiText, setAiText]   = useState(lead.consultation_ai_summary || '');
   const [note, setNote]       = useState(lead.consultation_note || '');
+  const [advice, setAdvice]   = useState(lead.consultation_advice || '');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
@@ -75,8 +86,14 @@ function ConsultEditor({ lead, section, onUpdate, onClose }) {
   };
 
   const save = () => {
-    onUpdate({ consultation_ai_summary: aiText, consultation_note: note });
+    onUpdate({ consultation_ai_summary: aiText, consultation_note: note, consultation_advice: advice });
     onClose();
+  };
+
+  const textareaBase = {
+    fontSize: 13, color: '#174f35', border: '1px solid #c6dfd0',
+    borderRadius: 6, padding: '6px 9px', resize: 'vertical',
+    fontFamily: 'inherit', lineHeight: 1.6, width: '100%', boxSizing: 'border-box',
   };
 
   return (
@@ -84,7 +101,9 @@ function ConsultEditor({ lead, section, onUpdate, onClose }) {
       onClick={e => e.stopPropagation()}
       style={{ borderTop: '1px solid #e2f0e8', marginTop: 4, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}
     >
-      {/* AI生成 */}
+      {/* 相談前メモ */}
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#6a9a7a', letterSpacing: '0.05em' }}>相談前メモ</div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <button
           onClick={generate}
@@ -109,31 +128,33 @@ function ConsultEditor({ lead, section, onUpdate, onClose }) {
         </div>
       )}
 
-      {/* AI生成テキスト */}
       <textarea
         value={aiText}
         onChange={e => setAiText(e.target.value)}
         placeholder="AI生成ボタンで自動生成、または直接入力"
         rows={3}
-        style={{
-          fontSize: 13, color: '#174f35', border: '1px solid #c6dfd0',
-          borderRadius: 6, padding: '6px 9px', resize: 'vertical',
-          fontFamily: 'inherit', lineHeight: 1.6, background: '#f8fbf9', width: '100%', boxSizing: 'border-box',
-        }}
+        style={{ ...textareaBase, background: '#f8fbf9' }}
       />
 
-      {/* 補足メモ */}
       <textarea
         value={note}
         onChange={e => setNote(e.target.value)}
         placeholder="補足メモ（スパイス）"
         rows={2}
-        style={{
-          fontSize: 13, color: '#174f35', border: '1px solid #c6dfd0',
-          borderRadius: 6, padding: '6px 9px', resize: 'vertical',
-          fontFamily: 'inherit', lineHeight: 1.6, background: '#fff', width: '100%', boxSizing: 'border-box',
-        }}
+        style={{ ...textareaBase, background: '#fff' }}
       />
+
+      {/* 相談メモ（相談後） */}
+      <div style={{ borderTop: '1px solid #d8ede1', paddingTop: 8, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#059669', letterSpacing: '0.05em' }}>相談メモ</div>
+        <textarea
+          value={advice}
+          onChange={e => setAdvice(e.target.value)}
+          placeholder=""
+          rows={2}
+          style={{ ...textareaBase, background: '#f0fdf4', border: '1px solid #86efac' }}
+        />
+      </div>
 
       {/* 保存・キャンセル */}
       <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
@@ -154,29 +175,44 @@ function ConsultEditor({ lead, section, onUpdate, onClose }) {
   );
 }
 
-function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted }) {
+function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted, compact }) {
   const [showEditor, setShowEditor] = useState(false);
   const c  = IS_COLORS[lead.is_member] || { bg: '#3d7a5e' };
 
   const handleComplete = e => {
     e.stopPropagation();
+    const existingActions = lead.actions || [];
     const patch = {
       consultation_completed: true,
-      consultation_completed_actions: (lead.actions || []).length,
+      consultation_completed_actions: existingActions.length,
       consultation_ai_summary: '',
       consultation_note: '',
+      consultation_advice: '',
     };
+    if (lead.consultation_advice) {
+      const consultAction = {
+        id: uid(),
+        type: 'consultation',
+        result: '',
+        date: new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }),
+        summary: lead.consultation_advice,
+      };
+      patch.actions = [consultAction, ...existingActions];
+      patch.consultation_completed_actions = existingActions.length + 1;
+    }
     if (section.key === 'flagged') patch.consultation_flag = false;
     onUpdate(patch);
     onCompleted?.();
   };
   const sc = getStatusColor(lead.status);
-  const summary   = buildCardSummary(lead.actions);
-  const callCount = (lead.actions || []).filter(a => a.type === 'call').length;
+  const summary          = buildCardSummary(lead.actions);
+  const calls            = (lead.actions || []).filter(a => a.type === 'call');
+  const callCount        = calls.length;
+  const unreachableCount = calls.filter(a => a.result === '不在' || a.result === '不通').length;
   const overdue  = lead.next_action_date && lead.next_action_date < TODAY;
   const isToday  = lead.next_action_date === TODAY;
   const nextColor = overdue ? '#ef4444' : isToday ? '#059669' : '#6a9a7a';
-  const hasMemo   = lead.consultation_ai_summary || lead.consultation_note;
+  const hasMemo   = lead.consultation_ai_summary || lead.consultation_note || lead.consultation_advice;
 
   return (
     <div
@@ -209,14 +245,17 @@ function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted }) {
             {lead.status}
           </span>
         )}
-        {callCount > 0 && (
-          <span style={{ fontSize: 12, color: '#8b5cf6', background: '#8b5cf611', border: '1px solid #8b5cf633', borderRadius: 4, padding: '1px 7px' }}>
-            架電{callCount}回
-          </span>
-        )}
       </div>
 
-      {/* 現状（3行） */}
+      {/* 不在・不通回数 */}
+      {unreachableCount > 0 && (
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#8b5cf6' }}>
+          不在・不通 {unreachableCount} / 架電 {callCount}
+        </div>
+      )}
+
+      {/* 現状（3行）*/}
+      {!compact && (
       <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#6a9a7a', flexShrink: 0, marginTop: 2 }}>現状</span>
         <span style={{
@@ -226,9 +265,10 @@ function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted }) {
           {summary || '（アクション履歴なし）'}
         </span>
       </div>
+      )}
 
       {/* 保存済み相談メモ */}
-      {hasMemo && !showEditor && (
+      {!compact && hasMemo && !showEditor && (
         <div style={{ background: '#f0fdf4', border: '1px solid #a7f3d033', borderRadius: 6, padding: '7px 10px', display: 'flex', flexDirection: 'column', gap: 5 }}>
           {lead.consultation_ai_summary && (
             <div style={{ fontSize: 12, color: '#047857', lineHeight: 1.5 }}>
@@ -238,6 +278,11 @@ function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted }) {
           {lead.consultation_note && (
             <div style={{ fontSize: 12, color: '#92400e' }}>
               {lead.consultation_note}
+            </div>
+          )}
+          {lead.consultation_advice && (
+            <div style={{ fontSize: 12, color: '#065f46', background: '#ecfdf5', borderRadius: 4, padding: '4px 8px', borderLeft: '3px solid #059669' }}>
+              <span style={{ fontWeight: 700, marginRight: 4 }}>相談メモ:</span>{lead.consultation_advice}
             </div>
           )}
         </div>
@@ -302,50 +347,171 @@ function LeadCard({ lead, section, onOpenLead, onUpdate, onCompleted }) {
 }
 
 // 設定パネル
-function SettingsPanel({ settings, onChange }) {
-  const [draft, setDraft] = useState(settings);
+function SettingsPanel({ settings, onChange, onClose }) {
+  const [draft, setDraft] = useState({ minActions: 2, ...settings });
+  const allStatuses = getStatuses();
 
   const apply = () => {
     const next = {
-      stalledDays:    Math.max(1, Math.min(999, Number(draft.stalledDays)    || 14)),
-      minUnreachable: Math.max(1, Math.min(99,  Number(draft.minUnreachable) || 2)),
+      stalledDays:          Math.max(1, Math.min(999, Number(draft.stalledDays)    || 14)),
+      minUnreachable:       Math.max(1, Math.min(99,  Number(draft.minUnreachable) || 2)),
+      minActions:           Math.max(1, Math.min(99,  Number(draft.minActions)     || 2)),
+      minNurturing:         Math.max(1, Math.min(99,  Number(draft.minNurturing)   || 3)),
+      minFollowupEnd:       Math.max(1, Math.min(99,  Number(draft.minFollowupEnd) || 3)),
+      excludeStatuses:      draft.excludeStatuses || [],
+      stalledNoNextAction:  !!draft.stalledNoNextAction,
+      stalledOverdueAction: !!draft.stalledOverdueAction,
+      stalledLastFailed:    !!draft.stalledLastFailed,
     };
     saveSettings(next);
     onChange(next);
+    onClose();
   };
 
+  const toggleStatus = s => {
+    setDraft(d => {
+      const cur = d.excludeStatuses || [];
+      return { ...d, excludeStatuses: cur.includes(s) ? cur.filter(x => x !== s) : [...cur, s] };
+    });
+  };
+
+  const inputStyle = { fontSize: 13, padding: '3px 6px', border: '1px solid #d8ede1', borderRadius: 5, textAlign: 'center', fontFamily: 'inherit', color: '#174f35' };
+  const checkLabelStyle = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#174f35', cursor: 'pointer' };
+
+  const card = (color, bg, border) => ({
+    flex: '1 1 200px', borderRadius: 8, padding: '10px 14px',
+    background: bg, border: `1px solid ${border}`,
+    display: 'flex', flexDirection: 'column', gap: 7,
+  });
+  const cardTitle = (color) => ({
+    fontSize: 12, fontWeight: 800, color, letterSpacing: '0.05em',
+    paddingBottom: 4, borderBottom: `1px solid ${color}33`, marginBottom: 2,
+  });
+
   return (
-    <div style={{ padding: '10px 24px', background: '#fff', borderBottom: '1px solid #e2f0e8', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 700, color: '#6a9a7a' }}>自動ピックアップ条件</span>
+    <div style={{ padding: '12px 24px 14px', background: '#fff', borderBottom: '1px solid #e2f0e8', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start' }}>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#174f35' }}>
-        <span style={{ color: '#8b5cf6', fontWeight: 700 }}>停滞中</span>
-        最後のアクションから
-        <input
-          type="number" min="1" max="999" value={draft.stalledDays}
-          onChange={e => setDraft(d => ({ ...d, stalledDays: e.target.value }))}
-          style={{ width: 54, fontSize: 13, padding: '3px 6px', border: '1px solid #d8ede1', borderRadius: 5, textAlign: 'center', fontFamily: 'inherit', color: '#174f35' }}
-        />
-        日以上アクションなし
-      </label>
+        {/* 停滞中 */}
+        <div style={card('#8b5cf6', '#faf5ff', '#8b5cf644')}>
+          <div style={cardTitle('#8b5cf6')}>停滞中</div>
+          <label style={{ ...checkLabelStyle, flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              <input type="number" min="1" max="999" value={draft.stalledDays}
+                onChange={e => setDraft(d => ({ ...d, stalledDays: e.target.value }))}
+                style={{ ...inputStyle, width: 54 }} />
+              日以上アクションなし
+            </span>
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>（最後のアクション日から）</span>
+          </label>
+          <label style={checkLabelStyle}>
+            <input type="checkbox" checked={!!draft.stalledLastFailed}
+              onChange={e => setDraft(d => ({ ...d, stalledLastFailed: e.target.checked }))}
+              style={{ accentColor: '#8b5cf6' }} />
+            前回が不在・不通のみ絞る
+          </label>
+          <label style={checkLabelStyle}>
+            <input type="checkbox" checked={!!draft.stalledNoNextAction}
+              onChange={e => setDraft(d => ({ ...d, stalledNoNextAction: e.target.checked }))}
+              style={{ accentColor: '#8b5cf6' }} />
+            次アクション未設定も含む
+          </label>
+          <label style={checkLabelStyle}>
+            <input type="checkbox" checked={!!draft.stalledOverdueAction}
+              onChange={e => setDraft(d => ({ ...d, stalledOverdueAction: e.target.checked }))}
+              style={{ accentColor: '#8b5cf6' }} />
+            次アクション期限切れも含む
+          </label>
+        </div>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#174f35' }}>
-        <span style={{ color: '#ef4444', fontWeight: 700 }}>繋がらない</span>
-        直近
-        <input
-          type="number" min="1" max="99" value={draft.minUnreachable}
-          onChange={e => setDraft(d => ({ ...d, minUnreachable: e.target.value }))}
-          style={{ width: 46, fontSize: 13, padding: '3px 6px', border: '1px solid #d8ede1', borderRadius: 5, textAlign: 'center', fontFamily: 'inherit', color: '#174f35' }}
-        />
-        回の架電がすべて不在
-      </label>
+        {/* 繋がらない */}
+        <div style={card('#ef4444', '#fef2f2', '#ef444444')}>
+          <div style={cardTitle('#ef4444')}>繋がらない</div>
+          <label style={checkLabelStyle}>
+            直近
+            <input type="number" min="1" max="99" value={draft.minUnreachable}
+              onChange={e => setDraft(d => ({ ...d, minUnreachable: e.target.value }))}
+              style={{ ...inputStyle, width: 46 }} />
+            回の架電がすべて不在
+          </label>
+        </div>
 
-      <button
-        onClick={apply}
-        style={{ fontSize: 13, color: '#fff', background: '#059669', border: 'none', borderRadius: 6, padding: '5px 16px', cursor: 'pointer', fontFamily: 'inherit' }}
-      >
-        適用
-      </button>
+        {/* ナーチャリング候補 */}
+        <div style={card('#0891b2', '#ecfeff', '#0891b244')}>
+          <div style={cardTitle('#0891b2')}>ナーチャリング候補</div>
+          <label style={{ ...checkLabelStyle, flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              直近
+              <input type="number" min="1" max="99" value={draft.minNurturing ?? 3}
+                onChange={e => setDraft(d => ({ ...d, minNurturing: e.target.value }))}
+                style={{ ...inputStyle, width: 46 }} />
+              回の架電がすべて不在
+            </span>
+            <span style={{ fontSize: 12, color: '#6a9a7a' }}>（ステータスがナーチャリング以外）</span>
+          </label>
+        </div>
+
+        {/* 追客終了候補 */}
+        <div style={card('#64748b', '#f8fafc', '#64748b44')}>
+          <div style={cardTitle('#64748b')}>追客終了候補</div>
+          <label style={{ ...checkLabelStyle, flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+              直近
+              <input type="number" min="1" max="99" value={draft.minFollowupEnd ?? 3}
+                onChange={e => setDraft(d => ({ ...d, minFollowupEnd: e.target.value }))}
+                style={{ ...inputStyle, width: 46 }} />
+              回の架電がすべて不在/不通
+            </span>
+            <span style={{ fontSize: 12, color: '#6a9a7a' }}>（ステータスがナーチャリングのもの）</span>
+          </label>
+        </div>
+
+        {/* 共通条件 */}
+        <div style={card('#059669', '#f0fdf4', '#05966944')}>
+          <div style={cardTitle('#059669')}>共通条件</div>
+          <label style={checkLabelStyle}>
+            アクション履歴が
+            <input type="number" min="1" max="99" value={draft.minActions ?? 2}
+              onChange={e => setDraft(d => ({ ...d, minActions: e.target.value }))}
+              style={{ ...inputStyle, width: 46 }} />
+            件以上
+          </label>
+        </div>
+
+        <button onClick={apply}
+          style={{ fontSize: 13, color: '#fff', background: '#059669', border: 'none', borderRadius: 6, padding: '6px 18px', cursor: 'pointer', fontFamily: 'inherit', alignSelf: 'flex-end', fontWeight: 700 }}>
+          適用
+        </button>
+      </div>
+
+      {/* 除外するステータス */}
+      {allStatuses.length > 0 && (
+        <div style={{ borderTop: '1px solid #e2f0e8', paddingTop: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#6a9a7a', marginBottom: 6 }}>
+            除外するステータス
+            <span style={{ fontWeight: 400, marginLeft: 6, fontSize: 11, color: '#9ca3af' }}>選択したステータスは自動ピックアップしない</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {allStatuses.map(s => {
+              const checked = (draft.excludeStatuses || []).includes(s);
+              return (
+                <label key={s} style={{
+                  display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, cursor: 'pointer',
+                  background: checked ? '#ecfdf5' : '#f8fbf9',
+                  border: `1px solid ${checked ? '#059669' : '#d8ede1'}`,
+                  borderRadius: 5, padding: '3px 9px',
+                  color: checked ? '#059669' : '#6a9a7a',
+                  fontWeight: checked ? 700 : 400, userSelect: 'none',
+                }}>
+                  <input type="checkbox" checked={checked} onChange={() => toggleStatus(s)}
+                    style={{ margin: 0, accentColor: '#059669' }} />
+                  {s}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -360,10 +526,12 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
     setTimeout(() => setToast(''), 5000);
   };
 
-  const { flagged, unreachable, stalled } = useMemo(() => {
+  const { flagged, unreachable, stalled, nurturing, followupEnd } = useMemo(() => {
     const flagged = [];
     const unreachable = [];
     const stalled = [];
+    const nurturing = [];
+    const followupEnd = [];
     const seen = new Set();
 
     // 完了済み：完了時より多くアクションが追加されるまでは非表示（削除は無視）
@@ -371,7 +539,11 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
       l.consultation_completed &&
       (l.actions || []).length <= (l.consultation_completed_actions ?? -1);
 
-    const targets = leads.filter(l => l.status !== '育成対象外' && !isCompleted(l));
+    const targets = leads.filter(l =>
+      l.status !== '育成対象外' &&
+      !settings.excludeStatuses.includes(l.status) &&
+      !isCompleted(l)
+    );
 
     targets.forEach(lead => {
       if (lead.consultation_flag) {
@@ -380,24 +552,57 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
       }
     });
 
+    // 追客終了候補を繋がらない・停滞中より先に処理（ナーチャリングのリードが重複しないよう）
     targets.forEach(lead => {
       if (seen.has(lead.id)) return;
+      if (lead.status !== 'ナーチャリング') return;
+      if (!lead.next_action_date) return;
+      const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
+      if (actionCount < settings.minActions) return;
+      if (detectUnreachable(lead, settings.minFollowupEnd)) {
+        followupEnd.push(lead);
+        seen.add(lead.id);
+      }
+    });
+
+    targets.forEach(lead => {
+      if (seen.has(lead.id)) return;
+      // 相談メモを除いたアクション数が最低数未満はスキップ
+      const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
+      if (actionCount < settings.minActions) return;
+      // ネクストアクション未設定はチェックボックスがオンの場合のみ対象にする
+      if (!lead.next_action_date && !settings.stalledNoNextAction) return;
       if (detectUnreachable(lead, settings.minUnreachable)) {
         unreachable.push(lead);
         seen.add(lead.id);
         return;
       }
-      if (detectStalled(lead, settings.stalledDays)) {
+      if (detectStalled(lead, settings.stalledDays, {
+        stalledNoNextAction:  settings.stalledNoNextAction,
+        stalledOverdueAction: settings.stalledOverdueAction,
+        stalledLastFailed:    settings.stalledLastFailed,
+      })) {
         stalled.push(lead);
       }
     });
 
-    return { flagged, unreachable, stalled };
+    targets.forEach(lead => {
+      if (seen.has(lead.id)) return;
+      if (lead.status === 'ナーチャリング') return;
+      const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
+      if (actionCount < settings.minActions) return;
+      if (detectUnreachable(lead, settings.minNurturing)) {
+        nurturing.push(lead);
+        seen.add(lead.id);
+      }
+    });
+
+    return { flagged, unreachable, stalled, nurturing, followupEnd };
   }, [leads, settings]);
 
   const todayLabel = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'long', day: 'numeric', weekday: 'short' });
-  const total = flagged.length + unreachable.length + stalled.length;
-  const sectionData = { flagged, unreachable, stalled };
+  const total = flagged.length + unreachable.length + stalled.length + nurturing.length + followupEnd.length;
+  const sectionData = { flagged, unreachable, stalled, nurturing, followupEnd };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -440,16 +645,24 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
       </div>
 
       {/* 設定パネル（開閉） */}
-      {showSettings && <SettingsPanel settings={settings} onChange={setSettings} />}
+      {showSettings && <SettingsPanel settings={settings} onChange={setSettings} onClose={() => setShowSettings(false)} />}
 
       {/* ボード（3列） */}
       <div style={{ flex: 1, overflowX: 'auto', overflowY: 'hidden', padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
         {SECTIONS.map(section => {
           const items = sectionData[section.key] || [];
           const description = section.key === 'stalled'
-            ? `${settings.stalledDays}日以上アクションなし`
+            ? [
+                `${settings.stalledDays}日以上アクションなし`,
+                settings.stalledNoNextAction  && 'ネクストアクション未設定',
+                settings.stalledOverdueAction && '期限切れ',
+              ].filter(Boolean).join(' / ')
             : section.key === 'unreachable'
             ? `直近${settings.minUnreachable}回の架電がすべて不在`
+            : section.key === 'nurturing'
+            ? `直近${settings.minNurturing}回不在/不通・ナーチャリング以外`
+            : section.key === 'followupEnd'
+            ? <>{`直近${settings.minFollowupEnd}回不在/不通・ナーチャリング・`}<br/>アクション有</>
             : '手動でフラグを立てたリード';
 
           return (
@@ -458,13 +671,13 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
               <div style={{
                 background: section.bg, border: `1px solid ${section.border}`,
                 borderRadius: '8px 8px 0 0', padding: '10px 14px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
               }}>
-                <div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: section.color }}>{section.label}</span>
-                  <div style={{ fontSize: 12, color: section.color + 'aa', marginTop: 2 }}>{description}</div>
+                  <div style={{ fontSize: 12, color: section.color + 'aa', marginTop: 2, minHeight: '2.4em', lineHeight: 1.5 }}>{description}</div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: section.color, background: '#fff', borderRadius: 10, padding: '2px 10px', border: `1px solid ${section.border}` }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: section.color, background: '#fff', borderRadius: 10, padding: '2px 10px', border: `1px solid ${section.border}`, flexShrink: 0, marginLeft: 8, whiteSpace: 'nowrap' }}>
                   {items.length}件
                 </span>
               </div>
@@ -491,6 +704,7 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
                       onOpenLead={onOpenLead}
                       onUpdate={patch => onUpdate(lead.id, patch)}
                       onCompleted={() => showToast(`${lead.company || 'リード'} の相談を完了しました`)}
+                      compact={section.key === 'followupEnd'}
                     />
                   ))
                 )}
