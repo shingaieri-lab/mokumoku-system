@@ -11,6 +11,7 @@ export function LeadFilterBar({
   sort, setSort, sortDir, setSortDir,
   leads, isMobile,
 }) {
+  const allStatuses = getStatuses();
   return (
     <>
       {/* フィルター 1行目 */}
@@ -68,7 +69,7 @@ export function LeadFilterBar({
         </button>
         <span style={{fontSize:11, color:"#c0dece", flexShrink:0, margin:"0 4px"}}>|</span>
         <span style={{fontSize:11, color:"#6a9a7a", flexShrink:0}}>ステータス:</span>
-        {getStatuses().map(s => {
+        {allStatuses.map(s => {
           const active = fStatuses.has(s);
           const c = getStatusColor(s);
           return (
@@ -79,10 +80,10 @@ export function LeadFilterBar({
             </button>
           );
         })}
-        {fStatuses.size > 0 && (
-          <button onClick={() => setFStatuses(new Set())}
+        {fStatuses.size < allStatuses.length && (
+          <button onClick={() => setFStatuses(new Set(allStatuses))}
             style={{fontSize:11,color:"#6a9a7a",background:"none",border:"none",cursor:"pointer",padding:"2px 4px",flexShrink:0,whiteSpace:"nowrap"}}>
-            ✕ クリア
+            ✕ 全選択に戻す
           </button>
         )}
       </div>
