@@ -92,11 +92,11 @@ export function buildRuleSummary(actions) {
   return [lastDate, memoPart].filter(Boolean).join("  ");
 }
 
-export const ACTION_TYPE_LABEL = { call: '電話', email: 'メール', sms: 'SMS', other: 'その他' };
+export const ACTION_TYPE_LABEL = { call: '電話', email: 'メール', sms: 'SMS', other: 'その他', consultation: '相談メモ' };
 
 // アクション履歴をAIに渡す要約プロンプトを生成する
 export function buildSummaryPrompt(lead) {
-  const actions = (lead.actions || []).slice(0, 8);
+  const actions = (lead.actions || []).filter(a => a.type !== 'consultation').slice(0, 8);
   const lines = actions.map(a => {
     const typeLabel = ACTION_TYPE_LABEL[a.type] || a.type;
     const parts = [a.date, typeLabel, a.result, a.summary].filter(Boolean);
@@ -119,7 +119,7 @@ ${lines}
 
 // 電話が繋がっていないか自動検出する
 // 直近の架電アクションが2回以上あり、すべて「不在」「留守」「繋がらない」系の結果かどうかを判定する
-const UNREACHABLE_RESULT = ['不在', '留守', '繋がらない', '繋がらず', 'not in'];
+const UNREACHABLE_RESULT = ['不在', '不通', '留守', '繋がらない', '繋がらず', 'not in'];
 const UNREACHABLE_MEMO   = ['繋がら', '不在', '留守'];
 
 function isCallUnreachable(action) {
@@ -138,14 +138,33 @@ export function detectUnreachable(lead, minCalls = 2) {
   return unreachable.length >= minCalls && unreachable.length === recent.length;
 }
 
-// アクションが止まっているか検出（デフォルト14日以上アクションなし）
-export function detectStalled(lead, days = 14) {
+// アクションが止まっているか検出
+// opts.stalledNoNextAction:  アクションはあるが次回アクション日が未設定のリードも対象
+// opts.stalledOverdueAction: 次回アクション日が期限切れのリードも対象
+// opts.stalledLastFailed:    直前の非相談アクション結果が「不在」または「不通」のリードのみ対象
+export function detectStalled(lead, days = 14, opts = {}) {
+  const { stalledNoNextAction = false, stalledOverdueAction = false, stalledLastFailed = false } = opts;
   const actions = lead.actions || [];
-  if (actions.length === 0) return false;
-  const lastDate = actions[0].date || '';
-  if (!lastDate) return false;
-  const diffDays = (new Date(TODAY + 'T00:00:00+09:00') - new Date(lastDate + 'T00:00:00+09:00')) / 86400000;
-  return diffDays >= days;
+
+  if (stalledLastFailed) {
+    const lastReal = actions.find(a => a.type !== 'consultation');
+    const result = lastReal?.result || '';
+    if (result !== '不在' && result !== '不通') return false;
+  }
+
+  if (actions.length > 0) {
+    const lastDate = actions[0].date || '';
+    if (lastDate) {
+      const diffDays = (new Date(TODAY + 'T00:00:00+09:00') - new Date(lastDate + 'T00:00:00+09:00')) / 86400000;
+      if (diffDays >= days) return true;
+    }
+  }
+
+  if (stalledNoNextAction && actions.length > 0 && !lead.next_action_date) return true;
+
+  if (stalledOverdueAction && lead.next_action_date && lead.next_action_date < TODAY) return true;
+
+  return false;
 }
 
 // 相談ボード用のAIプロンプトを生成する
@@ -156,7 +175,7 @@ export function buildConsultationPrompt(lead, reason) {
     flagged: '担当者が相談を希望している',
   }[reason] || '';
 
-  const actions = (lead.actions || []).slice(0, 5);
+  const actions = (lead.actions || []).filter(a => a.type !== 'consultation').slice(0, 5);
   const lines = actions.map(a => {
     const typeLabel = ACTION_TYPE_LABEL[a.type] || a.type;
     return `- ${a.date || ''} ${typeLabel} ${a.result || ''} ${extractText(a.summary || '').slice(0, 50)}`;

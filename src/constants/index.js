@@ -37,10 +37,11 @@ export const LEAD_SOURCE_ICONS = [
 export const MQL_OPTIONS = ["MQL", "非MQL"];
 
 export const ACTION_TYPES = [
-  { v: "call",  label: "電話",  icon: "📞", color: "#10b981" },
-  { v: "email", label: "メール",icon: "✉️",  color: "#8b5cf6" },
-  { v: "sms",   label: "SMS",   icon: "💬", color: "#0ea5e9" },
-  { v: "other", label: "その他",icon: "📝", color: "#6a9a7a" },
+  { v: "call",         label: "電話",    icon: "📞", color: "#10b981" },
+  { v: "email",        label: "メール",  icon: "✉️",  color: "#8b5cf6" },
+  { v: "sms",          label: "SMS",     icon: "💬", color: "#0ea5e9" },
+  { v: "other",        label: "その他",  icon: "📝", color: "#6a9a7a" },
+  { v: "consultation", label: "相談メモ", icon: "💡", color: "#f59e0b" },
 ];
 
 export const ACTION_RESULTS = ["取次", "不在", "不通", "折電", "送信済", "その他"];
