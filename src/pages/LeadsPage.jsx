@@ -21,7 +21,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const [showImport, setShowImport] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [showZohoImport, setShowZohoImport] = useState(false);
-  const [fStatuses, setFStatuses] = useState(new Set());
+  const [fStatuses, setFStatuses] = useState(() => new Set(getStatuses()));
   const [fSource, setFSrc] = useState("");
   const [fPortal, setFPortal] = useState("");
   const [fMonth, setFMonth] = useState("");
@@ -53,7 +53,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const STATUS_ORDER_FIXED = Object.fromEntries(getStatuses().map((s, i) => [s, i]));
 
   const list = leads
-    .filter(l => fStatuses.size === 0 || fStatuses.has(l.status))
+    .filter(l => fStatuses.has(l.status))
     .filter(l => {
       if (!fMonth) return true;
       const s = l.date||""; let ym = s.slice(0,7);
