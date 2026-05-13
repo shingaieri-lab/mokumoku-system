@@ -536,7 +536,10 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
       }
     });
 
-    // 追客終了候補を繋がらない・停滞中より先に処理（ナーチャリングのリードが重複しないよう）
+    // 優先度：追客終了候補 ＞ ナーチャリング候補 ＞ 停滞中
+    // 高優先度から先に seen に追加することで重複表示を防ぐ
+
+    // ① 追客終了候補（ナーチャリングステータスのリードが対象）
     targets.forEach(lead => {
       if (seen.has(lead.id)) return;
       if (lead.status !== 'ナーチャリング') return;
@@ -549,12 +552,23 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
       }
     });
 
+    // ② ナーチャリング候補（追客終了候補より優先度低・停滞中より優先度高）
     targets.forEach(lead => {
       if (seen.has(lead.id)) return;
-      // 相談メモを除いたアクション数が最低数未満はスキップ
+      if (lead.status === 'ナーチャリング') return;
       const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
       if (actionCount < settings.minActions) return;
-      // ネクストアクション未設定はチェックボックスがオンの場合のみ対象にする
+      if (detectUnreachable(lead, settings.minNurturing)) {
+        nurturing.push(lead);
+        seen.add(lead.id);
+      }
+    });
+
+    // ③ 停滞中（最も優先度低）
+    targets.forEach(lead => {
+      if (seen.has(lead.id)) return;
+      const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
+      if (actionCount < settings.minActions) return;
       if (!lead.next_action_date && !settings.stalledNoNextAction) return;
       if (lead.status === 'ナーチャリング') return;
       if (detectStalled(lead, settings.stalledDays, {
@@ -563,16 +577,6 @@ export function ConsultationPage({ leads, onOpenLead, onUpdate }) {
         stalledLastFailed:    settings.stalledLastFailed,
       })) {
         stalled.push(lead);
-      }
-    });
-
-    targets.forEach(lead => {
-      if (seen.has(lead.id)) return;
-      if (lead.status === 'ナーチャリング') return;
-      const actionCount = (lead.actions || []).filter(a => a.type !== 'consultation').length;
-      if (actionCount < settings.minActions) return;
-      if (detectUnreachable(lead, settings.minNurturing)) {
-        nurturing.push(lead);
         seen.add(lead.id);
       }
     });

@@ -165,23 +165,30 @@ export function detectUnreachable(lead, minCalls = 2) {
 // opts.stalledLastFailed:    直前の非相談アクション結果が「不在」または「不通」のリードのみ対象
 export function detectStalled(lead, days = 14, opts = {}) {
   const { stalledNoNextAction = false, stalledOverdueAction = false, stalledLastFailed = false } = opts;
-  const actions = lead.actions || [];
+
+  // 保存順序に依存しないよう、日付降順（新しい順）に並べ直す
+  const actionsSortedNewestFirst = (lead.actions || [])
+    .filter(a => a.date)
+    .sort((a, b) =>
+      (String(b.date || '') + (b.time || '')).localeCompare(
+       String(a.date || '') + (a.time || ''))
+    );
 
   if (stalledLastFailed) {
-    const lastReal = actions.find(a => a.type !== 'consultation');
+    // 最新の（相談以外の）アクション結果が不在・不通でなければ対象外
+    const lastReal = actionsSortedNewestFirst.find(a => a.type !== 'consultation');
     const result = lastReal?.result || '';
     if (result !== '不在' && result !== '不通') return false;
   }
 
-  if (actions.length > 0) {
-    const lastDate = actions[0].date || '';
-    if (lastDate) {
-      const diffDays = (new Date(TODAY + 'T00:00:00+09:00') - new Date(lastDate + 'T00:00:00+09:00')) / 86400000;
-      if (diffDays >= days) return true;
-    }
+  // 最新アクションの日付から今日までの日数が days 以上なら停滞とみなす
+  if (actionsSortedNewestFirst.length > 0) {
+    const lastActionDate = actionsSortedNewestFirst[0].date;
+    const diffDays = (new Date(TODAY + 'T00:00:00+09:00') - new Date(lastActionDate + 'T00:00:00+09:00')) / 86400000;
+    if (diffDays >= days) return true;
   }
 
-  if (stalledNoNextAction && actions.length > 0 && !lead.next_action_date) return true;
+  if (stalledNoNextAction && actionsSortedNewestFirst.length > 0 && !lead.next_action_date) return true;
 
   if (stalledOverdueAction && lead.next_action_date && lead.next_action_date < TODAY) return true;
 
