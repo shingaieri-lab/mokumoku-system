@@ -215,6 +215,7 @@ router.post('/api/zoho/push-action', requireAuth, rateLimit, async (req, res) =>
     };
     if (zohoUserId) {
       eventRecord.Owner = { id: zohoUserId };
+      eventRecord.field15 = { id: zohoUserId };
     }
 
     const data = await zohoApi('POST', '/Event', { data: [eventRecord] });
