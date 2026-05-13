@@ -130,9 +130,12 @@ function isCallUnreachable(action) {
 }
 
 export function detectUnreachable(lead, minCalls = 2) {
-  const calls = (lead.actions || []).filter(a => a.type === 'call');
+  // 日付・時刻で明示的に新しい順にソート（保存順序に依存しない）
+  const calls = (lead.actions || [])
+    .filter(a => a.type === 'call')
+    .sort((a, b) => (String(b.date || '') + (b.time || '')).localeCompare(String(a.date || '') + (a.time || '')));
   if (calls.length < minCalls) return false;
-  // 新しい順（配列先頭が最新）で先頭から連続して不在・不通が続く件数を数える
+  // 先頭（最新）から連続して不在・不通が続く件数を数える
   let consecutive = 0;
   for (const call of calls) {
     if (isCallUnreachable(call)) {
