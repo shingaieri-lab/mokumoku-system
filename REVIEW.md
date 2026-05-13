@@ -107,11 +107,11 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 
 | 優先度 | 問題 | 詳細 |
 |--------|------|------|
-| 高 | **ログインエンドポイントにIPレート制限がない** | アカウントロック（5回失敗）はあるが、IPベースの制限がなく別アカウントへの総当たりが可能。`/api/login` に `rateLimit` ミドルウェアを追加する |
-| 高 | **Zoho Client SecretがKVに平文保存** | `zoho_config` キーに暗号化なしで保存。KVが漏洩するとZoho APIを不正利用される。環境変数への移行または暗号化が必要 |
-| 高 | **APIキー（Gemini等）がKVに平文保存** | `accounts` / `ai_config` キーに平文保存。暗号化またはサーバー側管理への変更が必要 |
+| ~~高~~ | ~~**ログインエンドポイントにIPレート制限がない**~~ | ✅ 対応済み（`feature/security-review`）：`/api/login` に `rateLimit` ミドルウェアを追加 |
+| ~~高~~ | ~~**Zoho Client SecretがKVに平文保存**~~ | ✅ 対応済み（`feature/security-review`）：保存時に AES-256-GCM で暗号化。`ENCRYPTION_KEY` 環境変数が必要 |
+| ~~高~~ | ~~**APIキー（Gemini等）がKVに平文保存**~~ | ✅ 対応済み（`feature/security-review`）：`ai_config.geminiKey` / `accounts[].geminiKey` を保存時に暗号化 |
 | 中 | **入力バリデーションが薄い** | リード・アカウント・設定保存のAPIで `req.body` を検証なしで保存。Zodなどでスキーマ定義が必要 |
-| 中 | **OAuth redirectURIが動的生成** | `req.headers.host` から生成しており、環境変数で固定値にすべき（routes/zoho.js:37-38） |
+| ~~中~~ | ~~**OAuth redirectURIが動的生成**~~ | ✅ 対応済み（`feature/security-review`）：`ZOHO_REDIRECT_URI` 環境変数を優先使用。未設定時は従来の動的生成にフォールバック |
 | 中 | **Webhook署名検証がない** | トークン一致のみ。ZohoのHMAC-SHA256署名検証が未実装 |
 | 低 | **セッション有効期限が7日** | 顧客情報を扱うツールとして、3日以下への短縮を検討 |
 
