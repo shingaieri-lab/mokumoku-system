@@ -129,22 +129,34 @@ function isCallUnreachable(action) {
     || UNREACHABLE_MEMO.some(k => memo.includes(k));
 }
 
+// 「直近の架電が minCalls 回以上、連続して不在・不通で終わっているか」を判定する。
+// 例）minCalls=2 のとき：
+//   不通→不在→取次→不在  ✅ 最新2件が連続不在・不通
+//   不通→取次→不在→不在  ❌ 最新が取次（繋がった）なのでリセット
 export function detectUnreachable(lead, minCalls = 2) {
-  // 日付・時刻で明示的に新しい順にソート（保存順序に依存しない）
-  const calls = (lead.actions || [])
+  // ① 電話アクションだけを取り出し、新しい順（日付降順）に並べる
+  const callsSortedNewestFirst = (lead.actions || [])
     .filter(a => a.type === 'call')
-    .sort((a, b) => (String(b.date || '') + (b.time || '')).localeCompare(String(a.date || '') + (a.time || '')));
-  if (calls.length < minCalls) return false;
-  // 先頭（最新）から連続して不在・不通が続く件数を数える
-  let consecutive = 0;
-  for (const call of calls) {
+    .sort((a, b) =>
+      (String(b.date || '') + (b.time || '')).localeCompare(
+       String(a.date || '') + (a.time || ''))
+    );
+
+  if (callsSortedNewestFirst.length < minCalls) return false;
+
+  // ② 最新の架電から順に「不在・不通か？」を確認し、連続件数を数える
+  //    繋がった記録（取次・折電など）が出た時点で終了
+  let consecutiveUnreachable = 0;
+  for (const call of callsSortedNewestFirst) {
     if (isCallUnreachable(call)) {
-      consecutive++;
+      consecutiveUnreachable++;
     } else {
       break;
     }
   }
-  return consecutive >= minCalls;
+
+  // ③ 連続して不在・不通だった件数が、設定回数以上なら候補に上げる
+  return consecutiveUnreachable >= minCalls;
 }
 
 // アクションが止まっているか検出
