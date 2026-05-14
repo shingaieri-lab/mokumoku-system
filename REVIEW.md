@@ -114,7 +114,7 @@ AIが通話メモを読んで次の行動を提案したり、Googleカレンダ
 | ~~中~~ | ~~**OAuth redirectURIが動的生成**~~ | ✅ 対応済み（`feature/security-review`、2026-05-13）：`ZOHO_REDIRECT_URI` 環境変数を優先使用。未設定時は従来の動的生成にフォールバック |
 | ~~中~~ | ~~**入力バリデーションが薄い**~~ | ✅ 対応済み（`feature/input-validation`、2026-05-14）：`lib/validators.js` に Zod スキーマを定義。`/api/leads`・`/api/accounts`・`/api/master-settings`・`/api/email-tpls` に適用 |
 | ~~中~~ | ~~**Webhook署名検証がない**~~ | ✅ 対応済み（`feature/input-validation`、2026-05-14）：`ZOHO_WEBHOOK_SECRET` 環境変数を追加。設定時は `X-Zoho-Webhook-Signature` ヘッダーの HMAC-SHA256 を検証。タイミング攻撃対策として `timingSafeEqual` を使用 |
-| 低 | **セッション有効期限が7日** | 顧客情報を扱うツールとして、3日以下への短縮を検討 |
+| ~~低~~ | ~~**セッション有効期限が7日**~~ | ✅ 対応済み（`feature/input-validation`、2026-05-14）：`SESSION_TTL_SEC = 3日` を `lib/auth.js` に定数化。Cookie の `maxAge` と KV の TTL を同じ定数から設定し、ズレを防止 |
 
 
 
