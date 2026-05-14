@@ -14,6 +14,7 @@ import { uid } from '../constants/index.js';
 import { getStatuses } from '../lib/master.js';
 import { ExternalLinkIcon, UploadIcon, InboxIcon, UsersIcon } from '../components/ui/Icons.jsx';
 import { updateZohoLeadStatus } from '../lib/zoho.js';
+import { Pagination } from '../components/ui/Pagination.jsx';
 
 export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile, onGoToZohoSettings }) {
   const [showForm, setShowForm]     = useState(false);
@@ -33,6 +34,8 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const [sort, setSort] = useState("fixed");
   const [sortDir, setSortDir] = useState("asc");
   const [openId, setOpenId] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
 
   useEffect(() => {
     if (!initialFilter) return;
@@ -49,6 +52,9 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
     setOpenId(initialOpenId);
     onOpenIdConsumed && onOpenIdConsumed();
   }, [initialOpenId]);
+
+  // フィルター・ソート変更時はページ1に戻す
+  useEffect(() => { setPage(1); }, [fStatuses, fSource, fPortal, fMonth, fNextAction, fIS, fQ, fHasPortal, fMql, sort, sortDir]);
 
   const STATUS_ORDER_FIXED = Object.fromEntries(getStatuses().map((s, i) => [s, i]));
 
@@ -91,6 +97,9 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
       return ra < rb ? -1 : ra > rb ? 1 : 0;
     });
 
+  const totalPages = Math.ceil(list.length / pageSize);
+  const paged = list.slice((page - 1) * pageSize, page * pageSize);
+
   const selectedLead = openId ? leads.find(l => l.id === openId) : null;
 
   const handleEditAction = (lead, aid, updated) => {
@@ -121,7 +130,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   return (
     <div className="lead-list-container" style={{paddingLeft:28, paddingRight:28, height: isMobile ? "auto" : "100%", overflow: isMobile ? "visible" : "hidden", display:"flex", flexDirection:"column", minHeight: isMobile ? "calc(100vh - 130px)" : undefined}}>
       <div className="page-pad" style={{flexShrink:0, background:"#f0f5f2", paddingTop:24, paddingBottom:8, marginLeft:-28, marginRight:-28, paddingLeft:28, paddingRight:28, borderBottom:"1px solid #d8ede1"}}>
-        <Header title={<span style={{display:"flex",alignItems:"center",gap:7}}><UsersIcon size={20} color="#174f35" /> リード一覧</span>} sub={`${leads.length}件 / 表示 ${list.length}件`}>
+        <Header title={<span style={{display:"flex",alignItems:"center",gap:7}}><UsersIcon size={20} color="#174f35" /> リード一覧</span>} sub={`全 ${leads.length}件 / フィルター後 ${list.length}件`}>
           <div className="lead-header-actions" style={{display:"flex", gap:8}}>
             <button onClick={exportCSV} style={{...S.btnSec, display:"flex", alignItems:"center", gap:4}}><UploadIcon size={12} color="#6a9a7a" /> CSVエクスポート</button>
             {!readOnly && <button onClick={() => { setShowImport(v=>!v); setImportResult(null); }} style={{...S.btnSec, display:"flex", alignItems:"center", gap:4}}><InboxIcon size={12} color="#6a9a7a" /> CSVインポート</button>}
@@ -173,7 +182,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
         <div style={{flex: isMobile ? "none" : "0 0 50%", width: isMobile ? "100%" : "50%", overflowY:"auto"}}>
           <div style={{display:"flex", flexDirection:"column", gap:10}}>
             {list.length === 0 && <div style={{...S.empty, padding:"32px"}}>リードがありません</div>}
-            {list.map(lead => (
+            {paged.map(lead => (
               <LeadRow key={lead.id} lead={lead} openId={openId} setOpenId={setOpenId}
                 onEdit={readOnly ? null : () => { setEditing(lead); setShowForm(true); }}
                 onDelete={readOnly ? null : () => onDelete(lead.id)}
@@ -193,6 +202,11 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
               />
             ))}
           </div>
+          <Pagination
+            page={page} totalPages={totalPages} total={list.length} pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={n => { setPageSize(n); setPage(1); }}
+          />
         </div>
 
         {/* デスクトップ: 右パネル */}
