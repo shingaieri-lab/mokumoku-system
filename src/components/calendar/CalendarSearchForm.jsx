@@ -1,5 +1,5 @@
 // 商談候補日検索フォームUI（検索条件の入力）
-import { TrashIcon, SearchIcon, LightbulbIcon, AlertIcon, BanIcon } from '../ui/Icons.jsx';
+import { TrashIcon, SearchIcon, LightbulbIcon, AlertIcon, BanIcon, SpinnerIcon } from '../ui/Icons.jsx';
 
 const S = {
   card:  { background:"#ffffff", border:"1px solid #e2f0e8", borderRadius:14, padding:"18px 20px", marginBottom:14, boxShadow:"0 2px 10px #0569690a" },
@@ -134,7 +134,7 @@ export function CalendarSearchForm({
       </div>
       <button onClick={onSearch} disabled={loading}
         style={{...S.btnP, width:"100%", opacity:loading?0.6:1}}>
-        {loading ? <span style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center"}}><SearchIcon size={14} color="#fff" /> 検索中...</span> : <span style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center"}}><SearchIcon size={14} color="#fff" /> 空き時間を検索</span>}
+        {loading ? <span style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center"}}><SpinnerIcon size={14} color="#fff" /> 検索中…</span> : <span style={{display:"flex",alignItems:"center",gap:5,justifyContent:"center"}}><SearchIcon size={14} color="#fff" /> 空き時間を検索</span>}
       </button>
       {error && <div style={{color:"#ef4444",fontSize:12,marginTop:8}}>{error}</div>}
     </div>

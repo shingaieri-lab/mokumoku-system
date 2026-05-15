@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { getISMembers } from '../../lib/master.js';
 import { saveZohoConfig, fetchZohoUsers } from '../../lib/zoho.js';
-import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, PinIcon } from '../ui/Icons.jsx';
+import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, PinIcon, SpinnerIcon } from '../ui/Icons.jsx';
 
 export function ZohoCrmSettings() {
   const stored = window.__appData?.zohoConfig || {};
@@ -175,8 +175,8 @@ export function ZohoCrmSettings() {
       <div style={{background:'#f8fbf9',border:'1px solid #e2f0e8',borderRadius:8,padding:'14px',marginBottom:14}}>
         <div style={{fontSize:12,fontWeight:700,color:'#174f35',marginBottom:4}}>Zohoユーザーマッピング</div>
         <div style={{fontSize:11,color:'#6a9a7a',marginBottom:10}}>行動を同期する際の担当者・割り当て先として使用します<br/>本ツールのメンバーとZohoのユーザーを対応付けてください</div>
-        <button onClick={handleFetchZohoUsers} disabled={fetchingUsers || !authenticated} style={{...btnP, fontSize:11, padding:'6px 14px', marginBottom:12, opacity:(!authenticated||fetchingUsers)?0.6:1}}>
-          {fetchingUsers ? '取得中...' : 'Zohoユーザーを取得'}
+        <button onClick={handleFetchZohoUsers} disabled={fetchingUsers || !authenticated} style={{...btnP, fontSize:11, padding:'6px 14px', marginBottom:12, opacity:(!authenticated||fetchingUsers)?0.6:1, display:"flex", alignItems:"center", gap:5}}>
+          {fetchingUsers ? <><SpinnerIcon size={12} color="#fff" /> 取得中…</> : 'Zohoユーザーを取得'}
         </button>
         {!authenticated && <div style={{fontSize:10,color:'#d97706',marginBottom:8}}>※ Zoho認証後に取得できます</div>}
         {isStaffAccounts.length > 0 && (
