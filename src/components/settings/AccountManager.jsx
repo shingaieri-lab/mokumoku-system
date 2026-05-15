@@ -1,6 +1,6 @@
 // アカウント管理（管理者向け）- 招待コード発行・アカウントCRUD
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, AlertIcon, UsersIcon, ExternalLinkIcon, MailIcon, LockOpenIcon } from '../ui/Icons.jsx';
+import { PencilIcon, TrashIcon, AlertIcon, UsersIcon, ExternalLinkIcon, MailIcon, LockOpenIcon, SpinnerIcon } from '../ui/Icons.jsx';
 import { PALETTE } from '../../constants/index.js';
 import { loadAccounts, saveAccounts } from '../../lib/accounts.js';
 import { getLoginLocks, unlockAccount, createInvite } from '../../lib/account.js';
@@ -136,8 +136,8 @@ export function AccountManager({ currentUser, onClose, inline, onUpdateProfile }
       <div style={{marginBottom:16, padding:"12px 14px", background:"#f0faf5", borderRadius:9, border:"1px solid #c0dece"}}>
         <div style={{fontSize:12, fontWeight:700, color:"#174f35", marginBottom:8, display:"flex", alignItems:"center", gap:5}}><ExternalLinkIcon size={12} color="#174f35" /> 招待コード発行</div>
         <div style={{fontSize:11, color:"#6a9a7a", marginBottom:8}}>コードは24時間有効・1回限り使用可能です</div>
-        <button onClick={handleGenerateInvite} disabled={inviteLoading} style={{padding:"6px 14px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#10b981,#059669)", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit", opacity:inviteLoading?0.6:1}}>
-          {inviteLoading ? "発行中..." : "招待コードを発行"}
+        <button onClick={handleGenerateInvite} disabled={inviteLoading} style={{padding:"6px 14px", borderRadius:7, border:"none", background:"linear-gradient(135deg,#10b981,#059669)", color:"#fff", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit", opacity:inviteLoading?0.6:1, display:"flex", alignItems:"center", gap:5}}>
+          {inviteLoading ? <><SpinnerIcon size={12} color="#fff" /> 発行中…</> : "招待コードを発行"}
         </button>
         {inviteCode && (
           <div style={{marginTop:10, padding:"8px 12px", background:"#fff", borderRadius:7, border:"1px solid #10b981", display:"flex", alignItems:"center", gap:10}}>

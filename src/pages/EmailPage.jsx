@@ -1,6 +1,6 @@
 // メールテンプレートページ（差し込み変数・Gmail下書き保存・候補日スロット連携）
 import { useState, useEffect } from 'react';
-import { PencilIcon, TrashIcon, MailIcon, FileTextIcon, SendIcon, ClipboardIcon, CheckIcon, CheckCircleIcon } from '../components/ui/Icons.jsx';
+import { PencilIcon, TrashIcon, MailIcon, FileTextIcon, SendIcon, ClipboardIcon, CheckIcon, CheckCircleIcon, SpinnerIcon } from '../components/ui/Icons.jsx';
 import { getMaster } from '../lib/master.js';
 import { getEffectiveAiConfig } from '../lib/accounts.js';
 import { EmailVariableForm } from '../components/email/EmailVariableForm.jsx';
@@ -217,7 +217,7 @@ export function EmailPage({ leads, onUpdate, currentUser, candidateSlots = [], i
                     <div style={{display:"flex",gap:6}}>
                       <button onClick={()=>{setPreviewSubj(subj);setPreviewBody(body);}} style={{padding:"5px 12px",borderRadius:7,border:"1px solid #c0dece",background:"#f0f5f2",color:"#3d7a5e",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>↩ リセット</button>
                       <button onClick={saveGmailDraft} disabled={gmailSaving} style={{padding:"5px 14px",borderRadius:7,border:"none",background:gmailSaved?"#2563eb":gmailSaving?"#93c5fd":"linear-gradient(135deg,#3b82f6,#2563eb)",color:"#fff",fontSize:12,fontWeight:700,cursor:gmailSaving?"not-allowed":"pointer",fontFamily:"inherit",opacity:gmailSaving?0.7:1,display:"flex",alignItems:"center",gap:5}}>
-                        {gmailSaving ? "保存中..." : gmailSaved ? <><CheckCircleIcon size={12} color="#fff" /> 下書き保存済</> : <><SendIcon size={12} color="#fff" /> Gmailに下書き保存</>}
+                        {gmailSaving ? <><SpinnerIcon size={12} color="#fff" /> 保存中…</> : gmailSaved ? <><CheckCircleIcon size={12} color="#fff" /> 下書き保存済</> : <><SendIcon size={12} color="#fff" /> Gmailに下書き保存</>}
                       </button>
                       <button onClick={()=>copy(previewSubj+"\n\n"+previewBody)} style={{padding:"5px 14px",borderRadius:7,border:"none",background:copied?"#059669":"linear-gradient(135deg,#10b981,#059669)",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
                         {copied ? <><CheckIcon size={12} color="#fff" /> コピー済み</> : <><ClipboardIcon size={12} color="#fff" /> 全文コピー</>}

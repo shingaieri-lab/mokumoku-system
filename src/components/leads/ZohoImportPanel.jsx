@@ -1,7 +1,7 @@
 // Zoho CRM 手動取込パネル
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
-import { ExternalLinkIcon, CheckCircleIcon, AlertIcon } from '../ui/Icons.jsx';
+import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, SpinnerIcon } from '../ui/Icons.jsx';
 import { importZohoLead } from '../../lib/zoho.js';
 
 export function ZohoImportPanel({ onAdd, onClose }) {
@@ -28,8 +28,8 @@ export function ZohoImportPanel({ onAdd, onClose }) {
         style={{...S.sel, width:280, flexShrink:0}}
         onKeyDown={e => { if (e.key === 'Enter') handleImport(); }} />
       <button disabled={zohoImporting || !zohoImportId.trim()} onClick={handleImport}
-        style={{...S.btnP, opacity: (zohoImporting || !zohoImportId.trim()) ? 0.5 : 1}}>
-        {zohoImporting ? '取込中…' : '取込'}
+        style={{...S.btnP, opacity: (zohoImporting || !zohoImportId.trim()) ? 0.6 : 1, display:"flex", alignItems:"center", gap:5}}>
+        {zohoImporting ? <><SpinnerIcon size={12} color="#fff" /> 取込中…</> : '取込'}
       </button>
       <button onClick={onClose} style={{fontSize:11,padding:"3px 9px",borderRadius:10,cursor:"pointer",fontFamily:"inherit",background:"none",border:"1px solid #bfdbfe",color:"#1e40af"}}>✕ 閉じる</button>
       {zohoImportMsg && (

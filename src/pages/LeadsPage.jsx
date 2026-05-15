@@ -1,5 +1,5 @@
 // リード一覧ページ（フィルター・ソート・インポート・アクション履歴パネル）
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { S } from '../styles/index.js';
 import { Header } from '../components/ui/Layout.jsx';
 import { CSVImport } from '../components/leads/CSVImport.jsx';
@@ -15,6 +15,7 @@ import { getStatuses } from '../lib/master.js';
 import { ExternalLinkIcon, UploadIcon, InboxIcon, UsersIcon } from '../components/ui/Icons.jsx';
 import { updateZohoLeadStatus } from '../lib/zoho.js';
 import { Pagination } from '../components/ui/Pagination.jsx';
+import { Toast } from '../components/ui/Toast.jsx';
 
 export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBulkAdd, initialFilter, onFilterConsumed, initialOpenId, onOpenIdConsumed, currentUser, readOnly, isMobile, onGoToZohoSettings }) {
   const [showForm, setShowForm]     = useState(false);
@@ -36,6 +37,19 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
   const [openId, setOpenId] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(30);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+
+  const showToast = (message, type = 'success') => {
+    clearTimeout(toastTimer.current);
+    setToast({ message, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  };
+
+  const handleDeleteLead = (id) => {
+    onDelete(id);
+    showToast('リードを削除しました');
+  };
 
   useEffect(() => {
     if (!initialFilter) return;
@@ -155,7 +169,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
 
         {/* Zoho手動取込パネル */}
         {showZohoImport && !readOnly && (
-          <ZohoImportPanel onAdd={lead => { onAdd(lead); setEditing(lead); setShowForm(true); }} onClose={() => setShowZohoImport(false)} />
+          <ZohoImportPanel onAdd={lead => { onAdd(lead); showToast(`「${lead.company || lead.contact}」を取込みました`); setEditing(lead); setShowForm(true); }} onClose={() => setShowZohoImport(false)} />
         )}
 
         <LeadFilterBar
@@ -171,7 +185,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
 
       {showImport && (
         <CSVImport
-          onImport={newLeads => { onBulkAdd(newLeads); setImportResult({ count: newLeads.length }); }}
+          onImport={newLeads => { onBulkAdd(newLeads); setImportResult({ count: newLeads.length }); showToast(`${newLeads.length}件のリードを取込みました`); }}
           onClose={() => setShowImport(false)}
           result={importResult}
         />
@@ -185,7 +199,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
             {paged.map(lead => (
               <LeadRow key={lead.id} lead={lead} openId={openId} setOpenId={setOpenId}
                 onEdit={readOnly ? null : () => { setEditing(lead); setShowForm(true); }}
-                onDelete={readOnly ? null : () => onDelete(lead.id)}
+                onDelete={readOnly ? null : () => handleDeleteLead(lead.id)}
                 readOnly={readOnly}
                 currentUser={currentUser}
                 onStatusChange={s => {
@@ -216,7 +230,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
               onClose={() => setOpenId(null)}
               onUpdate={p => onUpdate(selectedLead.id, p)}
               onEdit={readOnly ? null : () => { setEditing(selectedLead); setShowForm(true); }}
-              onDelete={readOnly ? null : () => { onDelete(selectedLead.id); setOpenId(null); }}
+              onDelete={readOnly ? null : () => { handleDeleteLead(selectedLead.id); setOpenId(null); }}
               currentUser={currentUser} readOnly={readOnly}
               onEditAction={(aid, updated) => handleEditAction(selectedLead, aid, updated)}
               onDeleteAction={aid => handleDeleteAction(selectedLead, aid)}
@@ -234,7 +248,7 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
               onClose={() => setOpenId(null)}
               onUpdate={p => onUpdate(selectedLead.id, p)}
               onEdit={readOnly ? null : () => { setEditing(selectedLead); setShowForm(true); }}
-              onDelete={readOnly ? null : () => { onDelete(selectedLead.id); setOpenId(null); }}
+              onDelete={readOnly ? null : () => { handleDeleteLead(selectedLead.id); setOpenId(null); }}
               currentUser={currentUser} readOnly={readOnly}
               onEditAction={(aid, updated) => handleEditAction(selectedLead, aid, updated)}
               onDeleteAction={aid => handleDeleteAction(selectedLead, aid)}
@@ -243,6 +257,8 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
           </div>
         </div>
       )}
+
+      {toast && <Toast message={toast.message} type={toast.type} />}
 
       {showForm && (
         <LeadForm initial={editing}
