@@ -74,6 +74,7 @@ export function App() {
   const [candidateSlots, setCandidateSlots] = useState([]);
   const [calendarSlots, setCalendarSlots] = useState([]);
   const [calendarSearched, setCalendarSearched] = useState(false);
+  const [calendarSearchedMembers, setCalendarSearchedMembers] = useState([]);
   const [calendarLeadId, setCalendarLeadId] = useState("");
   const [aiOpenLeadId, setAiOpenLeadId] = useState(null);
   const [showWizard, setShowWizard] = useState(false);
@@ -149,7 +150,7 @@ const mut = (next) => { setLeads(next); saveLeads(next); };
           onBulkAdd={newLeads => { const next = [...newLeads, ...leads]; setLeads(next); saveLeads(next); }}
           onGoToZohoSettings={() => { setSettingsTab("zoho"); navigate("settings"); }} />}
         {page === "ai"        && <AIPage leads={leads} onAdd={addLead} onUpdate={updateLead} onAddAction={addAction} goLeads={(leadId) => { setAiOpenLeadId(leadId||null); navigate("leads"); }} goCalendar={() => navigate("calendar")} aiConfig={effectiveAiConfig} currentUser={currentUser} isMobile={isMobile} />}
-        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} slots={calendarSlots} setSlots={setCalendarSlots} searched={calendarSearched} setSearched={setCalendarSearched} onGoEmail={(leadId)=>{ setCalendarLeadId(leadId); navigate("email"); }} currentUser={currentUser} leads={leads} />}
+        {page === "calendar"  && <CalendarPage candidateSlots={candidateSlots} onSlotsChange={setCandidateSlots} slots={calendarSlots} setSlots={setCalendarSlots} searched={calendarSearched} setSearched={setCalendarSearched} searchedMembers={calendarSearchedMembers} setSearchedMembers={setCalendarSearchedMembers} onGoEmail={(leadId)=>{ setCalendarLeadId(leadId); navigate("email"); }} currentUser={currentUser} leads={leads} />}
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} onOpenWizard={() => setShowWizard(true)} />}
         {page === "email"        && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} initialLeadId={calendarLeadId} isMobile={isMobile} />}
         {page === "consultation" && (currentUser?.isStaff || currentUser?.role === 'admin') && <ConsultationPage leads={leads} onOpenLead={(id) => { setAiOpenLeadId(id); navigate("leads"); }} onUpdate={updateLead} />}
