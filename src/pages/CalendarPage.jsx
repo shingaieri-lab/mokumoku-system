@@ -1,5 +1,5 @@
 // 商談候補日検索ページ（Google Calendar freeBusy API・候補日選択・カレンダー登録）
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Header } from '../components/ui/Layout.jsx';
 import { CalendarNavIcon, GearIcon } from '../components/ui/Icons.jsx';
 import { loadGCalConfig, saveGCalConfig, fetchFreeBusyWithToken } from '../lib/gcal.js';
@@ -19,7 +19,7 @@ const S = {
   btnSec: { background:"#d8ede1", color:"#2d6b4a", border:"1px solid #c0dece", borderRadius:8, padding:"9px 16px", fontSize:13, cursor:"pointer", fontFamily:"inherit" },
 };
 
-export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slots = [], setSlots = ()=>{}, searched = false, setSearched = ()=>{}, onGoEmail = ()=>{}, currentUser, leads = [] }) {
+export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slots = [], setSlots = ()=>{}, searched = false, setSearched = ()=>{}, searchedMembers = [], setSearchedMembers = ()=>{}, onGoEmail = ()=>{}, currentUser, leads = [] }) {
   const [cfg, setCfg] = useState(() => loadGCalConfig());
   const [showSetup, setShowSetup] = useState(false);
   const [editCfg, setEditCfg] = useState(() => loadGCalConfig());
@@ -55,6 +55,12 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slot
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const isMounted = useRef(false);
+  useEffect(() => {
+    if (!isMounted.current) { isMounted.current = true; return; }
+    setSlots([]); setSearched(false); onSlotsChange([]); setSearchedMembers([]);
+  }, [selectedMembers]);
   const [showCalReg, setShowCalReg] = useState(false);
   const [emailLeadId, setEmailLeadId] = useState("");
   const [oauthToken, setOauthToken] = useState(null);
@@ -124,7 +130,7 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slot
         }
         cur.setDate(cur.getDate() + 1);
       }
-      setSlots(found); setSearched(true);
+      setSlots(found); setSearched(true); setSearchedMembers([...selectedMembers]);
     } catch(e) {
       if (e.message === '__AUTH_EXPIRED__') { setOauthToken(null); setError("認証の期限が切れました。再度お試しください。"); }
       else { setError("エラー: " + e.message); }
@@ -184,7 +190,7 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slot
         emailLeadId={emailLeadId} setEmailLeadId={setEmailLeadId}
         leads={leads} isSlotSelected={isSlotSelected} toggleCandidateSlot={toggleCandidateSlot}
         onGoEmail={onGoEmail} onShowCalReg={() => setShowCalReg(true)}
-        selectedMembers={selectedMembers}
+        selectedMembers={searchedMembers}
       />
       <CalendarRegModal
         show={showCalReg} onClose={() => setShowCalReg(false)}
