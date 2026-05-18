@@ -17,7 +17,12 @@ export function CalendarSlotResults({
   return (
     <div style={S.card}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:8}}>
-        <div style={{fontSize:13,fontWeight:700,color:"#174f35"}}>
+        <div style={{fontSize:13,fontWeight:700,color:"#174f35",display:"flex",alignItems:"center",gap:8}}>
+          {selectedMembers.length > 0 && (
+            <span style={{fontSize:16,color:"#059669",fontWeight:700}}>
+              {selectedMembers.join("・")}
+            </span>
+          )}
           検索結果：<span style={{color:"#10b981"}}>{slots.length}件</span> の空き時間
         </div>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
