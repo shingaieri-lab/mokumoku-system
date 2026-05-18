@@ -19,7 +19,7 @@ const S = {
   btnSec: { background:"#d8ede1", color:"#2d6b4a", border:"1px solid #c0dece", borderRadius:8, padding:"9px 16px", fontSize:13, cursor:"pointer", fontFamily:"inherit" },
 };
 
-export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGoEmail = ()=>{}, currentUser, leads = [] }) {
+export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, slots = [], setSlots = ()=>{}, searched = false, setSearched = ()=>{}, onGoEmail = ()=>{}, currentUser, leads = [] }) {
   const [cfg, setCfg] = useState(() => loadGCalConfig());
   const [showSetup, setShowSetup] = useState(false);
   const [editCfg, setEditCfg] = useState(() => loadGCalConfig());
@@ -53,10 +53,8 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
   const [includeHolidays, setIncludeHolidays] = useState(false);
   const [excludeTimes, setExcludeTimes] = useState([{from:"12:00",to:"13:00"}]);
 
-  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [searched, setSearched] = useState(false);
   const [showCalReg, setShowCalReg] = useState(false);
   const [emailLeadId, setEmailLeadId] = useState("");
   const [oauthToken, setOauthToken] = useState(null);
@@ -65,7 +63,7 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
 
   const search = async () => {
     if (!isConfigured) { setShowSetup(true); return; }
-    setLoading(true); setError(""); setSlots([]); setSearched(false);
+    setLoading(true); setError(""); setSlots([]); setSearched(false); onSlotsChange([]);
     try {
       const aiCfg = window.__appData?.aiConfig || {};
       const clientId = currentUser?.gmailClientId || aiCfg.gmailClientId || "";
