@@ -120,10 +120,8 @@ export function CalendarPage({ candidateSlots = [], onSlotsChange = ()=>{}, onGo
             });
             if (freeMembers.length > 0) {
               found.push({ date: ds, start: slotStart.toTimeString().slice(0,5), end: slotEnd.toTimeString().slice(0,5), members: freeMembers });
-              slotStart = new Date(slotEnd.getTime() + bufAfter);
-            } else {
-              slotStart = new Date(slotStart.getTime() + 30 * 60000);
             }
+            slotStart = new Date(slotStart.getTime() + 30 * 60000);
           }
         }
         cur.setDate(cur.getDate() + 1);
