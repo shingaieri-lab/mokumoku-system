@@ -83,24 +83,64 @@ export async function saveOutboundConfig(config) {
   }
 }
 
+// 列マッピング（CSV・Excel共通）
+function buildColMap(headers) {
+  const h = headers.map(v => String(v ?? '').trim().toLowerCase());
+  return {
+    company:  h.findIndex(v => ['company',  '会社名'].includes(v)),
+    contact:  h.findIndex(v => ['contact',  '担当者名', '担当者'].includes(v)),
+    phone:    h.findIndex(v => ['phone',    '電話番号', '電話'].includes(v)),
+    mobile:   h.findIndex(v => ['mobile',   '携帯番号', '携帯'].includes(v)),
+    email:    h.findIndex(v => ['email',    'メール', 'メールアドレス'].includes(v)),
+    industry: h.findIndex(v => ['industry', '業種'].includes(v)),
+    position: h.findIndex(v => ['position', '役職'].includes(v)),
+    address:  h.findIndex(v => ['address',  '住所'].includes(v)),
+    memo:     h.findIndex(v => ['memo',     'メモ', '備考'].includes(v)),
+  };
+}
+
+function rowToLead(cols, colMap) {
+  const get = (k) => colMap[k] >= 0 ? String(cols[colMap[k]] ?? '').trim() : '';
+  return { company: get('company'), contact: get('contact'), phone: get('phone'), mobile: get('mobile'), email: get('email'), industry: get('industry'), position: get('position'), address: get('address'), memo: get('memo') };
+}
+
+// アウトバウンド用 Excel パース（.xlsx / .xls）
+// SheetJSを動的インポートすることで通常画面のバンドルサイズに影響させない
+export async function parseOutboundExcel(arrayBuffer) {
+  const XLSX = await import('xlsx');
+  const wb   = XLSX.read(arrayBuffer, { type: 'array', cellText: false, cellDates: true });
+  const ws   = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+  // # で始まるコメント行・空行をスキップ
+  const dataRows = rows.filter(r => {
+    const first = String(r[0] ?? '').trim();
+    return first !== '' && !first.startsWith('#');
+  });
+
+  if (dataRows.length < 2) return { leads: [], errors: ['ヘッダー行とデータ行が必要です'] };
+
+  const colMap = buildColMap(dataRows[0]);
+  const errors = [];
+  const leads  = [];
+
+  dataRows.slice(1).forEach((row, i) => {
+    const lead = rowToLead(row, colMap);
+    if (!lead.company) { errors.push(`${i + 2}行目: 会社名が空のためスキップ`); return; }
+    leads.push(lead);
+  });
+
+  return { leads, errors };
+}
+
 // アウトバウンド用CSVパース
 // 対応列: 会社名, 担当者名, 電話番号, 携帯番号, メールアドレス, 業種, 役職, 住所, メモ
 export function parseOutboundCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.startsWith('#'));
   if (lines.length < 2) return { leads: [], errors: ['ヘッダー行とデータ行が必要です'] };
 
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1').toLowerCase());
-  const colMap = {
-    company:  headers.findIndex(h => ['company',  '会社名'].includes(h)),
-    contact:  headers.findIndex(h => ['contact',  '担当者名', '担当者'].includes(h)),
-    phone:    headers.findIndex(h => ['phone',    '電話番号', '電話'].includes(h)),
-    mobile:   headers.findIndex(h => ['mobile',   '携帯番号', '携帯'].includes(h)),
-    email:    headers.findIndex(h => ['email',    'メール', 'メールアドレス'].includes(h)),
-    industry: headers.findIndex(h => ['industry', '業種'].includes(h)),
-    position: headers.findIndex(h => ['position', '役職'].includes(h)),
-    address:  headers.findIndex(h => ['address',  '住所'].includes(h)),
-    memo:     headers.findIndex(h => ['memo',     'メモ', '備考'].includes(h)),
-  };
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"(.*)"$/, '$1'));
+  const colMap = buildColMap(headers);
 
   const errors = [];
   const leads = [];

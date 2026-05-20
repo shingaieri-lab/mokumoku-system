@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react';
 import { S } from '../../styles/index.js';
 import { InboxIcon, FolderOpenIcon, AlertIcon } from '../ui/Icons.jsx';
-import { parseOutboundCSV } from '../../lib/outboundApi.js';
+import { parseOutboundCSV, parseOutboundExcel } from '../../lib/outboundApi.js';
 
 const STATUS_GROUPS = {
   未架電:  { color: '#6a9a7a', bg: '#f0f5f2' },
@@ -38,6 +38,21 @@ export function OutboundListHeader({ lists, currentListId, leads, currentUser, o
 
   const handleFile = (file) => {
     if (!file) return;
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = async e => {
+        const { leads: parsed, errors } = await parseOutboundExcel(e.target.result);
+        setPreview(parsed);
+        setParseErrors(errors);
+        setEncoding('Excel');
+      };
+      reader.readAsArrayBuffer(file);
+      return;
+    }
+
+    // CSV: 文字コード判定してパース
     const binReader = new FileReader();
     binReader.onload = e => {
       const bytes = new Uint8Array(e.target.result);
@@ -122,7 +137,7 @@ export function OutboundListHeader({ lists, currentListId, leads, currentUser, o
           <>
             <button onClick={() => setShowImport(true)}
               style={{ ...S.btnP, fontSize: 12, padding: '8px 14px', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <InboxIcon size={13} color="#fff" /> CSVインポート
+              <InboxIcon size={13} color="#fff" /> インポート
             </button>
             {currentListId && !confirmDelete && (
               <button onClick={() => setConfirmDelete(true)} style={{ ...S.btnDel, fontSize: 12, padding: '7px 14px' }}>
@@ -184,9 +199,9 @@ export function OutboundListHeader({ lists, currentListId, leads, currentUser, o
                   onClick={() => fileRef.current?.click()}
                   style={{ border: '2px dashed #c0dece', borderRadius: 10, padding: '28px', textAlign: 'center', cursor: 'pointer' }}>
                   <FolderOpenIcon size={32} color="#6a9a7a" />
-                  <div style={{ fontSize: 13, color: '#2d6b4a', marginTop: 8 }}>CSVをドロップ、またはクリックして選択</div>
+                  <div style={{ fontSize: 13, color: '#2d6b4a', marginTop: 8 }}>CSV / Excel をドロップ、またはクリックして選択</div>
                   <div style={{ fontSize: 11, color: '#6a9a7a', marginTop: 4 }}>列: 会社名, 担当者名, 電話番号, 携帯番号, メール, 業種, 役職, メモ</div>
-                  <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+                  <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
                 </div>
               )}
 

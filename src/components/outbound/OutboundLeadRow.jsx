@@ -210,18 +210,13 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
           {lead.memo && (
             <div
               onClick={() => setMemoOpen(v => !v)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 12, color: '#3d7a5e', marginTop: 3, cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#3d7a5e', marginTop: 3, cursor: 'pointer' }}
             >
-              <MemoIcon size={13} color="#3d7a5e" />
-              {memoOpen ? (
-                <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-                  {lead.memo}<span style={{ color: '#6a9a7a', marginLeft: 4 }}>▲</span>
-                </span>
-              ) : (
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
-                  {lead.memo}<span style={{ color: '#6a9a7a', marginLeft: 4 }}>▼</span>
-                </span>
-              )}
+              <MemoIcon size={13} color="#3d7a5e" style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 400 }}>
+                {lead.memo}
+              </span>
+              <span style={{ color: '#6a9a7a', flexShrink: 0 }}>{memoOpen ? '▲' : '▼'}</span>
             </div>
           )}
         </div>
@@ -299,6 +294,13 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
           </div>
         </div>
       </div>
+
+      {/* メモ展開 */}
+      {lead.memo && memoOpen && (
+        <div style={{ padding: '10px 14px', borderTop: '1px solid #e2f0e8', background: '#f8fbf9', fontSize: 12, color: '#3d7a5e', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.7 }}>
+          {lead.memo}
+        </div>
+      )}
 
       {/* 最終架電履歴（通常時） */}
       {lastCall && mode === null && (
