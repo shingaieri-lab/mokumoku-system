@@ -27,7 +27,8 @@ const IS_NAV_ITEMS = [
 
 // アウトバウンド専用メニュー
 const OUTBOUND_NAV_ITEMS = [
-  { id: "outbound", Icon: PhoneOutIcon, label: "架電管理" },
+  { id: "outbound",  Icon: PhoneOutIcon, label: "架電管理" },
+  { id: "settings",  Icon: GearIcon,     label: "設定" },
 ];
 
 export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUpdateProfile, isMobile, isDemo }) {
