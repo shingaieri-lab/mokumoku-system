@@ -1,6 +1,6 @@
 // ナビゲーションコンポーネント（デスクトップ：左サイドバー / モバイル：下部タブバー）
 import { useState, useEffect } from 'react';
-import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon, ChatIcon } from '../ui/Icons.jsx';
+import { DashboardIcon, TrendIcon, UsersIcon, SparkleIcon, CalendarNavIcon, MailIcon, GearIcon, ChatIcon, PhoneOutIcon } from '../ui/Icons.jsx';
 import mokumokuImg from '../../assets/mokumoku.png';
 import mokumokuMorningImg from '../../assets/mokumoku-morning.png';
 import mokumokuEveningImg from '../../assets/mokumoku-evening.png';
@@ -12,7 +12,8 @@ function getMokumokuImg() {
   return mokumokuImg;
 }
 
-const BASE_NAV_ITEMS = [
+// ISチーム用メニュー
+const IS_NAV_ITEMS = [
   { id: "dashboard",    Icon: DashboardIcon,   label: "ダッシュボード" },
   { id: "trend",        Icon: TrendIcon,       label: "月別推移" },
   { id: "leads",        Icon: UsersIcon,       label: "リード管理" },
@@ -20,12 +21,25 @@ const BASE_NAV_ITEMS = [
   { id: "ai",           Icon: SparkleIcon,     label: "AI" },
   { id: "calendar",     Icon: CalendarNavIcon, label: "候補日" },
   { id: "email",        Icon: MailIcon,        label: "メール" },
+  { id: "outbound",     Icon: PhoneOutIcon,    label: "アウトバウンド" },
   { id: "settings",     Icon: GearIcon,        label: "設定" },
 ];
 
-export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUpdateProfile, isMobile }) {
+// アウトバウンド専用メニュー
+const OUTBOUND_NAV_ITEMS = [
+  { id: "outbound", Icon: PhoneOutIcon, label: "架電管理" },
+];
+
+export function Nav({ page, setPage, setSettingsTab, count, currentUser, onLogout, onUpdateProfile, isMobile, isDemo }) {
+  const isOutbound = currentUser?.role === 'outbound';
   const canSeeConsultation = currentUser?.isStaff || currentUser?.role === 'admin';
-  const NAV_ITEMS = BASE_NAV_ITEMS.filter(item => item.id !== 'consultation' || canSeeConsultation);
+  const NAV_ITEMS = isOutbound
+    ? OUTBOUND_NAV_ITEMS
+    : IS_NAV_ITEMS.filter(item => {
+        if (item.id === 'consultation') return canSeeConsultation;
+        if (item.id === 'outbound') return !isDemo;
+        return true;
+      });
   const [tooltip, setTooltip] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentMokumokuImg, setCurrentMokumokuImg] = useState(getMokumokuImg());

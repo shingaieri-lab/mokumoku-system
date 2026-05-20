@@ -11,10 +11,11 @@ if (!process.env.ENCRYPTION_KEY || Buffer.from(process.env.ENCRYPTION_KEY, 'hex'
 const express = require('express');
 const cookieParser = require('cookie-parser');
 
-const authRoutes = require('./routes/auth');
-const dataRoutes = require('./routes/data');
-const aiRoutes   = require('./routes/ai');
-const zohoRoutes = require('./routes/zoho');
+const authRoutes     = require('./routes/auth');
+const dataRoutes     = require('./routes/data');
+const aiRoutes       = require('./routes/ai');
+const zohoRoutes     = require('./routes/zoho');
+const outboundRoutes = require('./routes/outbound');
 
 const path = require('path');
 const app = express();
@@ -29,6 +30,7 @@ app.use(authRoutes);
 app.use(dataRoutes);
 app.use(aiRoutes);
 app.use(zohoRoutes);
+app.use(outboundRoutes);
 
 // Vercel環境ではサーバーを起動しない（サーバーレス関数として動作するため）
 // ステージング環境など Vercel 以外でも強制起動したい場合は RUN_SERVER=1 を設定する

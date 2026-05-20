@@ -13,6 +13,7 @@ import { CalendarPage } from './pages/CalendarPage.jsx';
 import { SettingsPage } from './pages/SettingsPage.jsx';
 import { EmailPage } from './pages/EmailPage.jsx';
 import { ConsultationPage } from './pages/ConsultationPage.jsx';
+import { OutboundPage }     from './pages/OutboundPage.jsx';
 import { CSS } from './styles/css.js';
 import { USER_COLORS } from './lib/accounts.js';
 import { IS_COLORS } from './lib/master.js';
@@ -36,6 +37,8 @@ export function App() {
   const [aiConfig, setAiConfig] = useState({});
 
   const selectUser = (account, data) => {
+    // outboundロールはアウトバウンドページに直接遷移
+    if (account.role === 'outbound') navigate('outbound');
     setCurrentUser(account);
     USER_COLORS[account.name] = account.color;
     localStorage.setItem("current_user_id", account.id);
@@ -154,6 +157,7 @@ const mut = (next) => { setLeads(next); saveLeads(next); };
         {page === "settings"  && <SettingsPage aiConfig={effectiveAiConfig} onSave={saveAiConfig} currentUser={currentUser} onUpdateProfile={updateMyProfile} initialTab={settingsTab} onLeadsChange={setLeads} onMasterSave={() => setMasterVer(v => v + 1)} onOpenWizard={() => setShowWizard(true)} />}
         {page === "email"        && <EmailPage leads={leads} onUpdate={updateLead} currentUser={currentUser} candidateSlots={candidateSlots} initialLeadId={calendarLeadId} isMobile={isMobile} />}
         {page === "consultation" && (currentUser?.isStaff || currentUser?.role === 'admin') && <ConsultationPage leads={leads} onOpenLead={(id) => { setAiOpenLeadId(id); navigate("leads"); }} onUpdate={updateLead} />}
+        {page === "outbound"     && <OutboundPage currentUser={currentUser} />}
       </main>
     </div>
   );
