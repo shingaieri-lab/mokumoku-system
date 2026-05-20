@@ -25,7 +25,20 @@ router.post('/api/zoho-config', requireAuth, rateLimit, async (req, res) => {
 });
 
 // Zoho OAuth認証開始
-router.get('/api/zoho/auth', requireAuth, async (req, res) => {
+router.get('/api/zoho/auth', async (req, res) => {
+  // セッション確認（未認証時はJSON代わりにHTMLメッセージを返す）
+  const token = req.cookies?.session;
+  if (!token) {
+    return res.status(401).send('<html><body style="font-family:sans-serif;padding:24px"><p style="color:#dc2626;font-weight:bold">セッションが切れています。<br>一度ログアウトして再度ログインしてから、もう一度「Zoho認証」を押してください。</p></body></html>');
+  }
+  try {
+    const accountId = await kv.get('session:' + token);
+    if (!accountId) {
+      return res.status(401).send('<html><body style="font-family:sans-serif;padding:24px"><p style="color:#dc2626;font-weight:bold">セッションが切れています。<br>一度ログアウトして再度ログインしてから、もう一度「Zoho認証」を押してください。</p></body></html>');
+    }
+  } catch {
+    return res.status(503).send('<html><body style="font-family:sans-serif;padding:24px"><p style="color:#dc2626;font-weight:bold">サーバーエラーが発生しました。しばらくしてから再試行してください。</p></body></html>');
+  }
   const cfg = await readData('zoho_config');
   if (!cfg?.clientId) return res.status(400).json({ error: 'Zoho Client IDが未設定です' });
 
