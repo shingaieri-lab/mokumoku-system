@@ -221,23 +221,17 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
           )}
         </div>
 
-        {/* 電話・携帯・メール（横並び） */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
-          {lead.phone  && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#059669', fontWeight: 700, fontSize: 14 }}>
-              <PhoneCallIcon size={15} color="#059669" />{lead.phone}
-            </span>
-          )}
-          {lead.mobile && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#0284c7', fontWeight: 700, fontSize: 14 }}>
-              <MobileIcon size={15} color="#0284c7" />{lead.mobile}
-            </span>
-          )}
-          {lead.email  && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#6a9a7a', fontSize: 14 }}>
-              <EnvelopeIcon size={15} color="#6a9a7a" />{lead.email}
-            </span>
-          )}
+        {/* 電話・携帯・メール（横並び・固定幅で開始位置を揃える） */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+          <span style={{ width: 160, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, color: '#059669', fontWeight: 700, fontSize: 14, overflow: 'hidden' }}>
+            {lead.phone ? <><PhoneCallIcon size={15} color="#059669" />{lead.phone}</> : null}
+          </span>
+          <span style={{ width: 160, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, color: '#0284c7', fontWeight: 700, fontSize: 14, overflow: 'hidden' }}>
+            {lead.mobile ? <><MobileIcon size={15} color="#0284c7" />{lead.mobile}</> : null}
+          </span>
+          <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 5, color: '#6a9a7a', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {lead.email ? <><EnvelopeIcon size={15} color="#6a9a7a" />{lead.email}</> : null}
+          </span>
         </div>
 
         {/* ステータス */}
