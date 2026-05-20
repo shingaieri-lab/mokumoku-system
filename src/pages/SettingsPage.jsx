@@ -1,10 +1,11 @@
 // 設定ページ（基本設定・リード管理・ポータル・API設定・Zoho CRM・アカウント管理）
 import { useState } from 'react';
-import { PencilIcon, LeadMgmtIcon, PortalIcon, ApiKeyIcon, ZohoIcon, AdminIcon, AccountIcon, EyeIcon, EyeOffIcon, GearIcon, UserIcon } from '../components/ui/Icons.jsx';
+import { PencilIcon, LeadMgmtIcon, PortalIcon, ApiKeyIcon, ZohoIcon, AdminIcon, AccountIcon, EyeIcon, EyeOffIcon, GearIcon, UserIcon, PhoneOutIcon } from '../components/ui/Icons.jsx';
 import { ZohoCrmSettings } from '../components/settings/ZohoCrmSettings.jsx';
 import { AccountManager } from '../components/settings/AccountManager.jsx';
 import { ApiKeyTab } from '../components/settings/ApiKeyTab.jsx';
 import { LeadMgmtTab } from '../components/settings/LeadMgmtTab.jsx';
+import { OutboundSettingsTab } from '../components/settings/OutboundSettingsTab.jsx';
 import { PortalTab } from '../components/settings/PortalTab.jsx';
 import { PALETTE } from '../constants/index.js';
 import { getMaster, saveMasterSettings } from '../lib/master.js';
@@ -30,12 +31,13 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
   const save = (next) => { setMaster(next); saveMasterSettings(next); onMasterSave?.(); setMsg("保存しました ✓"); setTimeout(()=>setMsg(""),2000); };
 
   const MENU = [
-    { key:"leadmgmt",  Icon:LeadMgmtIcon, color:"#10b981", label:"リード管理",    adminOnly:true  },
-    { key:"portal",    Icon:PortalIcon,   color:"#3b82f6", label:"ポータルサイト", adminOnly:true  },
-    { key:"apikey",    Icon:ApiKeyIcon,   color:"#f97316", label:"API設定",        adminOnly:false },
-    { key:"zoho",      Icon:ZohoIcon,     color:"#8b5cf6", label:"Zoho CRM",       adminOnly:true  },
-    { key:"accounts",  Icon:AdminIcon,    color:"#ef4444", label:"管理者設定",     adminOnly:true  },
-    { key:"myaccount", Icon:AccountIcon,  color:"#06b6d4", label:"アカウント",     adminOnly:false },
+    { key:"leadmgmt",  Icon:LeadMgmtIcon,  color:"#10b981", label:"リード管理",      adminOnly:true  },
+    { key:"outbound",  Icon:PhoneOutIcon,  color:"#0284c7", label:"アウトバウンド",  adminOnly:true  },
+    { key:"portal",    Icon:PortalIcon,    color:"#3b82f6", label:"ポータルサイト",  adminOnly:true  },
+    { key:"apikey",    Icon:ApiKeyIcon,    color:"#f97316", label:"API設定",          adminOnly:false },
+    { key:"zoho",      Icon:ZohoIcon,      color:"#8b5cf6", label:"Zoho CRM",         adminOnly:true  },
+    { key:"accounts",  Icon:AdminIcon,     color:"#ef4444", label:"管理者設定",       adminOnly:true  },
+    { key:"myaccount", Icon:AccountIcon,   color:"#06b6d4", label:"アカウント",       adminOnly:false },
   ];
   const activeMenu = MENU.find(m => m.key === tab);
 
@@ -84,6 +86,9 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
         )}
         {tab === "leadmgmt" && currentUser?.role==="admin" && (
           <div style={{maxWidth:720}}><LeadMgmtTab master={master} save={save} onLeadsChange={onLeadsChange} /></div>
+        )}
+        {tab === "outbound" && currentUser?.role==="admin" && (
+          <OutboundSettingsTab master={master} save={save} />
         )}
         {tab === "zoho" && currentUser?.role==="admin" && (
           <div style={{maxWidth:720}}><ZohoCrmSettings /></div>

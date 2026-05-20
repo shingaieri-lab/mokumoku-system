@@ -5,18 +5,18 @@ import { InboxIcon, FolderOpenIcon, AlertIcon } from '../ui/Icons.jsx';
 import { parseOutboundCSV } from '../../lib/outboundApi.js';
 
 const STATUS_GROUPS = {
-  未架電: { color: '#6a9a7a', bg: '#f0f5f2' },
+  未架電:  { color: '#6a9a7a', bg: '#f0f5f2' },
   アポ獲得: { color: '#059669', bg: '#d1fae5' },
-  'お断り・NG': { color: '#ef4444', bg: '#fef2f2' },
-  '対応中': { color: '#f59e0b', bg: '#fef9ec' },
+  お断り:  { color: '#ef4444', bg: '#fef2f2' },
+  対応中:  { color: '#f59e0b', bg: '#fef9ec' },
 };
 
 function getSummary(leads) {
-  const counts = { 未架電: 0, アポ獲得: 0, 'お断り・NG': 0, 対応中: 0 };
+  const counts = { 未架電: 0, アポ獲得: 0, お断り: 0, 対応中: 0 };
   for (const l of leads) {
     if (l.status === '未架電') counts['未架電']++;
     else if (l.status === 'アポ獲得') counts['アポ獲得']++;
-    else if (l.status === 'お断り' || l.status === 'NG') counts['お断り・NG']++;
+    else if (l.status === 'お断り') counts['お断り']++;
     else counts['対応中']++;
   }
   return counts;

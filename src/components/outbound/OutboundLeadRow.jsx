@@ -1,18 +1,27 @@
-// 架電リストの1行コンポーネント（表示・架電記録・項目編集）
+// 架電リストの1行コンポーネント（表示・架電記録・項目編集・Zoom入力・Gmail下書き）
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
-import { PhoneIcon, MobileIcon, EnvelopeIcon, MemoIcon } from '../ui/icons/NavIcons.jsx';
+import { PhoneCallIcon, MobileIcon, EnvelopeIcon, MemoIcon } from '../ui/icons/NavIcons.jsx';
+import { acquireGmailToken, buildGmailDraftRaw, postGmailDraft } from '../../lib/oauth.js';
+import { getEffectiveAiConfig } from '../../lib/accounts.js';
+import { getMaster } from '../../lib/master.js';
 
-const STATUSES = ['未架電', '不在', '折り返し待ち', '担当者不在', 'お断り', 'アポ獲得', 'NG'];
+const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function applyTplVars(tpl, vars) {
+  return Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v || ''), tpl);
+}
+
+const STATUSES = ['未架電', '留守', '再架電', '折り返し待ち', '担当者不在', 'お断り', 'アポ獲得'];
 
 const STATUS_COLOR = {
   '未架電':       { color: '#6a9a7a', bg: '#f0f5f2' },
-  '不在':         { color: '#f59e0b', bg: '#fef9ec' },
-  '折り返し待ち': { color: '#3b82f6', bg: '#eff6ff' },
-  '担当者不在':   { color: '#8b5cf6', bg: '#f5f3ff' },
+  '留守':         { color: '#f59e0b', bg: '#fef9ec' },
+  '再架電':       { color: '#3b82f6', bg: '#eff6ff' },
+  '折り返し待ち': { color: '#8b5cf6', bg: '#f5f3ff' },
+  '担当者不在':   { color: '#0891b2', bg: '#ecfeff' },
   'お断り':       { color: '#ef4444', bg: '#fef2f2' },
   'アポ獲得':     { color: '#059669', bg: '#d1fae5' },
-  'NG':           { color: '#9ca3af', bg: '#f9fafb' },
 };
 
 // 編集フォーム（基本情報の修正）
@@ -74,12 +83,15 @@ function EditPanel({ lead, onSave, onCancel }) {
   );
 }
 
-export function OutboundLeadRow({ lead, canWrite, selected, onToggleSelect, onUpdate, onOpenAppointment }) {
-  const [mode, setMode]         = useState(null); // null | 'record' | 'edit'
+export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSelect, onUpdate, onOpenAppointment, currentUser }) {
+  const [mode, setMode]         = useState(null); // null | 'record' | 'edit' | 'zoom'
   const [method, setMethod]     = useState('phone');
   const [memo, setMemo]         = useState('');
   const [saving, setSaving]     = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
+  const [zoomText, setZoomText] = useState(lead.appointmentInfo?.zoomText || '');
+  const [gmailSending, setGmailSending] = useState(false);
+  const [gmailToken,   setGmailToken]   = useState(null);
 
   const sc       = STATUS_COLOR[lead.status] || STATUS_COLOR['未架電'];
   const lastCall = lead.callHistory?.[0];
@@ -105,6 +117,55 @@ export function OutboundLeadRow({ lead, canWrite, selected, onToggleSelect, onUp
   };
 
   const handleStatusChange = (newStatus) => onUpdate({ ...lead, status: newStatus });
+
+  // Zoom情報を保存
+  const handleSaveZoom = async () => {
+    if (!zoomText.trim()) { alert('Zoom情報を入力してください'); return; }
+    await onUpdate({ ...lead, appointmentInfo: { ...(lead.appointmentInfo || {}), zoomText: zoomText.trim() } });
+    setMode(null);
+  };
+
+  // Gmail下書き作成
+  const handleGmailDraft = async () => {
+    const clientId = getEffectiveAiConfig(currentUser).gmailClientId || currentUser?.gmailClientId;
+    if (!clientId) {
+      alert('Gmail連携が設定されていません。設定＞マイアカウントでGmailクライアントIDを登録してください。');
+      return;
+    }
+    const ai = lead.appointmentInfo || {};
+    const meetingDate = ai.meetingDate || '';
+    const meetingTime = ai.meetingTime || '';
+    const weekday = meetingDate ? WEEKDAYS[new Date(meetingDate + 'T00:00:00').getDay()] : '';
+    const dateStr = meetingDate ? `${meetingDate}（${weekday}） ${meetingTime}〜` : '';
+
+    const tpl = getMaster().outboundEmailTpl || {};
+    const vars = {
+      担当者名:   lead.contact || 'ご担当者',
+      企業名:    lead.company,
+      商談日時:  dateStr,
+      Zoomリンク: ai.zoomText || '',
+      商談担当:  ai.salesPerson || '',
+      送信者名:  currentUser?.name || '',
+      署名:      currentUser?.signature || '',
+    };
+    const subject = applyTplVars(tpl.subject || '', vars);
+    const body    = applyTplVars(tpl.body || '', vars);
+
+    setGmailSending(true);
+    try {
+      const tokenObj = await acquireGmailToken(clientId, gmailToken);
+      setGmailToken(tokenObj);
+      const raw = buildGmailDraftRaw(lead.email || '', subject, body);
+      await postGmailDraft(tokenObj.token, raw);
+      const draftedAt = new Date().toISOString();
+      await onUpdate({ ...lead, appointmentInfo: { ...(lead.appointmentInfo || {}), gmailDraftedAt: draftedAt } });
+      alert('Gmailに下書きを保存しました！');
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setGmailSending(false);
+    }
+  };
 
   return (
     <div style={{ background: selected ? '#f0fdf4' : '#fff', border: `1px solid ${selected ? '#10b98155' : '#e2f0e8'}`, borderRadius: 10, marginBottom: 8, overflow: 'hidden', transition: 'background 0.1s' }}>
@@ -158,7 +219,7 @@ export function OutboundLeadRow({ lead, canWrite, selected, onToggleSelect, onUp
         <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 18, flexWrap: 'wrap', alignItems: 'center' }}>
           {lead.phone  && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#059669', fontWeight: 700, fontSize: 14 }}>
-              <PhoneIcon size={15} color="#059669" />{lead.phone}
+              <PhoneCallIcon size={15} color="#059669" />{lead.phone}
             </span>
           )}
           {lead.mobile && (
@@ -193,18 +254,38 @@ export function OutboundLeadRow({ lead, canWrite, selected, onToggleSelect, onUp
           </button>
         )}
 
-        {/* 操作ボタン群 */}
+        {/* 操作ボタン群（左列: 記録/Zoom、右列: 編集/Gmail） */}
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          {canWrite && (
-            <button onClick={() => setMode(mode === 'record' ? null : 'record')}
-              style={{ ...S.btnSec, fontSize: 13, padding: '5px 12px' }}>
-              {mode === 'record' ? '閉じる' : '記録する'}
-            </button>
-          )}
-          <button onClick={() => setMode(mode === 'edit' ? null : 'edit')}
-            style={{ background: 'none', border: '1px solid #c0dece', borderRadius: 6, padding: '5px 12px', fontSize: 13, color: '#6a9a7a', cursor: 'pointer', fontFamily: 'inherit' }}>
-            {mode === 'edit' ? '閉じる' : '編集'}
-          </button>
+          {/* 左列 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {canWrite && (
+              <button onClick={() => setMode(mode === 'record' ? null : 'record')}
+                style={{ ...S.btnSec, fontSize: 13, padding: '5px 12px' }}>
+                {mode === 'record' ? '閉じる' : '記録する'}
+              </button>
+            )}
+            {canEdit && lead.status === 'アポ獲得' && lead.appointmentInfo?.meetingDate && (
+              <button onClick={() => setMode(mode === 'zoom' ? null : 'zoom')}
+                style={{ background: mode === 'zoom' ? '#eff6ff' : '#f0f9ff', color: '#0284c7', border: '1px solid #bfdbfe', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {mode === 'zoom' ? '閉じる' : 'Zoom入力'}
+              </button>
+            )}
+          </div>
+          {/* 右列 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {canEdit && (
+              <button onClick={() => setMode(mode === 'edit' ? null : 'edit')}
+                style={{ background: 'none', border: '1px solid #c0dece', borderRadius: 6, padding: '5px 12px', fontSize: 13, color: '#6a9a7a', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {mode === 'edit' ? '閉じる' : '編集'}
+              </button>
+            )}
+            {canEdit && lead.appointmentInfo?.zoomText && (
+              <button onClick={handleGmailDraft} disabled={gmailSending}
+                style={{ background: gmailSending ? '#f5f5f5' : '#fef2f2', color: '#ea4335', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: 700, cursor: gmailSending ? 'default' : 'pointer', fontFamily: 'inherit', opacity: gmailSending ? 0.6 : 1 }}>
+                {gmailSending ? '作成中...' : 'Gmail下書き'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -259,6 +340,32 @@ export function OutboundLeadRow({ lead, canWrite, selected, onToggleSelect, onUp
           onSave={handleEditSave}
           onCancel={() => setMode(null)}
         />
+      )}
+
+      {/* Zoom入力フォーム */}
+      {mode === 'zoom' && (
+        <div style={{ padding: '12px 14px', borderTop: '1px solid #bfdbfe', background: '#f0f9ff' }}>
+          <div style={{ fontSize: 12, color: '#0284c7', fontWeight: 700, marginBottom: 6 }}>Zoom ミーティング情報</div>
+          <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10 }}>
+            以下の形式でZoom情報を貼り付けてください：<br />
+            <code style={{ background: '#e0f2fe', borderRadius: 3, padding: '1px 5px' }}>Zoom ミーティングに参加する</code>
+            {' → URL → '}
+            <code style={{ background: '#e0f2fe', borderRadius: 3, padding: '1px 5px' }}>ミーティングID: xxx</code>
+          </div>
+          <textarea
+            value={zoomText}
+            onChange={e => setZoomText(e.target.value)}
+            rows={4}
+            placeholder={`Zoom ミーティングに参加する\nhttps://us06web.zoom.us/j/8888888888\nミーティングID: 888 8888 8888`}
+            style={{ ...S.inp, resize: 'vertical', fontFamily: 'monospace', fontSize: 12, width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+            <button onClick={handleSaveZoom}
+              style={{ ...S.btnP, fontSize: 12, padding: '8px 14px' }}>
+              保存
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

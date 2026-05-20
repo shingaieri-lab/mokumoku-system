@@ -182,6 +182,8 @@ export function OutboundPage({ currentUser }) {
               key={lead.id}
               lead={lead}
               canWrite={canWrite}
+              canEdit={isIS}
+              currentUser={currentUser}
               selected={selectedIds.has(lead.id)}
               onToggleSelect={isIS ? handleToggleSelect : null}
               onUpdate={handleUpdateLead}
@@ -195,6 +197,7 @@ export function OutboundPage({ currentUser }) {
         <AppointmentModal
           lead={appointLead}
           listName={lists.find(l => l.id === currentListId)?.name || ''}
+          currentUser={currentUser}
           onSave={async (updated) => {
             await handleSaveAppointment(updated);
             setAppointLead(updated);

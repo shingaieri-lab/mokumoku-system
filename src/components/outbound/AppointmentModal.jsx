@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { S } from '../../styles/index.js';
 import { sendChatwork, buildChatworkMessage } from '../../lib/outboundApi.js';
-import { loadAccounts } from '../../lib/accounts.js';
+import { getSalesMembers } from '../../lib/master.js';
 
 const TIME_OPTIONS = [];
 for (let h = 7; h <= 21; h++) {
@@ -16,22 +16,25 @@ function todayJST() {
   return new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
 }
 
-export function AppointmentModal({ lead, listName, onSave, onClose }) {
-  const existing  = lead.appointmentInfo || {};
-  const accounts  = loadAccounts().filter(a => a.role === 'admin' || a.role === 'member');
+export function AppointmentModal({ lead, listName, currentUser, onSave, onClose }) {
+  const existing     = lead.appointmentInfo || {};
+  const salesMembers = getSalesMembers();
 
   const [form, setForm] = useState({
-    salesPerson:  existing.salesPerson  || '',
-    website:      existing.website      || '',
-    address:      existing.address      || '',
-    confirmedDate: existing.confirmedDate || todayJST(),
-    meetingDate:  existing.meetingDate  || '',
-    meetingTime:  existing.meetingTime  || '10:00',
-    construction: existing.construction || '',
-    supervisor:   existing.supervisor   ?? '',  // 'yes' | 'no' | ''
-    rank:         existing.rank         || '',
-    note:         existing.note         || '',
+    salesPerson:    existing.salesPerson    || '',
+    website:        existing.website        || '',
+    address:        existing.address        || '',
+    confirmedDate:  existing.confirmedDate  || todayJST(),
+    meetingDate:    existing.meetingDate    || '',
+    meetingTime:    existing.meetingTime    || '10:00',
+    construction:   existing.construction  || '',
+    supervisor:     existing.supervisor    ?? '',
+    rank:           existing.rank          || '',
+    note:           existing.note          || '',
     chatworkSentAt: existing.chatworkSentAt || null,
+    zoomUrl:        existing.zoomUrl        || '',
+    zoomMeetingId:  existing.zoomMeetingId  || '',
+    gmailDraftedAt: existing.gmailDraftedAt || null,
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -103,29 +106,6 @@ export function AppointmentModal({ lead, listName, onSave, onClose }) {
             )}
           </div>
 
-          {/* 営業担当者（商談担当） */}
-          <div>
-            <label style={S.lbl}>営業担当者（商談担当）</label>
-            <select value={form.salesPerson} onChange={e => set('salesPerson', e.target.value)} style={S.sel}>
-              <option value="">選択してください</option>
-              {accounts.map(a => (
-                <option key={a.id} value={a.name}>{a.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 会社HP・住所 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px' }}>
-            <div>
-              <label style={S.lbl}>会社HP</label>
-              <input value={form.website} onChange={e => set('website', e.target.value)} placeholder="例: https://example.com" style={S.inp} />
-            </div>
-            <div>
-              <label style={S.lbl}>住所</label>
-              <input value={form.address} onChange={e => set('address', e.target.value)} placeholder="例: 大阪府大阪市〇〇区" style={S.inp} />
-            </div>
-          </div>
-
           {/* 商談獲得日・商談日時 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px' }}>
             <div>
@@ -140,6 +120,29 @@ export function AppointmentModal({ lead, listName, onSave, onClose }) {
                   {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* 営業担当者 */}
+          <div>
+            <label style={S.lbl}>営業担当者</label>
+            <select value={form.salesPerson} onChange={e => set('salesPerson', e.target.value)} style={S.sel}>
+              <option value="">選択してください</option>
+              {salesMembers.map((name, i) => (
+                <option key={i} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 会社HP・住所 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 14px' }}>
+            <div>
+              <label style={S.lbl}>会社HP</label>
+              <input value={form.website} onChange={e => set('website', e.target.value)} placeholder="例: https://example.com" style={S.inp} />
+            </div>
+            <div>
+              <label style={S.lbl}>住所</label>
+              <input value={form.address} onChange={e => set('address', e.target.value)} placeholder="例: 大阪府大阪市〇〇区" style={S.inp} />
             </div>
           </div>
 
