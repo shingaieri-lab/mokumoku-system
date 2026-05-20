@@ -5,6 +5,7 @@ import { PhoneCallIcon, MobileIcon, EnvelopeIcon, MemoIcon } from '../ui/icons/N
 import { acquireGmailToken, buildGmailDraftRaw, postGmailDraft } from '../../lib/oauth.js';
 import { getEffectiveAiConfig } from '../../lib/accounts.js';
 import { getMaster } from '../../lib/master.js';
+import { GmailDraftModal } from './GmailDraftModal.jsx';
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -90,8 +91,9 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
   const [saving, setSaving]     = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
   const [zoomText, setZoomText] = useState(lead.appointmentInfo?.zoomText || '');
-  const [gmailSending, setGmailSending] = useState(false);
-  const [gmailToken,   setGmailToken]   = useState(null);
+  const [gmailSending,  setGmailSending]  = useState(false);
+  const [gmailToken,    setGmailToken]    = useState(null);
+  const [gmailPreview,  setGmailPreview]  = useState(null); // null | { subject, body, to }
 
   const sc       = STATUS_COLOR[lead.status] || STATUS_COLOR['未架電'];
   const lastCall = lead.callHistory?.[0];
@@ -125,8 +127,8 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
     setMode(null);
   };
 
-  // Gmail下書き作成
-  const handleGmailDraft = async () => {
+  // テンプレート変数を展開してプレビューモーダルを開く
+  const handleOpenGmailPreview = () => {
     const clientId = getEffectiveAiConfig(currentUser).gmailClientId || currentUser?.gmailClientId;
     if (!clientId) {
       alert('Gmail連携が設定されていません。設定＞マイアカウントでGmailクライアントIDを登録してください。');
@@ -148,17 +150,25 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
       送信者名:  currentUser?.name || '',
       署名:      currentUser?.signature || '',
     };
-    const subject = applyTplVars(tpl.subject || '', vars);
-    const body    = applyTplVars(tpl.body || '', vars);
+    setGmailPreview({
+      to:      lead.email || '',
+      subject: applyTplVars(tpl.subject || '', vars),
+      body:    applyTplVars(tpl.body || '', vars),
+    });
+  };
 
+  // プレビューで確認後、実際にGmail下書きを保存する
+  const handleSendGmailDraft = async (subject, body) => {
+    const clientId = getEffectiveAiConfig(currentUser).gmailClientId || currentUser?.gmailClientId;
     setGmailSending(true);
     try {
       const tokenObj = await acquireGmailToken(clientId, gmailToken);
       setGmailToken(tokenObj);
-      const raw = buildGmailDraftRaw(lead.email || '', subject, body);
+      const raw = buildGmailDraftRaw(gmailPreview.to, subject, body);
       await postGmailDraft(tokenObj.token, raw);
       const draftedAt = new Date().toISOString();
       await onUpdate({ ...lead, appointmentInfo: { ...(lead.appointmentInfo || {}), gmailDraftedAt: draftedAt } });
+      setGmailPreview(null);
       alert('Gmailに下書きを保存しました！');
     } catch (e) {
       alert(e.message);
@@ -168,6 +178,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
   };
 
   return (
+    <>
     <div style={{ background: selected ? '#f0fdf4' : '#fff', border: `1px solid ${selected ? '#10b98155' : '#e2f0e8'}`, borderRadius: 10, marginBottom: 8, overflow: 'hidden', transition: 'background 0.1s' }}>
       {/* メイン行 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', flexWrap: 'wrap' }}>
@@ -280,9 +291,9 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
               </button>
             )}
             {canEdit && lead.appointmentInfo?.zoomText && (
-              <button onClick={handleGmailDraft} disabled={gmailSending}
-                style={{ background: gmailSending ? '#f5f5f5' : '#fef2f2', color: '#ea4335', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: 700, cursor: gmailSending ? 'default' : 'pointer', fontFamily: 'inherit', opacity: gmailSending ? 0.6 : 1 }}>
-                {gmailSending ? '作成中...' : 'Gmail下書き'}
+              <button onClick={handleOpenGmailPreview}
+                style={{ background: '#fef2f2', color: '#ea4335', border: '1px solid #fca5a5', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Gmail下書き
               </button>
             )}
           </div>
@@ -368,5 +379,16 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
         </div>
       )}
     </div>
+
+    {gmailPreview && (
+      <GmailDraftModal
+        to={gmailPreview.to}
+        initialSubject={gmailPreview.subject}
+        initialBody={gmailPreview.body}
+        onSend={handleSendGmailDraft}
+        onClose={() => setGmailPreview(null)}
+      />
+    )}
+    </>
   );
 }

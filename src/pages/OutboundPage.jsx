@@ -5,6 +5,7 @@ import { OutboundListHeader } from '../components/outbound/OutboundListHeader.js
 import { OutboundLeadRow }    from '../components/outbound/OutboundLeadRow.jsx';
 import { AppointmentModal }   from '../components/outbound/AppointmentModal.jsx';
 import { fetchOutboundLists, createOutboundList, deleteOutboundList, fetchOutboundLeads, saveOutboundLeads } from '../lib/outboundApi.js';
+import { SignatureEditModal } from '../components/outbound/SignatureEditModal.jsx';
 
 export function OutboundPage({ currentUser }) {
   const [lists,          setLists]          = useState([]);
@@ -14,6 +15,7 @@ export function OutboundPage({ currentUser }) {
   const [appointLead,    setAppointLead]    = useState(null);
   const [selectedIds,    setSelectedIds]    = useState(new Set());
   const [confirmDelete,  setConfirmDelete]  = useState(false);
+  const [showSignature,  setShowSignature]  = useState(false);
 
   const canWrite = currentUser?.role === 'outbound' || currentUser?.role === 'admin';
   const isIS     = currentUser?.role === 'admin' || currentUser?.role === 'member';
@@ -103,11 +105,19 @@ export function OutboundPage({ currentUser }) {
 
   return (
     <div style={S.page}>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#174f35', margin: 0 }}>アウトバウンド管理</h1>
-        <p style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4 }}>
-          {canWrite ? '架電・メール結果を記録し、アポ獲得時はChatworkに送信できます。' : '架電リストと進捗を閲覧できます（書き込みは業務委託先のみ）。'}
-        </p>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#174f35', margin: 0 }}>アウトバウンド管理</h1>
+          <p style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4 }}>
+            {canWrite ? '架電・メール結果を記録し、アポ獲得時はChatworkに送信できます。' : '架電リストと進捗を閲覧できます（書き込みは業務委託先のみ）。'}
+          </p>
+        </div>
+        {isIS && (
+          <button onClick={() => setShowSignature(true)}
+            style={{ background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>
+            ✏️ メールテンプレート編集
+          </button>
+        )}
       </div>
 
       <OutboundListHeader
@@ -191,6 +201,12 @@ export function OutboundPage({ currentUser }) {
             />
           ))}
         </div>
+      )}
+
+      {showSignature && (
+        <SignatureEditModal
+          onClose={() => setShowSignature(false)}
+        />
       )}
 
       {appointLead && (
