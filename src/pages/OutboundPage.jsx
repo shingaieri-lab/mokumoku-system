@@ -18,6 +18,7 @@ export function OutboundPage({ currentUser }) {
   const [selectedIds,    setSelectedIds]    = useState(new Set());
   const [confirmDelete,  setConfirmDelete]  = useState(false);
   const [showSignature,  setShowSignature]  = useState(false);
+  const [filterStatus,   setFilterStatus]   = useState(null); // null = すべて表示
 
   const canWrite = currentUser?.role === 'outbound' || currentUser?.role === 'admin';
   const isIS     = currentUser?.role === 'admin' || currentUser?.role === 'member';
@@ -37,6 +38,7 @@ export function OutboundPage({ currentUser }) {
     if (!currentListId) { setLeads([]); return; }
     setSelectedIds(new Set());
     setConfirmDelete(false);
+    setFilterStatus(null);
     setLoading(true);
     fetchOutboundLeads(currentListId)
       .then(data => setLeads(data))
@@ -150,6 +152,8 @@ export function OutboundPage({ currentUser }) {
         onSelectList={setCurrentListId}
         onCreateList={handleCreateList}
         onDeleteList={handleDeleteList}
+        filterStatus={filterStatus}
+        onFilterStatus={s => setFilterStatus(s === null ? null : prev => prev === s ? null : s)}
       />
 
       {!currentListId && (
@@ -167,61 +171,77 @@ export function OutboundPage({ currentUser }) {
       {currentListId && !loading && leads.length > 0 && (
         <div>
           {/* 選択操作ツールバー */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, minHeight: 32 }}>
-            {isIS && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === leads.length}
-                  ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < leads.length; }}
-                  onChange={handleSelectAll}
-                  style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#059669' }}
-                />
-                全選択
-              </label>
-            )}
-            {selectedIds.size > 0 && (
+          {(() => {
+            const filteredLeads = filterStatus ? leads.filter(l => {
+              if (filterStatus === '対応中') return l.status !== '未架電' && l.status !== 'アポ獲得' && l.status !== 'お断り';
+              return l.status === filterStatus;
+            }) : leads;
+            return (
               <>
-                <span style={{ fontSize: 13, color: '#174f35', fontWeight: 700 }}>{selectedIds.size}件選択中</span>
-                {!confirmDelete ? (
-                  <button onClick={() => setConfirmDelete(true)}
-                    style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    削除
-                  </button>
-                ) : (
-                  <>
-                    <span style={{ fontSize: 13, color: '#ef4444' }}>本当に削除しますか？</span>
-                    <button onClick={handleDeleteSelected}
-                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      削除する
-                    </button>
-                    <button onClick={() => setConfirmDelete(false)}
-                      style={{ background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 6, padding: '4px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      キャンセル
-                    </button>
-                  </>
-                )}
-                <button onClick={() => { setSelectedIds(new Set()); setConfirmDelete(false); }}
-                  style={{ background: 'none', color: '#9ca3af', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  選択解除
-                </button>
-              </>
-            )}
-          </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, minHeight: 32 }}>
+                  {isIS && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.size === leads.length}
+                        ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < leads.length; }}
+                        onChange={handleSelectAll}
+                        style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#059669' }}
+                      />
+                      全選択
+                    </label>
+                  )}
+                  {filterStatus && (
+                    <span style={{ fontSize: 12, color: '#6a9a7a' }}>
+                      <span style={{ fontWeight: 700, color: '#174f35' }}>{filteredLeads.length}件</span>
+                      {filteredLeads.length !== leads.length && <span style={{ marginLeft: 4 }}>/ 全{leads.length}件</span>}
+                    </span>
+                  )}
+                  {selectedIds.size > 0 && (
+                    <>
+                      <span style={{ fontSize: 13, color: '#174f35', fontWeight: 700 }}>{selectedIds.size}件選択中</span>
+                      {!confirmDelete ? (
+                        <button onClick={() => setConfirmDelete(true)}
+                          style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          削除
+                        </button>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: 13, color: '#ef4444' }}>本当に削除しますか？</span>
+                          <button onClick={handleDeleteSelected}
+                            style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            削除する
+                          </button>
+                          <button onClick={() => setConfirmDelete(false)}
+                            style={{ background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 6, padding: '4px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            キャンセル
+                          </button>
+                        </>
+                      )}
+                      <button onClick={() => { setSelectedIds(new Set()); setConfirmDelete(false); }}
+                        style={{ background: 'none', color: '#9ca3af', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        選択解除
+                      </button>
+                    </>
+                  )}
+                </div>
 
-          {leads.map(lead => (
-            <OutboundLeadRow
-              key={lead.id}
-              lead={lead}
-              canWrite={canWrite}
-              canEdit={isIS}
-              currentUser={currentUser}
-              selected={selectedIds.has(lead.id)}
-              onToggleSelect={isIS ? handleToggleSelect : null}
-              onUpdate={handleUpdateLead}
-              onOpenAppointment={setAppointLead}
-            />
-          ))}
+                {filteredLeads.map(lead => (
+                  <OutboundLeadRow
+                    key={lead.id}
+                    lead={lead}
+                    canWrite={canWrite}
+                    canEdit={isIS}
+                    currentUser={currentUser}
+                    selected={selectedIds.has(lead.id)}
+                    onToggleSelect={isIS ? handleToggleSelect : null}
+                    onUpdate={handleUpdateLead}
+                    onOpenAppointment={setAppointLead}
+                  />
+                ))}
+              </>
+            );
+          })()}
         </div>
       )}
       </>}
