@@ -65,7 +65,7 @@ export async function sendChatwork(message) {
 
 // Chatwork設定取得（admin用）
 export async function fetchOutboundConfig() {
-  const r = await fetch('/api/outbound/config');
+  const r = await fetch('/api/outbound/config', { cache: 'no-store' });
   if (!r.ok) throw new Error('設定取得に失敗しました');
   return r.json();
 }
