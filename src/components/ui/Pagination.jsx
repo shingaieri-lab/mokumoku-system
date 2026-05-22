@@ -21,7 +21,7 @@ export function Pagination({ page, totalPages, total, pageSize, onPageChange, on
   );
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '16px 0 8px', flexShrink: 0, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '8px 0', flexShrink: 0, flexWrap: 'wrap' }}>
       {btn('← 前へ', page === 1, () => onPageChange(page - 1))}
       <span style={{ fontSize: 13, color: '#6a9a7a' }}>
         {totalPages > 1 && (
