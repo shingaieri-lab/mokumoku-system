@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>アウトバウンド業務マニュアル（業務委託スタッフ向け）</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      font-size: 14px;
+      line-height: 1.75;
+      color: #1a3a2a;
+      background: #f7fbf8;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
+    /* ── 印刷用 ────────────────── */
+    @media print {
+      body { background: #fff; font-size: 12px; }
+      .page-break { page-break-before: always; }
+      .no-print { display: none; }
+      .card { box-shadow: none; border: 1px solid #ccc; }
+    }
+
+    /* ── レイアウト ────────────── */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 40px 40px 80px;
+    }
+
+    /* ── ヘッダー ──────────────── */
+    .manual-header {
+      background: linear-gradient(135deg, #174f35 0%, #059669 100%);
+      color: #fff;
+      border-radius: 16px;
+      padding: 36px 40px;
+      margin-bottom: 40px;
+    }
+    .manual-header .tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 20px;
+      padding: 3px 14px;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .manual-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+    .manual-header p {
+      font-size: 13px;
+      opacity: 0.85;
+    }
+
+    /* ── 目次 ──────────────────── */
+    .toc {
+      background: #fff;
+      border: 1px solid #c8e8d4;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 36px;
+    }
+    .toc h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #059669;
+      margin-bottom: 14px;
+      letter-spacing: 0.05em;
+    }
+    .toc ol {
+      padding-left: 20px;
+    }
+    .toc li {
+      margin-bottom: 6px;
+    }
+    .toc a {
+      color: #174f35;
+      text-decoration: none;
+      font-size: 13px;
+    }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── セクション ─────────────── */
+    .section {
+      margin-bottom: 48px;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #c8e8d4;
+    }
+    .section-num {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: #059669;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .section-title h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #174f35;
+    }
+
+    /* ── カード ──────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid #daeee3;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #174f35;
+      margin-bottom: 10px;
+    }
+
+    /* ── ステップ ─────────────────── */
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+    }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 14px;
+      margin-bottom: 14px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      background: #d1fae5;
+      color: #059669;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .steps li .step-body {
+      flex: 1;
+    }
+    .steps li .step-body strong {
+      display: block;
+      font-weight: 700;
+      color: #174f35;
+      margin-bottom: 3px;
+    }
+    .steps li .step-body p, .steps li .step-body span {
+      font-size: 13px;
+      color: #3d7a5e;
+    }
+
+    /* ── フロー図 ──────────────────── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 16px 0;
+    }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .flow-box {
+      background: #f0f5f2;
+      border: 2px solid #c8e8d4;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #174f35;
+      min-width: 180px;
+      text-align: center;
+    }
+    .flow-box.active {
+      background: #d1fae5;
+      border-color: #059669;
+      color: #065f46;
+    }
+    .flow-box.warn {
+      background: #fef9ec;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+    .flow-box.action {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+    .flow-arrow {
+      font-size: 20px;
+      color: #6a9a7a;
+      text-align: center;
+      line-height: 1;
+      padding: 2px 0;
+    }
+    .flow-label {
+      font-size: 12px;
+      color: #6a9a7a;
+      flex: 1;
+    }
+
+    /* ── バッジ（ステータス）────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+    .badge-gray    { background: #f0f5f2; color: #6a9a7a; border-color: #c0dece; }
+    .badge-yellow  { background: #fef9ec; color: #d97706; border-color: #fcd34d; }
+    .badge-blue    { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+    .badge-purple  { background: #f5f3ff; color: #7c3aed; border-color: #c4b5fd; }
+    .badge-cyan    { background: #ecfeff; color: #0891b2; border-color: #a5f3fc; }
+    .badge-red     { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+    .badge-green   { background: #d1fae5; color: #059669; border-color: #6ee7b7; }
+
+    /* ── テーブル ──────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    th {
+      background: #f0f5f2;
+      color: #3d7a5e;
+      font-weight: 700;
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 2px solid #c8e8d4;
+      white-space: nowrap;
+    }
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #e8f4ee;
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* ── 注意・ポイントボックス ─────── */
+    .note {
+      display: flex;
+      gap: 10px;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 13px;
+      margin: 14px 0;
+    }
+    .note-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+    .note.info  { background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; }
+    .note.warn  { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+    .note.tip   { background: #f0fdf4; border: 1px solid #bbf7d0; color: #065f46; }
+    .note.danger{ background: #fff1f2; border: 1px solid #fecdd3; color: #9f1239; }
+
+    /* ── 画面イメージ（モック）─────── */
+    .mock-screen {
+      background: #f8fbf9;
+      border: 1px solid #c8e8d4;
+      border-radius: 10px;
+      padding: 14px;
+      margin: 14px 0;
+      font-size: 12px;
+    }
+    .mock-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #e2f0e8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .mock-company { font-weight: 700; font-size: 14px; color: #174f35; min-width: 180px; }
+    .mock-info    { font-size: 12px; color: #6a9a7a; }
+    .mock-phone   { font-size: 12px; color: #059669; font-weight: 700; }
+    .mock-btn {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid;
+      cursor: default;
+    }
+    .mock-btn-green  { background: #d1fae5; color: #059669; border-color: #6ee7b7; }
+    .mock-btn-gray   { background: #f0f5f2; color: #6a9a7a; border-color: #c0dece; }
+    .mock-btn-blue   { background: #eff6ff; color: #2563eb; border-color: #93c5fd; }
+    .mock-history {
+      background: #f8fbf9;
+      border-top: 1px solid #f0f5f2;
+      padding: 8px 14px;
+      font-size: 11px;
+      color: #6a9a7a;
+    }
+
+    /* ── 区切り ──────────────────── */
+    hr { border: none; border-top: 1px solid #e2f0e8; margin: 32px 0; }
+
+    /* ── フッター ─────────────────── */
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #e2f0e8;
+    }
+
+    /* ── 印刷ボタン ──────────────── */
+    .print-btn {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      margin-bottom: 24px;
+    }
+    .print-btn:hover { background: #047857; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- 印刷ボタン -->
+  <button class="print-btn no-print" onclick="window.print()">🖨️ PDFとして保存する</button>
+
+  <!-- ヘッダー -->
+  <div class="manual-header">
+    <div class="tag">業務委託スタッフ向け</div>
+    <h1>アウトバウンド業務マニュアル</h1>
+    <p>架電・メール記録からアポ獲得報告まで、業務の流れをすべて解説します。</p>
+  </div>
+
+  <!-- 目次 -->
+  <div class="toc">
+    <h2>📋 目次</h2>
+    <ol>
+      <li><a href="#s1">ログイン方法</a></li>
+      <li><a href="#s2">初回セットアップ（Chatwork APIトークンの登録）</a></li>
+      <li><a href="#s3">画面の見方（アウトバウンド管理）</a></li>
+      <li><a href="#s4">架電リストの見方</a></li>
+      <li><a href="#s5">架電・メールの記録方法</a></li>
+      <li><a href="#s6">ステータスの変更方法</a></li>
+      <li><a href="#s7">アポ獲得時の操作（アポ情報入力・Chatwork送信）</a></li>
+      <li><a href="#s8">アポ一覧の確認（前確認チェック）</a></li>
+      <li><a href="#s9">よくある質問</a></li>
+    </ol>
+  </div>
+
+
+  <!-- 1. ログイン -->
+  <div class="section" id="s1">
+    <div class="section-title">
+      <div class="section-num">1</div>
+      <h2>ログイン方法</h2>
+    </div>
+
+    <div class="card">
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>ブラウザでシステムのURLにアクセスする</strong>
+            <span>管理者から共有されたURLを開いてください。Google ChromeまたはEdgeの使用を推奨します。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>メールアドレスとパスワードを入力してログインする</strong>
+            <span>管理者から発行されたアカウント情報を入力し、「ログイン」ボタンをクリックしてください。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>ログイン後、左側のメニューから「アウトバウンド」をクリックする</strong>
+            <span>アウトバウンド管理画面が表示されます。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="note warn">
+      <span class="note-icon">⚠️</span>
+      <div>パスワードは他人と共有しないでください。ログアウトする際は必ず画面右上のメニューからログアウトしてください。</div>
+    </div>
+  </div>
+
+
+  <!-- 2. 初回セットアップ -->
+  <div class="section" id="s2">
+    <div class="section-title">
+      <div class="section-num">2</div>
+      <h2>初回セットアップ（Chatwork APIトークンの登録）</h2>
+    </div>
+
+    <div class="note danger">
+      <span class="note-icon">🔴</span>
+      <div><strong>初回ログイン後、必ずこの設定を行ってください。</strong><br>
+      APIトークンが登録されていないと、アポ獲得時にChatworkへ送信できません。</div>
+    </div>
+
+    <div class="card">
+      <h3>Chatwork APIトークンとは？</h3>
+      <p style="font-size:13px;color:#3d7a5e;">
+        Chatworkに自動でメッセージを送るために必要な「個人の認証キー」です。<br>
+        アポ獲得を報告する際、<strong>ご自身のアカウント名で送信される</strong>仕組みになっています。そのため、各スタッフが個別に登録する必要があります。
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>手順① Chatwork APIトークンを取得する</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>Chatworkにログインする</strong>
+            <span>普段使用しているブラウザでChatworkを開き、ログインしてください。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>画面右上のアカウントアイコンをクリックする</strong>
+            <span>自分のアイコン（顔写真や名前のアイコン）をクリックするとメニューが開きます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「サービス連携」を選択する</strong>
+            <span>メニューの中に「サービス連携」という項目があります。クリックしてください。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「APIトークン」タブを開く</strong>
+            <span>画面が切り替わったら「APIトークン」タブをクリックします。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>表示されたトークンをコピーする</strong>
+            <span><code style="background:#f0f5f2;padding:2px 6px;border-radius:4px;font-family:monospace;">xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code> のような文字列がAPIトークンです。「コピー」ボタンまたは全選択（Ctrl+A）してコピーしてください。</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="note warn">
+        <span class="note-icon">⚠️</span>
+        <div>APIトークンは<strong>パスワードと同様に大切な情報</strong>です。他人に教えたり、チャット等に貼り付けたりしないでください。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>手順② システムにAPIトークンを登録する</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>左側のメニューから「設定」を開く</strong>
+            <span>画面左のナビゲーションメニューから「設定」をクリックします。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「アカウント」をクリックする</strong>
+            <span>設定画面が開いたら、左側のメニューにある「アカウント」アイコンをクリックします。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「Chatwork APIトークン」欄にコピーしたトークンを貼り付ける</strong>
+            <span>入力欄をクリックして、先ほどコピーしたAPIトークンを貼り付けてください（Ctrl+V）。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「保存」ボタンをクリックする</strong>
+            <span>「保存しました ✓」と表示されれば登録完了です。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>登録後の確認</h3>
+      <p style="font-size:13px;color:#3d7a5e;margin-bottom:10px;">
+        アウトバウンド管理画面でアポ情報入力モーダルを開き、「Chatworkに送信」ボタンを押してテスト送信してみてください。<br>
+        エラーが出る場合はトークンが正しくコピーされているか確認し、手順②をやり直してください。
+      </p>
+      <table>
+        <thead>
+          <tr><th>エラーメッセージ</th><th>原因と対処</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Chatwork APIトークンが設定されていません</td>
+            <td>手順②の登録が完了していません。設定 → アカウントから再度登録してください。</td>
+          </tr>
+          <tr>
+            <td>Chatworkへの送信に失敗しました</td>
+            <td>トークンが正しくない可能性があります。Chatworkから再度コピーして登録し直してください。</td>
+          </tr>
+          <tr>
+            <td>Chatwork設定が未完了です</td>
+            <td>ルームIDが管理者側で未設定です。管理者に連絡してください。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="section-title">
+      <div class="section-num">3</div>
+      <h2>画面の見方（アウトバウンド管理）</h2>
+    </div>
+
+    <div class="card">
+      <h3>画面の構成</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>エリア</th>
+            <th>内容</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>タブ（架電リスト / アポ一覧）</strong></td>
+            <td>画面上部にあるタブで切り替えます。普段の架電業務は「架電リスト」、商談後の前確認は「アポ一覧」を使います。</td>
+          </tr>
+          <tr>
+            <td><strong>リスト選択プルダウン</strong></td>
+            <td>担当するリストを選択します。複数のリストがある場合はここで切り替えます。</td>
+          </tr>
+          <tr>
+            <td><strong>ステータスバッジ（件数表示）</strong></td>
+            <td>未架電・アポ獲得・お断り・対応中・合計の件数が表示されます。クリックするとそのステータスだけに絞り込めます。</td>
+          </tr>
+          <tr>
+            <td><strong>架電リスト（企業一覧）</strong></td>
+            <td>架電対象の企業が一覧で表示されます。</td>
+          </tr>
+          <tr>
+            <td><strong>ページネーション（上下）</strong></td>
+            <td>リストの上下に表示されるページ切替バーです。表示件数（10/20/30/50/100件）を変更でき、デフォルトは30件です。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note tip">
+      <span class="note-icon">💡</span>
+      <div>ステータスバッジをクリックすると「アポ獲得」だけ、「未架電」だけなど絞り込み表示ができます。もう一度クリックすると解除されます。「合計」をクリックすると絞り込みが解除されます。</div>
+    </div>
+  </div>
+
+
+  <!-- 4. 架電リストの見方 -->
+  <div class="section" id="s4">
+    <div class="section-title">
+      <div class="section-num">4</div>
+      <h2>架電リストの見方</h2>
+    </div>
+
+    <div class="card">
+      <h3>各行の表示内容</h3>
+      <!-- 画面イメージ -->
+      <div class="mock-screen">
+        <div class="mock-row">
+          <div>
+            <div style="font-size:11px;color:#6a9a7a;">IT・通信　大阪府大阪市〇〇区</div>
+            <div class="mock-company">株式会社サンプル</div>
+            <div class="mock-info">田中 太郎 / 部長</div>
+            <div class="mock-info" style="color:#3d7a5e;">📎 〇〇について要確認 ▼</div>
+          </div>
+          <div>
+            <div class="mock-phone">📞 06-XXXX-XXXX</div>
+            <div style="font-size:12px;color:#0284c7;font-weight:700;">📱 090-XXXX-XXXX</div>
+            <div class="mock-info">✉ tanaka@example.com</div>
+          </div>
+          <span class="badge badge-gray">未架電</span>
+          <span class="mock-btn mock-btn-gray">記録する</span>
+        </div>
+        <div class="mock-history">最終: 2026-05-20 14:30 ／ 電話 ／ 留守　「折り返し希望」　全3件 ▼</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>表示項目</th><th>説明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>業種・住所</strong></td><td>会社の業種や所在地が薄い文字で表示されます。</td></tr>
+          <tr><td><strong>会社名</strong></td><td>架電対象の会社名です。</td></tr>
+          <tr><td><strong>担当者名 / 役職</strong></td><td>架電担当者の名前と役職です。</td></tr>
+          <tr><td><strong>メモ（📎マーク）</strong></td><td>事前に入力されたメモです。クリックすると全文が表示されます。</td></tr>
+          <tr><td><strong>電話番号 / 携帯番号 / メール</strong></td><td>連絡先情報です。電話は緑、携帯は青で表示されます。</td></tr>
+          <tr><td><strong>ステータスバッジ</strong></td><td>現在の架電状況です（後述）。プルダウンで変更できます。</td></tr>
+          <tr><td><strong>架電履歴（最終行）</strong></td><td>最後に記録した架電内容が表示されます。クリックすると全件の履歴が開きます。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>ページネーション（表示件数の切替）</h3>
+      <p style="font-size:13px;color:#3d7a5e;margin-bottom:10px;">
+        リストの上下に表示されるページ切替バーで、件数が多い場合にページを切り替えながら確認できます。
+      </p>
+      <table>
+        <thead>
+          <tr><th>操作</th><th>説明</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>← 前へ / 次へ →</td><td>前後のページに移動します。</td></tr>
+          <tr><td>ページ番号（例：1 / 3 ページ）</td><td>現在のページと総ページ数を表示します。</td></tr>
+          <tr><td>表示件数プルダウン</td><td>1ページに表示する件数を10・20・30・50・100件から選べます。デフォルトは30件です。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>ステータスの種類と意味</h3>
+      <table>
+        <thead>
+          <tr><th>ステータス</th><th>意味</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="badge badge-gray">未架電</span></td><td>まだ一度も連絡していない状態（初期値）</td></tr>
+          <tr><td><span class="badge badge-yellow">留守</span></td><td>電話したが繋がらなかった</td></tr>
+          <tr><td><span class="badge badge-blue">再架電</span></td><td>改めて連絡が必要な状態</td></tr>
+          <tr><td><span class="badge badge-purple">折り返し待ち</span></td><td>先方から折り返し連絡を待っている</td></tr>
+          <tr><td><span class="badge badge-cyan">担当者不在</span></td><td>電話したが担当者が不在だった</td></tr>
+          <tr><td><span class="badge badge-red">お断り</span></td><td>不要と断られた</td></tr>
+          <tr><td><span class="badge badge-green">アポ獲得</span></td><td>商談のアポイントが取れた状態</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+  <!-- 5. 架電記録の方法 -->
+  <div class="section" id="s5">
+    <div class="section-title">
+      <div class="section-num">5</div>
+      <h2>架電・メールの記録方法</h2>
+    </div>
+
+    <div class="card">
+      <h3>記録の手順</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>記録したい企業の行にある「記録する」ボタンをクリックする</strong>
+            <span>行の右側に「記録する」ボタンがあります。クリックすると入力欄が開きます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>連絡手段を選択する</strong>
+            <span>「電話」または「メール」をプルダウンで選択してください。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>メモを入力する（任意）</strong>
+            <span>例：「折り返し15時以降希望」「担当者に取り次いでもらえず」など、連絡内容のポイントを入力します。入力しなくても記録できます。<br><strong>Enterキーで改行できます。</strong>複数行にわたるメモを残したい場合はそのまま改行してください。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「記録する」ボタンをクリックして保存する</strong>
+            <span>記録日時（現在時刻）・連絡手段・現在のステータスが自動で保存されます。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="note info">
+      <span class="note-icon">ℹ️</span>
+      <div>記録を保存すると、行の下部に「最終: 〇〇〇〇 ／ 電話 ／ 留守」のように最終履歴が表示されます。クリックすると過去の全履歴を確認できます。</div>
+    </div>
+
+    <div class="note warn">
+      <span class="note-icon">⚠️</span>
+      <div>ステータスはあらかじめ変更してから「記録する」を押してください。記録した時点のステータスが履歴に保存されます。</div>
+    </div>
+
+    <div class="card">
+      <h3>架電履歴の修正・削除（業務委託スタッフのみ）</h3>
+      <p style="font-size:13px;color:#3d7a5e;margin-bottom:12px;">
+        記録済みの架電履歴を後から修正または削除できます。最終履歴行をクリックして全件を展開した後に操作します。
+      </p>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>最終履歴行をクリックして全件の履歴を展開する</strong>
+            <span>行の下部に表示されている「最終: 〇〇 ／ 電話 ／ 留守」の部分をクリックすると全件が展開されます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>修正・削除したい履歴行にマウスを合わせる（ホバー）</strong>
+            <span>対象の履歴行にマウスカーソルを重ねると、行の右端に「修正」「削除」ボタンが表示されます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「修正」または「削除」をクリックする</strong>
+            <span>「修正」を押すとその行が入力フォームに切り替わります。連絡手段・結果・メモを編集して「更新」を押してください。「削除」を押すと確認なしで即座に削除されます。</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="note warn">
+        <span class="note-icon">⚠️</span>
+        <div>削除した履歴は元に戻せません。誤って削除した場合は管理者にお問い合わせください。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 6. ステータスの変更方法 -->
+  <div class="section" id="s6">
+    <div class="section-title">
+      <div class="section-num">6</div>
+      <h2>ステータスの変更方法</h2>
+    </div>
+
+    <div class="card">
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>変更したい企業の行にあるステータスのプルダウンをクリックする</strong>
+            <span>色付きのバッジ（例：<span class="badge badge-gray">未架電</span>）がプルダウンになっています。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>新しいステータスを選択する</strong>
+            <span>選択した瞬間に自動で保存されます。保存ボタンを押す必要はありません。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="note tip">
+      <span class="note-icon">💡</span>
+      <div>ステータスを <span class="badge badge-green">アポ獲得</span> に変更すると、「アポ情報入力」ボタンが表示されます。<strong>必ずアポ情報の入力とChatwork送信を行ってください。</strong></div>
+    </div>
+  </div>
+
+
+  <!-- 7. アポ獲得時の操作 -->
+  <div class="section" id="s7">
+    <div class="section-title">
+      <div class="section-num">7</div>
+      <h2>アポ獲得時の操作</h2>
+    </div>
+
+    <div class="note danger">
+      <span class="note-icon">🔴</span>
+      <div><strong>アポが取れたら必ずこの操作を行ってください。</strong><br>情報入力とChatwork送信がないとISチームへの報告が届きません。</div>
+    </div>
+
+    <div class="card">
+      <h3>手順①　ステータスを「アポ獲得」に変更する</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>該当企業のステータスプルダウンを開く</strong>
+            <span>現在のステータスバッジをクリックし、「アポ獲得」を選択します。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「アポ情報入力」ボタンが表示されることを確認する</strong>
+            <span>ステータスを「アポ獲得」にすると、行の右に緑色の「アポ情報入力」ボタンが現れます。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h3>手順②　アポ情報を入力する</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>「アポ情報入力」ボタンをクリックする</strong>
+            <span>入力モーダル（ポップアップ画面）が開きます。上部に企業情報が読み取り専用で表示されます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>必須項目を入力する</strong>
+            <span>「商談獲得日」と「商談日時」は必須です（<span style="color:#dc2626;">*</span>マーク）。</span>
+          </div>
+        </li>
+      </ol>
+
+      <table>
+        <thead>
+          <tr><th>入力項目</th><th>内容</th><th>必須</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>商談獲得日</strong></td><td>アポが取れた日付（今日の日付が自動で入ります）</td><td style="color:#dc2626;font-weight:700;">必須</td></tr>
+          <tr><td><strong>商談日時</strong></td><td>商談の実施日と開始時刻</td><td style="color:#dc2626;font-weight:700;">必須</td></tr>
+          <tr><td><strong>営業担当者</strong></td><td>商談に出席するISチームの担当者をプルダウンで選択</td><td>任意</td></tr>
+          <tr><td><strong>住所</strong></td><td>会社の所在地（例：大阪府大阪市〇〇区）</td><td>任意</td></tr>
+          <tr><td><strong>会社HP</strong></td><td>会社のウェブサイトURL</td><td>任意</td></tr>
+          <tr><td><strong>工事内容</strong></td><td>話題になった工事・施工の内容（例：外壁塗装・屋根工事）</td><td>任意</td></tr>
+          <tr><td><strong>現場に監督常駐している？</strong></td><td>「はい」「いいえ」「不明」から選択</td><td>任意</td></tr>
+          <tr><td><strong>ランク</strong></td><td>商談の見込み度（A・B・C・D）</td><td>任意</td></tr>
+          <tr><td><strong>【概要】</strong></td><td>通話内容のポイント・特記事項など自由記述</td><td>任意</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>手順③　送信内容を確認してChatworkに送信する</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>「▼ 送信内容を確認する」をクリックして内容をチェックする（任意）</strong>
+            <span>送信前にChatworkに投稿されるメッセージのプレビューを確認できます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「Chatworkに送信」ボタンをクリックする</strong>
+            <span>ご自身のChatworkアカウントから指定のルームに自動で送信されます。送信後は「✓ Chatwork送信済み」と表示されます。</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="note tip">
+        <span class="note-icon">💡</span>
+        <div>「保存のみ」ボタンを押すとChatworkには送信せずに情報だけ保存できます。後から再度モーダルを開いて送信することも可能です。</div>
+      </div>
+
+      <div class="note info">
+        <span class="note-icon">ℹ️</span>
+        <div>Chatworkへの送信は<strong>ご自身のAPIトークン</strong>を使って送信されます。送信者としてご自身のアカウント名が表示されます。APIトークンが未登録の場合はエラーになりますので、管理者にお問い合わせください。</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 8. アポ一覧 -->
+  <div class="section" id="s8">
+    <div class="section-title">
+      <div class="section-num">8</div>
+      <h2>アポ一覧の確認（前確認チェック）</h2>
+    </div>
+
+    <div class="card">
+      <h3>アポ一覧タブとは</h3>
+      <p style="font-size:13px;color:#3d7a5e;margin-bottom:12px;">
+        全リストのアポ獲得済みリードをまとめて確認できる画面です。商談開始月でフィルタリングして絞り込むことができます。
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>列名</th><th>内容</th><th>操作権限</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>会社名</td><td>アポ獲得した企業</td><td>読み取り専用</td></tr>
+          <tr><td>役職 / 名前</td><td>担当者情報</td><td>読み取り専用</td></tr>
+          <tr><td>商談担当</td><td>ISチームの担当者名</td><td>読み取り専用</td></tr>
+          <tr><td>ランク</td><td>A〜D の見込みランク</td><td>読み取り専用</td></tr>
+          <tr><td>ステータス</td><td>商談確定 / 追客中 / 契約 / 保留・失注</td><td>ISチームのみ編集可</td></tr>
+          <tr><td>アポ獲得日</td><td>アポを取得した日付</td><td>読み取り専用</td></tr>
+          <tr><td>商談開始日</td><td>商談の実施日時</td><td>読み取り専用</td></tr>
+          <tr>
+            <td><strong>前確認</strong></td>
+            <td>商談前に先方への確認連絡をしたかどうか</td>
+            <td><strong style="color:#059669;">業務委託スタッフが編集可</strong></td>
+          </tr>
+          <tr><td>案内メール</td><td>ISチームがGmail下書きを作成したかどうか</td><td>読み取り専用</td></tr>
+          <tr><td>商談後アポ種別</td><td>決裁者アポ / 担当者アポ / 対象外</td><td>ISチームのみ編集可</td></tr>
+          <tr><td>アポ単価</td><td>35,000円 / 25,000円 / 0円</td><td>ISチームのみ編集可</td></tr>
+          <tr><td>リスト</td><td>元の架電リスト名</td><td>読み取り専用</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>CSV書き出し（データのダウンロード）</h3>
+      <p style="font-size:13px;color:#3d7a5e;margin-bottom:12px;">
+        アポ一覧に表示されているデータをExcelで開けるCSV形式でダウンロードできます。
+      </p>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>「アポ一覧」タブを開く</strong>
+            <span>画面上部のタブから「アポ一覧」をクリックします。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>必要に応じて「商談開始月」で絞り込む</strong>
+            <span>月を絞り込んだ場合、ダウンロードされるのも絞り込み後のデータのみになります。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「⬇ CSV書き出し」ボタンをクリックする</strong>
+            <span>月フィルターの右横にあるボタンです。クリックするとCSVファイルが自動でダウンロードされます。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>ダウンロードしたファイルをExcelで開く</strong>
+            <span>ファイルはExcelで文字化けしないようUTF-8形式で保存されています。ダブルクリックで開いてください。</span>
+          </div>
+        </li>
+      </ol>
+
+      <div class="note info">
+        <span class="note-icon">ℹ️</span>
+        <div>ダウンロードされる内容は「現在の絞り込み結果すべて」です。ページを切り替えても全件が含まれます。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>前確認チェックの操作手順</h3>
+      <ol class="steps">
+        <li>
+          <div class="step-body">
+            <strong>画面上部のタブで「アポ一覧」をクリックする</strong>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>対象の企業を探す</strong>
+            <span>「商談開始月」プルダウンで月を絞り込むと探しやすくなります。</span>
+          </div>
+        </li>
+        <li>
+          <div class="step-body">
+            <strong>「前確認」列のチェックボックスにチェックを入れる</strong>
+            <span>先方への事前確認連絡が完了したらチェックします。チェックした瞬間に自動で保存されます。</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+
+
+  <!-- 9. FAQ -->
+  <div class="section" id="s9">
+    <div class="section-title">
+      <div class="section-num">9</div>
+      <h2>よくある質問</h2>
+    </div>
+
+    <div class="card">
+      <h3>Q. ステータスを間違えて変更してしまいました。</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. ステータスのプルダウンから正しいステータスに再度変更するだけで大丈夫です。変更した瞬間に上書き保存されます。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q.「アポ情報入力」ボタンが表示されません。</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. ステータスが「アポ獲得」になっているか確認してください。「アポ獲得」以外のステータスでは表示されません。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q. Chatwork送信でエラーが出ます。</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. ChatworkのAPIトークンが設定されていない可能性があります。「設定」→「API設定」でご自身のChatwork APIトークンを登録してください。設定方法がわからない場合は管理者にお問い合わせください。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q. 架電履歴はどこで確認できますか？</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. 架電リストの各行の下部に「最終: 〇〇 ／ 電話 ／ 留守」のように最終履歴が表示されます。クリックすると全件の履歴が展開されます。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q. リストに表示される件数が少ない気がします。</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. 以下の2点を確認してください。<br>
+      ①ステータスバッジをクリックして絞り込みが有効になっている可能性があります。「合計」バッジをクリックすると全件表示に戻ります。<br>
+      ②ページネーションで表示件数が制限されている可能性があります。リスト上部・下部のページネーションバーにある「表示件数」プルダウンで件数を増やすか、「次へ →」でページを切り替えてください。デフォルトは30件表示です。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q. 架電履歴を間違えて記録しました。修正できますか？</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. はい、修正・削除できます。対象の企業行で最終履歴行をクリックして全件展開し、修正したい履歴にマウスを合わせると「修正」「削除」ボタンが表示されます（業務委託スタッフのみ操作可能）。詳しくはセクション5の「架電履歴の修正・削除」をご参照ください。</p>
+    </div>
+
+    <div class="card">
+      <h3>Q. アポ情報を入力後、内容を修正したいです。</h3>
+      <p style="font-size:13px;color:#3d7a5e;">A. 「アポ情報入力」ボタンを再度クリックすると、入力済みの内容が表示されます。修正して「保存のみ」または「Chatworkに送信」を押してください。</p>
+    </div>
+  </div>
+
+  <hr />
+
+  <div class="footer">
+    アウトバウンド業務マニュアル（業務委託スタッフ向け）<br>
+    ご不明な点は管理者または担当ISチームメンバーにお問い合わせください。
+  </div>
+
+</div>
+</body>
+</html>
