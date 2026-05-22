@@ -400,7 +400,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
             </div>
             <div style={{ flex: 1, minWidth: 180 }}>
               <label style={S.lbl}>メモ（任意）</label>
-              <input value={memo} onChange={e => setMemo(e.target.value)} placeholder="例: 折り返し15時以降希望" style={S.inp} />
+              <textarea value={memo} onChange={e => setMemo(e.target.value)} placeholder="例: 折り返し15時以降希望" rows={2} style={{ ...S.inp, resize: 'vertical' }} />
             </div>
             <div style={{ alignSelf: 'flex-end' }}>
               <button onClick={handleRecord} disabled={saving}
