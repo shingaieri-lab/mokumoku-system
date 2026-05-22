@@ -127,7 +127,6 @@ export function OutboundListHeader({ lists, currentListId, leads, currentUser, o
           onChange={e => onSelectList(e.target.value)}
           style={{ ...S.sel, width: 500, fontWeight: 700 }}
         >
-          <option value="">リストを選択...</option>
           {lists.map(l => (
             <option key={l.id} value={l.id}>{l.name}（{l.leadCount}件）</option>
           ))}
