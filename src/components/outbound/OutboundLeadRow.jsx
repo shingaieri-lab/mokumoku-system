@@ -312,7 +312,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
             style={{ padding: '5px 14px 7px', borderTop: '1px solid #f0f5f2', fontSize: 12, color: '#6a9a7a', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}
           >
             <span>
-              最終: {lastCall.date} ／ {lastCall.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>} ／ {lastCall.result}
+              最終: {lastCall.date} ／ <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{lastCall.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>}</span> ／ {lastCall.result}
               {lastCall.memo && <span style={{ marginLeft: 6, color: '#3d7a5e' }}>「{lastCall.memo}」</span>}
             </span>
             <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8, flexShrink: 0 }}>
