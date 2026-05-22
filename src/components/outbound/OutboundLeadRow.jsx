@@ -72,7 +72,7 @@ function EditPanel({ lead, onSave, onCancel }) {
         </div>
         <div style={{ gridColumn: '1 / -1' }}>
           <label style={S.lbl}>メモ</label>
-          <input value={form.memo} onChange={e => set('memo', e.target.value)} style={S.inp} />
+          <textarea value={form.memo} onChange={e => set('memo', e.target.value)} rows={3} style={{ ...S.inp, resize: 'vertical' }} />
         </div>
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
