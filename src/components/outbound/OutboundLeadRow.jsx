@@ -90,7 +90,10 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
   const [memo, setMemo]             = useState('');
   const [saving, setSaving]         = useState(false);
   const [memoOpen, setMemoOpen]     = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyOpen,      setHistoryOpen]      = useState(false);
+  const [hoveredHistoryId, setHoveredHistoryId] = useState(null);
+  const [editingHistoryId, setEditingHistoryId] = useState(null);
+  const [editHistoryForm,  setEditHistoryForm]  = useState({});
   const [zoomText, setZoomText] = useState(lead.appointmentInfo?.zoomText || '');
   const [gmailSending,  setGmailSending]  = useState(false);
   const [gmailToken,    setGmailToken]    = useState(null);
@@ -323,11 +326,60 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
             <div style={{ padding: '8px 14px 10px', borderTop: '1px solid #f0f5f2', background: '#f8fbf9' }}>
               <div style={{ fontSize: 11, color: '#6a9a7a', fontWeight: 700, marginBottom: 6 }}>架電履歴</div>
               {lead.callHistory.map(h => (
-                <div key={h.id} style={{ fontSize: 12, color: '#3d7a5e', padding: '5px 0', borderBottom: '1px solid #f0f5f2', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                  <span style={{ color: '#6a9a7a', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.date}</span>
-                  <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>{h.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>}</span>
-                  <span style={{ fontWeight: 700, flexShrink: 0 }}>{h.result}</span>
-                  {h.memo && <span style={{ color: '#6a9a7a' }}>「{h.memo}」</span>}
+                <div key={h.id}
+                  onMouseEnter={() => setHoveredHistoryId(h.id)}
+                  onMouseLeave={() => setHoveredHistoryId(null)}
+                  style={{ fontSize: 12, color: '#3d7a5e', padding: '5px 4px', borderBottom: '1px solid #f0f5f2', display: 'flex', gap: 8, alignItems: 'center', borderRadius: 5, background: hoveredHistoryId === h.id ? '#f0f5f2' : 'transparent' }}
+                >
+                  {editingHistoryId === h.id ? (
+                    // 編集モード
+                    <>
+                      <select
+                        value={editHistoryForm.method}
+                        onChange={e => setEditHistoryForm(f => ({ ...f, method: e.target.value }))}
+                        style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}
+                      >
+                        <option value="phone">電話</option>
+                        <option value="email">メール</option>
+                      </select>
+                      <select
+                        value={editHistoryForm.result}
+                        onChange={e => setEditHistoryForm(f => ({ ...f, result: e.target.value }))}
+                        style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}
+                      >
+                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                      <input
+                        value={editHistoryForm.memo}
+                        onChange={e => setEditHistoryForm(f => ({ ...f, memo: e.target.value }))}
+                        placeholder="メモ"
+                        style={{ flex: 1, fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', outline: 'none' }}
+                      />
+                      <button onClick={() => {
+                        onUpdate({ ...lead, callHistory: lead.callHistory.map(c => c.id === h.id ? { ...c, ...editHistoryForm } : c) });
+                        setEditingHistoryId(null);
+                      }} style={{ fontSize: 11, padding: '2px 8px', background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>保存</button>
+                      <button onClick={() => setEditingHistoryId(null)}
+                        style={{ fontSize: 11, padding: '2px 8px', background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
+                    </>
+                  ) : (
+                    // 表示モード
+                    <>
+                      <span style={{ color: '#6a9a7a', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.date}</span>
+                      <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>{h.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>}</span>
+                      <span style={{ fontWeight: 700, flexShrink: 0 }}>{h.result}</span>
+                      {h.memo && <span style={{ color: '#6a9a7a', flex: 1 }}>「{h.memo}」</span>}
+                      {!h.memo && <span style={{ flex: 1 }} />}
+                      {hoveredHistoryId === h.id && currentUser?.role === 'outbound' && (
+                        <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <button onClick={() => { setEditingHistoryId(h.id); setEditHistoryForm({ method: h.method, result: h.result, memo: h.memo || '' }); }}
+                            style={{ fontSize: 11, padding: '2px 8px', background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>修正</button>
+                          <button onClick={() => onUpdate({ ...lead, callHistory: lead.callHistory.filter(c => c.id !== h.id) })}
+                            style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>削除</button>
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               ))}
             </div>
