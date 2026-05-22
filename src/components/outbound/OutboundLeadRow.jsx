@@ -300,91 +300,85 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
         </div>
       </div>
 
+      {/* 最終架電履歴サマリー（クリックで展開） */}
+      {lastCall && mode !== 'record' && (
+        <div
+          onClick={() => setHistoryOpen(v => !v)}
+          style={{ padding: '6px 14px 8px', borderTop: '1px solid #f0f5f2', fontSize: 12, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}
+        >
+          <div style={{ lineHeight: 1.6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{lastCall.date}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{lastCall.method === 'phone' ? <><PhoneCallIcon size={11} color="#059669" /> 電話</> : <><EnvelopeIcon size={11} color="#6a9a7a" /> メール</>}</span>
+              <span style={{ color: '#3d7a5e', fontWeight: 700 }}>{lastCall.result}</span>
+            </div>
+            {lastCall.memo && <div style={{ whiteSpace: 'pre-wrap', color: '#6a9a7a', marginTop: 1 }}>{lastCall.memo}</div>}
+          </div>
+          <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, paddingTop: 2 }}>
+            {lead.callHistory.length > 1 && `全${lead.callHistory.length}件`} {historyOpen ? '▲' : '▼'}
+          </span>
+        </div>
+      )}
+
+      {/* 架電履歴展開パネル */}
+      {lastCall && mode !== 'record' && historyOpen && (
+        <div style={{ padding: '8px 14px 10px', borderTop: '1px solid #f0f5f2', background: '#f8fbf9' }}>
+          <div style={{ fontSize: 11, color: '#6a9a7a', fontWeight: 700, marginBottom: 6 }}>架電履歴</div>
+          {lead.callHistory.map(h => (
+            <div key={h.id}
+              onMouseEnter={() => setHoveredHistoryId(h.id)}
+              onMouseLeave={() => setHoveredHistoryId(null)}
+              style={{ fontSize: 12, color: '#3d7a5e', padding: '5px 4px', borderBottom: '1px solid #f0f5f2', display: 'flex', gap: 8, alignItems: 'flex-start', borderRadius: 5, background: hoveredHistoryId === h.id ? '#f0f5f2' : 'transparent' }}
+            >
+              {editingHistoryId === h.id ? (
+                <>
+                  <select value={editHistoryForm.method} onChange={e => setEditHistoryForm(f => ({ ...f, method: e.target.value }))}
+                    style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}>
+                    <option value="phone">電話</option>
+                    <option value="email">メール</option>
+                  </select>
+                  <select value={editHistoryForm.result} onChange={e => setEditHistoryForm(f => ({ ...f, result: e.target.value }))}
+                    style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}>
+                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <input value={editHistoryForm.memo} onChange={e => setEditHistoryForm(f => ({ ...f, memo: e.target.value }))}
+                    placeholder="メモ"
+                    style={{ flex: 1, fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', outline: 'none' }} />
+                  <button onClick={() => { onUpdate({ ...lead, callHistory: lead.callHistory.map(c => c.id === h.id ? { ...c, ...editHistoryForm } : c) }); setEditingHistoryId(null); }}
+                    style={{ fontSize: 11, padding: '2px 8px', background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>保存</button>
+                  <button onClick={() => setEditingHistoryId(null)}
+                    style={{ fontSize: 11, padding: '2px 8px', background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
+                </>
+              ) : (
+                <>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: '#6a9a7a', whiteSpace: 'nowrap' }}>{h.date}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{h.method === 'phone' ? <><PhoneCallIcon size={11} color="#059669" /> 電話</> : <><EnvelopeIcon size={11} color="#6a9a7a" /> メール</>}</span>
+                      <span style={{ fontWeight: 700 }}>{h.result}</span>
+                    </div>
+                    {h.memo && <div style={{ color: '#6a9a7a', marginTop: 2, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{h.memo}</div>}
+                  </div>
+                  {hoveredHistoryId === h.id && currentUser?.role === 'outbound' && (
+                    <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      <button onClick={() => { setEditingHistoryId(h.id); setEditHistoryForm({ method: h.method, result: h.result, memo: h.memo || '' }); }}
+                        style={{ fontSize: 11, padding: '2px 8px', background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>修正</button>
+                      <button onClick={() => onUpdate({ ...lead, callHistory: lead.callHistory.filter(c => c.id !== h.id) })}
+                        style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>削除</button>
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* メモ展開 */}
       {lead.memo && memoOpen && (
         <div style={{ padding: '10px 14px', borderTop: '1px solid #e2f0e8', background: '#f8fbf9', fontSize: 12, color: '#3d7a5e', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.7 }}>
           {lead.memo}
         </div>
-      )}
-
-      {/* 最終架電履歴（クリックで全履歴展開） */}
-      {lastCall && mode !== 'record' && (
-        <>
-          <div
-            onClick={() => setHistoryOpen(v => !v)}
-            style={{ padding: '5px 14px 7px', borderTop: '1px solid #f0f5f2', fontSize: 12, color: '#6a9a7a', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', userSelect: 'none' }}
-          >
-            <span>
-              最終: {lastCall.date} ／ <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{lastCall.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>}</span> ／ {lastCall.result}
-              {lastCall.memo && <span style={{ marginLeft: 6, color: '#3d7a5e' }}>「{lastCall.memo}」</span>}
-            </span>
-            <span style={{ fontSize: 11, color: '#9ca3af', marginLeft: 8, flexShrink: 0 }}>
-              {lead.callHistory.length > 1 && `全${lead.callHistory.length}件`} {historyOpen ? '▲' : '▼'}
-            </span>
-          </div>
-          {historyOpen && (
-            <div style={{ padding: '8px 14px 10px', borderTop: '1px solid #f0f5f2', background: '#f8fbf9' }}>
-              <div style={{ fontSize: 11, color: '#6a9a7a', fontWeight: 700, marginBottom: 6 }}>架電履歴</div>
-              {lead.callHistory.map(h => (
-                <div key={h.id}
-                  onMouseEnter={() => setHoveredHistoryId(h.id)}
-                  onMouseLeave={() => setHoveredHistoryId(null)}
-                  style={{ fontSize: 12, color: '#3d7a5e', padding: '5px 4px', borderBottom: '1px solid #f0f5f2', display: 'flex', gap: 8, alignItems: 'center', borderRadius: 5, background: hoveredHistoryId === h.id ? '#f0f5f2' : 'transparent' }}
-                >
-                  {editingHistoryId === h.id ? (
-                    // 編集モード
-                    <>
-                      <select
-                        value={editHistoryForm.method}
-                        onChange={e => setEditHistoryForm(f => ({ ...f, method: e.target.value }))}
-                        style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}
-                      >
-                        <option value="phone">電話</option>
-                        <option value="email">メール</option>
-                      </select>
-                      <select
-                        value={editHistoryForm.result}
-                        onChange={e => setEditHistoryForm(f => ({ ...f, result: e.target.value }))}
-                        style={{ fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', background: '#fff' }}
-                      >
-                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <input
-                        value={editHistoryForm.memo}
-                        onChange={e => setEditHistoryForm(f => ({ ...f, memo: e.target.value }))}
-                        placeholder="メモ"
-                        style={{ flex: 1, fontSize: 11, padding: '2px 6px', border: '1px solid #c0dece', borderRadius: 5, fontFamily: 'inherit', color: '#174f35', outline: 'none' }}
-                      />
-                      <button onClick={() => {
-                        onUpdate({ ...lead, callHistory: lead.callHistory.map(c => c.id === h.id ? { ...c, ...editHistoryForm } : c) });
-                        setEditingHistoryId(null);
-                      }} style={{ fontSize: 11, padding: '2px 8px', background: '#059669', color: '#fff', border: 'none', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>保存</button>
-                      <button onClick={() => setEditingHistoryId(null)}
-                        style={{ fontSize: 11, padding: '2px 8px', background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>×</button>
-                    </>
-                  ) : (
-                    // 表示モード
-                    <>
-                      <span style={{ color: '#6a9a7a', whiteSpace: 'nowrap', flexShrink: 0 }}>{h.date}</span>
-                      <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4 }}>{h.method === 'phone' ? <><PhoneCallIcon size={12} color="#059669" /> 電話</> : <><EnvelopeIcon size={12} color="#6a9a7a" /> メール</>}</span>
-                      <span style={{ fontWeight: 700, flexShrink: 0 }}>{h.result}</span>
-                      {h.memo && <span style={{ color: '#6a9a7a', flex: 1 }}>「{h.memo}」</span>}
-                      {!h.memo && <span style={{ flex: 1 }} />}
-                      {hoveredHistoryId === h.id && currentUser?.role === 'outbound' && (
-                        <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                          <button onClick={() => { setEditingHistoryId(h.id); setEditHistoryForm({ method: h.method, result: h.result, memo: h.memo || '' }); }}
-                            style={{ fontSize: 11, padding: '2px 8px', background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>修正</button>
-                          <button onClick={() => onUpdate({ ...lead, callHistory: lead.callHistory.filter(c => c.id !== h.id) })}
-                            style={{ fontSize: 11, padding: '2px 8px', background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 5, cursor: 'pointer', fontFamily: 'inherit' }}>削除</button>
-                        </span>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </>
       )}
 
       {/* 架電記録フォーム */}
@@ -414,8 +408,12 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
               <div style={{ fontSize: 11, color: '#6a9a7a', fontWeight: 700, marginBottom: 4 }}>架電履歴</div>
               {lead.callHistory.map(h => (
                 <div key={h.id} style={{ fontSize: 11, color: '#3d7a5e', padding: '3px 0', borderBottom: '1px solid #f0f5f2' }}>
-                  {h.date} ／ <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{h.method === 'phone' ? <><PhoneCallIcon size={11} color="#059669" /> 電話</> : <><EnvelopeIcon size={11} color="#6a9a7a" /> メール</>}</span> ／ {h.result}
-                  {h.memo && <span style={{ marginLeft: 6, color: '#6a9a7a' }}>「{h.memo}」</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ color: '#6a9a7a' }}>{h.date}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>{h.method === 'phone' ? <><PhoneCallIcon size={11} color="#059669" /> 電話</> : <><EnvelopeIcon size={11} color="#6a9a7a" /> メール</>}</span>
+                    <span>{h.result}</span>
+                  </div>
+                  {h.memo && <div style={{ color: '#6a9a7a', marginTop: 1, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{h.memo}</div>}
                 </div>
               ))}
             </div>
