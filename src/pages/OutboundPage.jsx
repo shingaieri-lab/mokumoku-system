@@ -199,8 +199,8 @@ export function OutboundPage({ currentUser }) {
 
       {currentListId && !loading && leads.length > 0 && (
         <div>
-          {/* 選択操作ツールバー */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, minHeight: 32 }}>
+          {/* 選択操作ツールバー（内容がある時のみ表示） */}
+          {(isIS || filterStatus || selectedIds.size > 0) && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
             {isIS && (
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none' }}>
                 <input
@@ -246,7 +246,7 @@ export function OutboundPage({ currentUser }) {
                 </button>
               </>
             )}
-          </div>
+          </div>}
 
           {/* ページネーション（上） */}
           {paginationBar}
