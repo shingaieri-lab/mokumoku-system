@@ -92,6 +92,7 @@ export function AccountManager({ currentUser, onClose, inline, onUpdateProfile }
           <select value={form.role} onChange={e => setForm(p => ({...p, role:e.target.value}))} style={inp}>
             <option value="member">メンバー</option>
             <option value="admin">管理者</option>
+            <option value="outbound">アウトバウンド（業務委託）</option>
           </select>
         </div>
         <div style={{display:"flex", alignItems:"center", gap:8}}>

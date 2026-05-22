@@ -119,7 +119,7 @@ export function DemoApp() {
         page={page} setPage={navigate} setSettingsTab={() => {}}
         count={leads.length} currentUser={DEMO_USER}
         onLogout={() => {}} onUpdateProfile={() => {}}
-        isMobile={isMobile}
+        isMobile={isMobile} isDemo={true}
       />
       <div style={{flex:1, display:"flex", flexDirection:"column", overflow:"hidden"}}>
         <DemoBanner onReset={resetDemo} />

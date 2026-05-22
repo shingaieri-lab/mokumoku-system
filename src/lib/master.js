@@ -33,6 +33,10 @@ export function getMaster() {
     statuses: DEFAULT_STATUSES_WITH_COLORS,
     companyName: "",
     calRegTitleTpl: "仮WEB営1）【{{会社名}}様】",
+    outboundEmailTpl: {
+      subject: '【商談のご案内】{{企業名}} 様 {{商談日時}}〜',
+      body: '{{担当者名}} 様\n\nお世話になっております。\n{{送信者名}}でございます。\n\nこの度は商談のお時間をいただき、誠にありがとうございます。\n下記の通りZoom商談の詳細をお送りいたします。\n\n■ 商談日時\n{{商談日時}}\n\n■ Zoom参加方法\n{{Zoomリンク}}\n\nご不明な点がございましたら、お気軽にご連絡ください。\n当日はどうぞよろしくお願いいたします。\n\n{{署名}}',
+    },
   };
   if (!s) return defaults;
   return {
@@ -41,6 +45,7 @@ export function getMaster() {
     portalSiteSource: s.portalSiteSource || {},
     sources: s.sources || DEFAULT_SOURCES,
     statuses: s.statuses || DEFAULT_STATUSES_WITH_COLORS,
+    outboundEmailTpl: s.outboundEmailTpl || defaults.outboundEmailTpl,
   };
 }
 
