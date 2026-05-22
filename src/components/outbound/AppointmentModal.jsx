@@ -57,6 +57,18 @@ export function AppointmentModal({ lead, listName, currentUser, onSave, onClose 
       alert('商談獲得日と商談日時を入力してください');
       return false;
     }
+    if (!form.salesPerson) {
+      alert('営業担当者を選択してください');
+      return false;
+    }
+    if (!form.construction.trim()) {
+      alert('工事内容を入力してください');
+      return false;
+    }
+    if (!form.rank) {
+      alert('ランクを選択してください');
+      return false;
+    }
     return true;
   };
 
@@ -131,7 +143,7 @@ export function AppointmentModal({ lead, listName, currentUser, onSave, onClose 
 
           {/* 営業担当者 */}
           <div>
-            <label style={S.lbl}>営業担当者</label>
+            <label style={S.lbl}>営業担当者 <span style={{ color: '#ef4444' }}>*</span></label>
             <select value={form.salesPerson} onChange={e => set('salesPerson', e.target.value)} style={S.sel}>
               <option value="">選択してください</option>
               {salesMembers.map((name, i) => (
@@ -154,7 +166,7 @@ export function AppointmentModal({ lead, listName, currentUser, onSave, onClose 
 
           {/* 工事内容 */}
           <div>
-            <label style={S.lbl}>工事内容</label>
+            <label style={S.lbl}>工事内容 <span style={{ color: '#ef4444' }}>*</span></label>
             <textarea value={form.construction} onChange={e => set('construction', e.target.value)} rows={2} placeholder="例: 外壁塗装・屋根工事" style={{ ...S.inp, resize: 'vertical' }} />
           </div>
 
@@ -172,7 +184,7 @@ export function AppointmentModal({ lead, listName, currentUser, onSave, onClose 
               </div>
             </div>
             <div>
-              <label style={{ ...S.lbl, fontSize: 13 }}>ランク</label>
+              <label style={{ ...S.lbl, fontSize: 13 }}>ランク <span style={{ color: '#ef4444' }}>*</span></label>
               <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 {RANK_OPTIONS.map(r => (
                   <label key={r} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14, color: '#2d6b4a', cursor: 'pointer' }}>
