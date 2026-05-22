@@ -118,7 +118,14 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
     setSaving(false); setMode(null);
   };
 
-  const handleStatusChange = (newStatus) => onUpdate({ ...lead, status: newStatus });
+  const handleStatusChange = (newStatus) => {
+    const update = { ...lead, status: newStatus };
+    // アポ獲得になった時点でdealStatusを初期化
+    if (newStatus === 'アポ獲得' && !lead.appointmentInfo?.dealStatus) {
+      update.appointmentInfo = { ...(lead.appointmentInfo || {}), dealStatus: '商談確定' };
+    }
+    onUpdate(update);
+  };
 
   // Zoom情報を保存
   const handleSaveZoom = async () => {

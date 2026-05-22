@@ -4,10 +4,12 @@ import { S } from '../styles/index.js';
 import { OutboundListHeader } from '../components/outbound/OutboundListHeader.jsx';
 import { OutboundLeadRow }    from '../components/outbound/OutboundLeadRow.jsx';
 import { AppointmentModal }   from '../components/outbound/AppointmentModal.jsx';
+import { AppointmentList }    from '../components/outbound/AppointmentList.jsx';
 import { fetchOutboundLists, createOutboundList, deleteOutboundList, fetchOutboundLeads, saveOutboundLeads } from '../lib/outboundApi.js';
 import { SignatureEditModal } from '../components/outbound/SignatureEditModal.jsx';
 
 export function OutboundPage({ currentUser }) {
+  const [view,           setView]           = useState('list'); // 'list' | 'appointments'
   const [lists,          setLists]          = useState([]);
   const [currentListId,  setCurrentListId]  = useState('');
   const [leads,          setLeads]          = useState([]);
@@ -120,6 +122,26 @@ export function OutboundPage({ currentUser }) {
         )}
       </div>
 
+      {/* タブ切替 */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid #e2f0e8' }}>
+        {[
+          { key: 'list',         label: '架電リスト' },
+          { key: 'appointments', label: 'アポ一覧' },
+        ].map(({ key, label }) => (
+          <button key={key} onClick={() => setView(key)}
+            style={{ padding: '8px 20px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none', borderBottom: view === key ? '2px solid #059669' : '2px solid transparent', background: 'none', color: view === key ? '#059669' : '#6a9a7a', marginBottom: -2, transition: 'color 0.15s' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* アポ一覧ビュー */}
+      {view === 'appointments' && (
+        <AppointmentList currentUser={currentUser} />
+      )}
+
+      {/* 架電リストビュー */}
+      {view === 'list' && <>
       <OutboundListHeader
         lists={lists}
         currentListId={currentListId}
@@ -202,6 +224,7 @@ export function OutboundPage({ currentUser }) {
           ))}
         </div>
       )}
+      </>}
 
       {showSignature && (
         <SignatureEditModal
