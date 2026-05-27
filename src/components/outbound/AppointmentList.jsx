@@ -413,13 +413,17 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
                   <td style={{ padding: '10px 12px', background: gmailAlert ? '#fef3c7' : undefined }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                       {mailPendingOnly ? (
-                        <button
-                          onClick={() => handleOpenGmailPreview({ lead, listId, listName, leads })}
-                          disabled={gmailSending}
-                          style={{ background: ai.gmailDraftedAt ? '#d1fae5' : '#fef2f2', color: ai.gmailDraftedAt ? '#059669' : '#ea4335', border: `1px solid ${ai.gmailDraftedAt ? '#6ee7b7' : '#fca5a5'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                        >
-                          {ai.gmailDraftedAt ? '✓ 下書き済' : 'Gmail下書き'}
-                        </button>
+                        ai.zoomText ? (
+                          <button
+                            onClick={() => handleOpenGmailPreview({ lead, listId, listName, leads })}
+                            disabled={gmailSending}
+                            style={{ background: ai.gmailDraftedAt ? '#d1fae5' : '#fef2f2', color: ai.gmailDraftedAt ? '#059669' : '#ea4335', border: `1px solid ${ai.gmailDraftedAt ? '#6ee7b7' : '#fca5a5'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                          >
+                            {ai.gmailDraftedAt ? '✓ 下書き済' : 'Gmail下書き'}
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#d1d5db' }}>—</span>
+                        )
                       ) : (
                         <>
                           <span style={{ fontSize: 16, color: ai.gmailDraftedAt ? '#059669' : '#d1d5db' }} title={ai.gmailDraftedAt ? `${ai.gmailDraftedAt.slice(0, 10)} 送信済み` : '未送信'}>

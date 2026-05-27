@@ -1,5 +1,5 @@
 // アウトバウンド管理ページ（リスト管理・架電記録・アポ獲得報告）
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { S } from '../styles/index.js';
 import { OutboundListHeader } from '../components/outbound/OutboundListHeader.jsx';
 import { OutboundLeadRow }    from '../components/outbound/OutboundLeadRow.jsx';
@@ -24,8 +24,9 @@ export function OutboundPage({ currentUser }) {
   const [page,           setPage]           = useState(1);
   const [pageSize,       setPageSize]       = useState(30);
 
-  const canWrite = currentUser?.role === 'outbound' || currentUser?.role === 'admin';
-  const isIS     = currentUser?.role === 'admin' || currentUser?.role === 'member';
+  const canWrite  = currentUser?.role === 'outbound' || currentUser?.role === 'admin';
+  const isIS      = currentUser?.role === 'admin' || currentUser?.role === 'member';
+  const prevViewRef = useRef(view);
 
   // リスト一覧をロード
   useEffect(() => {
@@ -36,6 +37,17 @@ export function OutboundPage({ currentUser }) {
       })
       .catch(e => console.error(e));
   }, []);
+
+  // アポ一覧/未送信タブから架電リストに戻ったとき、他タブでの変更を反映するため再フェッチ
+  useEffect(() => {
+    const was = prevViewRef.current;
+    prevViewRef.current = view;
+    if (view === 'list' && was !== 'list' && currentListId) {
+      fetchOutboundLeads(currentListId)
+        .then(data => setLeads(data))
+        .catch(e => console.error(e));
+    }
+  }, [view, currentListId]);
 
   // リスト選択時にリードをロード・選択リセット
   useEffect(() => {
