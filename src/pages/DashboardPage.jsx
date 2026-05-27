@@ -23,6 +23,41 @@ const APPOINT_TYPE_ITEMS = [
   { type: '対象外',     color: '#9ca3af' },
 ];
 
+function HBar({ value, max, color, showPct = false, total }) {
+  const pct = max > 0 ? (value / max * 100) : 0;
+  const pctOfTotal = total > 0 ? Math.round(value / total * 100) : 0;
+  return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ flex: 1, height: 10, background: '#f0f4f2', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: pct + '%', background: color, borderRadius: 6, transition: 'width 0.8s ease' }} />
+      </div>
+      {showPct && <span style={{ fontSize: 11, color: '#9ab8a4', minWidth: 30, textAlign: 'right' }}>{pctOfTotal}%</span>}
+    </div>
+  );
+}
+
+function DonutChart({ data, total, size = 120 }) {
+  let cum = 0;
+  const parts = data.filter(d => d.count > 0).map(d => {
+    const start = cum;
+    const end = cum + (d.count / total * 100);
+    cum = end;
+    return `${d.color} ${start}% ${end}%`;
+  });
+  const gradient = parts.length > 0
+    ? `conic-gradient(${parts.join(', ')})`
+    : 'conic-gradient(#e2f0e8 0% 100%)';
+  const hole = size * 0.58;
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', background: gradient, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: hole, height: hole, borderRadius: '50%', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: size * 0.2, fontWeight: 900, color: '#174f35', lineHeight: 1 }}>{total}</div>
+        <div style={{ fontSize: size * 0.11, color: '#6a9a7a' }}>件</div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMobile, apoLeads = [] }) {
   const toYM = (dateStr) => {
     if (!dateStr) return "";
@@ -43,236 +78,236 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   }, [months]);
 
   const fl = month ? leads.filter(l => toYM(l.date) === month) : leads;
-
-  const bySrc    = s => fl.filter(l => l.source === s);
-  const isAppt   = l => ["日程調整中","商談確定"].includes(l.status);
-  const isWon    = l => l.status === "商談確定";
-  const rate     = (a, b) => b ? (a/b*100).toFixed(1)+"%" : "—";
+  const isAppt = l => ["日程調整中","商談確定"].includes(l.status);
+  const rate = (a, b) => b ? (a/b*100).toFixed(1)+"%" : "—";
   const validLeads = fl.filter(l => l.status !== "育成対象外");
-
-  const portal    = fl.filter(l => !!l.portal_site);
+  const portal = fl.filter(l => !!l.portal_site);
   const isCharged = l => !l.charge_applied;
-  const cost      = portal.filter(isCharged).reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0);
-  const applied   = portal.filter(l => l.charge_applied);
-
-  const todayActions   = leads.filter(l => l.next_action_date === TODAY && l.is_member === currentUser?.name);
+  const cost = portal.filter(isCharged).reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0);
+  const applied = portal.filter(l => l.charge_applied);
+  const todayActions = leads.filter(l => l.next_action_date === TODAY && l.is_member === currentUser?.name);
   const overdueActions = leads.filter(l => l.next_action_date && l.next_action_date < TODAY && l.is_member === currentUser?.name);
+  const apptCount = fl.filter(isAppt).length;
+  const apptRate = validLeads.length ? (apptCount / validLeads.length * 100).toFixed(1) : '0';
+  const mqlCount = fl.filter(l => l.mql === "MQL").length;
 
-  const monthApos    = apoLeads.filter(l => l.appointmentInfo?.meetingDate?.slice(0, 7) === month);
+  const monthApos = apoLeads.filter(l => l.appointmentInfo?.meetingDate?.slice(0, 7) === month);
   const totalApoCount = monthApos.length;
   const totalApoPrice = monthApos.reduce((s, l) => s + parseAppointPrice(l.appointmentInfo?.appointPrice), 0);
-  const rankCounts  = Object.fromEntries(RANK_ITEMS.map(({ rank }) => [rank, monthApos.filter(l => l.appointmentInfo?.rank === rank).length]));
-  const rankPrices  = Object.fromEntries(RANK_ITEMS.map(({ rank }) => [rank, monthApos.filter(l => l.appointmentInfo?.rank === rank).reduce((s, l) => s + parseAppointPrice(l.appointmentInfo?.appointPrice), 0)]));
-  const typeCounts  = Object.fromEntries(APPOINT_TYPE_ITEMS.map(({ type }) => [type, monthApos.filter(l => l.appointmentInfo?.appointType === type).length]));
-  const typePrices  = Object.fromEntries(APPOINT_TYPE_ITEMS.map(({ type }) => [type, monthApos.filter(l => l.appointmentInfo?.appointType === type).reduce((s, l) => s + parseAppointPrice(l.appointmentInfo?.appointPrice), 0)]));
+  const rankData = RANK_ITEMS.map(({ rank, color }) => ({
+    rank, color,
+    count: monthApos.filter(l => l.appointmentInfo?.rank === rank).length,
+    price: monthApos.filter(l => l.appointmentInfo?.rank === rank).reduce((s, l) => s + parseAppointPrice(l.appointmentInfo?.appointPrice), 0),
+  }));
+  const typeData = APPOINT_TYPE_ITEMS.map(({ type, color }) => ({
+    type, color,
+    count: monthApos.filter(l => l.appointmentInfo?.appointType === type).length,
+    price: monthApos.filter(l => l.appointmentInfo?.appointType === type).reduce((s, l) => s + parseAppointPrice(l.appointmentInfo?.appointPrice), 0),
+  }));
+
+  const statusData = getStatuses().map(s => ({
+    label: s,
+    color: getStatusColor(s),
+    count: fl.filter(l => l.status === s).length,
+  }));
+
+  const sourceData = getSources().map((src, idx) => {
+    const arr = fl.filter(l => l.source === src);
+    const valid = arr.filter(l => l.status !== "育成対象外");
+    const appt = arr.filter(isAppt).length;
+    return {
+      src, color: getSourceColor(src, idx), icon: getSourceIcon(src) || "document",
+      total: arr.length, valid: valid.length, appt,
+      mql: arr.filter(l => l.mql === "MQL").length,
+    };
+  });
+  const maxAppt = Math.max(...sourceData.map(s => s.appt), 1);
 
   const kpiItems = [
-    { Icon:InboxIcon,      label:"総反響数",   value:fl.length+"件",               color:"#10b981", bg:"linear-gradient(135deg,#0ecf8a,#059669)", sub:`MQL ${fl.filter(l=>l.mql==="MQL").length}件 (${rate(fl.filter(l=>l.mql==="MQL").length, fl.length)}) / 有効リード ${validLeads.length}件`, filter:{ month } },
-    { Icon:CalendarNavIcon,label:"商談設定数", value:fl.filter(isAppt).length+"件",color:"#f59e0b", bg:"linear-gradient(135deg,#fbbf24,#d97706)", sub:`商談化率 ${rate(fl.filter(isAppt).length, validLeads.length)}（有効リード ${validLeads.length}件）`, filter:{ month, statuses:["日程調整中","商談確定"] } },
-    { Icon:BookIcon,       label:"課金見込み", value:"¥"+cost.toLocaleString(),    color:"#8b5cf6", bg:"linear-gradient(135deg,#a78bfa,#7c3aed)", sub:`対象外申請済 ${applied.length}件`, filter:{ month, hasPortal: true } },
-    { Icon:FlameIcon,      label:"本日追客",   value:todayActions.length+"件",     color:"#0ea5e9", bg:"linear-gradient(135deg,#38bdf8,#0369a1)", sub:`期限切れ ${overdueActions.length}件`, filter:{ nextActionDate: TODAY } },
+    { label: "総反響数",   value: fl.length + "件",       color: "#10b981", sub: `有効リード ${validLeads.length}件`,       filter: { month } },
+    { label: "商談設定数", value: apptCount + "件",        color: "#f59e0b", sub: `商談化率 ${apptRate}%`,                  filter: { month, statuses: ["日程調整中","商談確定"] } },
+    { label: "MQL",        value: mqlCount + "件",         color: "#06b6d4", sub: rate(mqlCount, fl.length) + " / 全体",    filter: { month } },
+    { label: "課金見込み", value: "¥" + cost.toLocaleString(), color: "#8b5cf6", sub: `対象外申請済 ${applied.length}件`,   filter: { month, hasPortal: true } },
+    { label: "本日追客",   value: todayActions.length + "件", color: "#0ea5e9", sub: `期限切れ ${overdueActions.length}件`, filter: { nextActionDate: TODAY } },
   ];
 
+  const card = { background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 8px #0569690a', border: '1px solid #e8f0ea' };
+
   return (
-    <div className="dash-container" style={{padding:"24px 28px", height: isMobile ? "auto" : "calc(100vh - 60px)", display:"flex", flexDirection:"column", gap:10, overflow: isMobile ? "visible" : "auto"}}>
+    <div style={{ padding: '20px 24px', height: isMobile ? 'auto' : 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', gap: 12, overflowY: 'auto' }}>
+
       {/* ヘッダー */}
-      <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", flexShrink:0}}>
-        <div style={{display:"flex", alignItems:"center", gap:10}}>
-          <div style={{fontSize:22, fontWeight:800, color:"#174f35", letterSpacing:"-0.02em", display:"flex", alignItems:"center", gap:7}}><DashboardIcon size={20} color="#174f35" /> ダッシュボード</div>
-          <div style={{fontSize:12, color:"#6a9a7a"}}>月次・流入元別レポート</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <DashboardIcon size={20} color="#174f35" />
+          <span style={{ fontSize: 20, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
+          <span style={{ fontSize: 12, color: '#6a9a7a', marginLeft: 4 }}>月次レポート</span>
         </div>
-        <select value={month} onChange={e => setMonth(e.target.value)} style={{...S.sel, fontSize:12}}>
+        <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...S.sel, fontSize: 12 }}>
           {months.length === 0 && <option value={THIS_MONTH}>{THIS_MONTH.slice(0,4)}年{parseInt(THIS_MONTH.slice(5))}月</option>}
           {months.map(m => <option key={m} value={m}>{m.slice(0,4)}年{parseInt(m.slice(5))}月</option>)}
         </select>
       </div>
 
-      {/* KPI グラデカード */}
-      <div className="kpi-grid" style={{display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, flexShrink:0}}>
+      {/* KPIカード行 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, flexShrink: 0 }}>
         {kpiItems.map((k, i) => (
           <div key={i} onClick={() => onNavigate && onNavigate(k.filter)}
-            style={{borderRadius:16, overflow:"hidden", boxShadow:"0 6px 20px "+k.color+"44", position:"relative", cursor:"pointer", transition:"transform 0.1s, box-shadow 0.1s"}}
-            onMouseEnter={e => { e.currentTarget.style.transform="translateY(-2px)"; e.currentTarget.style.boxShadow="0 10px 28px "+k.color+"66"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform=""; e.currentTarget.style.boxShadow="0 6px 20px "+k.color+"44"; }}>
-            <div style={{background:k.bg, padding:"12px 16px 10px", position:"relative"}}>
-              <div style={{position:"absolute", top:-16, right:-16, width:72, height:72, borderRadius:"50%", background:"#ffffff18"}} />
-              <div style={{position:"absolute", bottom:-10, right:16, width:40, height:40, borderRadius:"50%", background:"#ffffff10"}} />
-              <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10}}>
-                <div style={{filter:"drop-shadow(0 2px 4px #0003)"}}><k.Icon size={22} color="#ffffffcc" /></div>
-                <div style={{fontSize:12, color:"#ffffffcc", fontWeight:600, letterSpacing:0.3}}>{k.label}</div>
-              </div>
-              <div style={{fontSize:24, fontWeight:900, color:"#fff", lineHeight:1, letterSpacing:-0.5, filter:"drop-shadow(0 1px 2px #0002)"}}>
-                {k.value}
-              </div>
-            </div>
-            <div style={{background:"#fff", padding:"5px 16px", borderRadius:"0 0 16px 16px", border:"1px solid "+k.color+"22", borderTop:"none"}}>
-              <div style={{fontSize:12, color:k.color, fontWeight:700}}>{k.sub}</div>
+            style={{ ...card, cursor: 'pointer', padding: '14px 16px', transition: 'transform 0.1s, box-shadow 0.1s' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 20px ${k.color}33`; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 8px #0569690a'; }}>
+            <div style={{ fontSize: 13, color: '#6a9a7a', fontWeight: 600, marginBottom: 8 }}>{k.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: k.color, lineHeight: 1, marginBottom: 6 }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: '#9ab8a4' }}>{k.sub}</div>
+            <div style={{ height: 3, background: k.color + '22', borderRadius: 2, marginTop: 12 }}>
+              <div style={{ height: '100%', width: '60%', background: k.color, borderRadius: 2, opacity: 0.5 }} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* 2カラム */}
-      <div className="two-col" style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, flex:"0 0 170px"}}>
-        {/* 流入元カード */}
-        <div style={{background:"#fff", borderRadius:14, padding:"12px 14px", boxShadow:"0 2px 10px #0569690a", border:"1px solid #e2f0e8", overflowY:"auto"}}>
-          <div style={{fontSize:13, fontWeight:700, color:"#174f35", marginBottom:4, display:"flex", alignItems:"center", gap:6}}>
-            <span style={{width:4, height:16, background:"#10b981", borderRadius:2, display:"inline-block"}} />
+      {/* 中段：流入元別 + ステータス分布 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flexShrink: 0 }}>
+
+        {/* 流入元別 */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#174f35', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 4, height: 16, background: '#10b981', borderRadius: 2, display: 'inline-block' }} />
             流入元別 商談化実績
           </div>
-          <div style={{fontSize:12, color:"#6a9a7a", marginBottom:14}}>
-            各流入元ごとの「反響数」と「有効リード（育成対象外を除く）」「商談設定数（日程調整中＋商談確定）」、商談化率（商談数÷有効リード）を表示
+          <div style={{ fontSize: 12, color: '#9ab8a4', marginBottom: 12 }}>棒グラフの長さ＝商談設定数の多さ</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 56px 56px', gap: '4px 8px', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 11, color: '#b0c8ba' }}>流入元</span>
+            <span style={{ fontSize: 11, color: '#b0c8ba' }}>商談設定数 →</span>
+            <span style={{ fontSize: 11, color: '#b0c8ba', textAlign: 'right' }}>設定数</span>
+            <span style={{ fontSize: 11, color: '#b0c8ba', textAlign: 'right' }}>商談化率</span>
           </div>
-          {getSources().map((src, srcIdx) => {
-            const arr = bySrc(src);
-            const validArr = arr.filter(l => l.status !== "育成対象外");
-            const ap = arr.filter(isAppt).length;
-            const pct = validArr.length ? ap/validArr.length : 0;
-            const srcColor = getSourceColor(src, srcIdx);
-            const srcIconKey = getSourceIcon(src) || "document";
-            return (
-              <div key={src} style={{marginBottom:6, background:"#f8fbf9", borderRadius:10, padding:"7px 10px", border:`1px solid ${srcColor}22`}}>
-                <div style={{display:"flex", alignItems:"center", gap:8, marginBottom:4}}>
-                  <span style={{fontSize:12, fontWeight:700, color:srcColor, flexShrink:0, display:"flex", alignItems:"center", gap:5}}>
-                    <SourceIconSVG iconKey={srcIconKey} size={18}/> {src}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sourceData.map(({ src, color, icon, total, valid, appt, mql }) => (
+              <div key={src}>
+                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 56px 56px', gap: '0 8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <SourceIconSVG iconKey={icon} size={14} />{src}
                   </span>
-                  <div style={{flex:1, display:"flex", gap:6, justifyContent:"flex-end", flexWrap:"wrap"}}>
-                    <span style={{fontSize:12, background:"#fff", border:"1px solid #e2f0e8", borderRadius:6, padding:"2px 8px", color:"#6a9a7a"}}>
-                      反響 <b style={{color:"#174f35"}}>{arr.length}</b>
-                    </span>
-                    <span style={{fontSize:12, background:"#f0fdf4", border:"1px solid #bbf7d0", borderRadius:6, padding:"2px 8px", color:"#15803d", fontWeight:700}}>
-                      有効リード <b>{validArr.length}</b>
-                    </span>
-                    <span style={{fontSize:12, background:"#fff8eb", border:"1px solid #fde68a", borderRadius:6, padding:"2px 8px", color:"#d97706", fontWeight:700, display:"inline-flex", alignItems:"center", gap:3}}>
-                      <CalendarNavIcon size={11} color="#d97706" /> 商談 {ap}件 ({rate(ap, validArr.length)})
-                    </span>
-                    <span style={{fontSize:12, background:"#ecfdf5", border:"1px solid #a7f3d0", borderRadius:6, padding:"2px 8px", color:"#059669", fontWeight:700, display:"inline-flex", alignItems:"center", gap:3}}>
-                      <SparkleIcon size={11} color="#059669" /> MQL {arr.filter(l=>l.mql==="MQL").length}件 ({rate(arr.filter(l=>l.mql==="MQL").length, arr.length)})
-                    </span>
-                  </div>
+                  <HBar value={appt} max={maxAppt} color={color} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color, textAlign: 'right' }}>{appt}件</span>
+                  <span style={{ fontSize: 13, color: '#6a9a7a', textAlign: 'right' }}>{rate(appt, valid)}</span>
                 </div>
-                <div style={{display:"flex", alignItems:"center", gap:8}}>
-                  <div style={{flex:1, height:5, background:"#e8f5ee", borderRadius:4, overflow:"hidden"}}>
-                    <div style={{height:"100%", width:(pct*100)+"%", background:`linear-gradient(90deg,${srcColor},${srcColor}cc)`, borderRadius:4, transition:"width 0.8s ease"}} />
-                  </div>
-                  <span style={{fontSize:10, color:"#6a9a7a", flexShrink:0, width:32, textAlign:"right"}}>{Math.round(pct*100)}%</span>
+                <div style={{ display: 'flex', gap: 12, paddingLeft: 84, marginTop: 2 }}>
+                  <span style={{ fontSize: 11, color: '#b0c8ba' }}>反響 {total}件</span>
+                  <span style={{ fontSize: 11, color: '#b0c8ba' }}>有効リード {valid}件</span>
+                  <span style={{ fontSize: 11, color: '#06b6d4' }}>MQL {mql}件</span>
                 </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        {/* ステータス分布カード */}
-        <div style={{background:"#fff", borderRadius:14, padding:"12px 14px", boxShadow:"0 2px 10px #0569690a", border:"1px solid #e2f0e8", overflowY:"auto"}}>
-          <div style={{fontSize:13, fontWeight:700, color:"#174f35", marginBottom:10, display:"flex", alignItems:"center", gap:6}}>
-            <span style={{width:4, height:16, background:"#8b5cf6", borderRadius:2, display:"inline-block"}} />
+        {/* ステータス分布 */}
+        <div style={card}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#174f35', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 4, height: 16, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} />
             ステータス分布
           </div>
-          <div style={{display:"flex", flexWrap:"wrap", gap:8}}>
-            {getStatuses().map(s => {
-              const n = fl.filter(l => l.status === s).length;
-              const c = getStatusColor(s);
-              const pct = fl.length ? Math.round(n/fl.length*100) : 0;
-              return (
-                <div key={s} style={{flex:"1 1 calc(50% - 4px)", background:c+"0d", border:`1px solid ${c}33`, borderRadius:10, padding:"7px 10px", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-                  <span style={{fontSize:12, color:c, fontWeight:600}}>{s}</span>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:18, fontWeight:900, color:c, lineHeight:1}}>{n}</div>
-                    <div style={{fontSize:9, color:c+"aa"}}>{pct}%</div>
+          <div style={{ fontSize: 12, color: '#9ab8a4', marginBottom: 12 }}>各ステータスのリード数と全体に占める割合</div>
+          <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+            <DonutChart data={statusData} total={fl.length} size={120} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {statusData.filter(s => s.count > 0).map(s => (
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13, color: '#174f35', flex: 1 }}>{s.label}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: s.color, minWidth: 32, textAlign: 'right' }}>{s.count}</span>
+                  <span style={{ fontSize: 12, color: '#b0c8ba', minWidth: 36, textAlign: 'right' }}>{fl.length ? Math.round(s.count/fl.length*100) : 0}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 下段：アポ実績 + ポータル課金 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flexShrink: 0 }}>
+
+        {/* アポ実績 */}
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 4, height: 16, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>アウトバウンドアポ実績</span>
+            </div>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'baseline' }}>
+              <span style={{ fontSize: 13, color: '#6a9a7a' }}>獲得数 <strong style={{ fontSize: 20, color: '#8b5cf6' }}>{totalApoCount}</strong>件</span>
+              <span style={{ fontSize: 13, color: '#6a9a7a' }}>単価計 <strong style={{ fontSize: 18, color: '#059669' }}>¥{totalApoPrice.toLocaleString()}</strong></span>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+            {/* ランク別 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#6a9a7a', marginBottom: 10 }}>ランク別（獲得件数）</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {rankData.map(({ rank, color, count, price }) => (
+                  <div key={rank} style={{ background: color + '10', border: `1.5px solid ${color}44`, borderRadius: 10, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 4 }}>ランク {rank}</div>
+                    <div style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>{count}<span style={{ fontSize: 13, fontWeight: 600, marginLeft: 2 }}>件</span></div>
+                    <div style={{ fontSize: 12, color: color + 'aa', marginTop: 4 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
                   </div>
+                ))}
+              </div>
+            </div>
+            {/* アポ種別 */}
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#6a9a7a', marginBottom: 10 }}>アポ種別（獲得件数）</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {typeData.map(({ type, color, count, price }) => (
+                  <div key={type} style={{ background: color + '10', border: `1.5px solid ${color}44`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color }}>{type}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1 }}>{count}<span style={{ fontSize: 12, fontWeight: 600, marginLeft: 2 }}>件</span></div>
+                      <div style={{ fontSize: 12, color: color + 'aa', marginTop: 2 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ポータル課金 */}
+        <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 4, height: 16, background: '#f59e0b', borderRadius: 2, display: 'inline-block' }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>ポータルサイト 課金管理</span>
+            </div>
+            <span style={{ fontSize: 13, color: '#6a9a7a' }}>合計 <strong style={{ fontSize: 20, color: '#f59e0b' }}>¥{cost.toLocaleString()}</strong></span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+            {getPortalSites().map(site => {
+              const sl = portal.filter(l => l.portal_site === site);
+              const sc = sl.filter(isCharged).reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0);
+              const ap = sl.filter(isAppt).length;
+              const unit = ap > 0 ? '¥' + (sc/ap).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—';
+              const charged = sl.filter(isCharged).length;
+              const free = sl.filter(l => l.charge_applied).length;
+              return (
+                <div key={site} style={{ background: '#f8fbf9', borderRadius: 10, padding: '14px', border: '1px solid #e2f0e8', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>{site}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#174f35', lineHeight: 1 }}>{sl.length}<span style={{ fontSize: 12, color: '#6a9a7a', marginLeft: 2 }}>件</span></div>
+                  <div style={{ fontSize: 12, color: '#b0c8ba' }}>課金{charged} / 対象外{free}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b' }}>¥{sc.toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: '#b0c8ba' }}>単価 {unit}</div>
                 </div>
               );
             })}
-          </div>
-        </div>
-      </div>
-
-      {/* アウトバウンドアポ実績 */}
-      <div style={{background:"#fff", borderRadius:14, padding:"12px 16px", boxShadow:"0 2px 10px #0569690a", border:"1px solid #e2f0e8", flexShrink:0}}>
-        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:10}}>
-          <div style={{display:"flex", alignItems:"center", gap:6}}>
-            <span style={{width:4, height:18, background:"#8b5cf6", borderRadius:2, display:"inline-block"}} />
-            <span style={{fontSize:14, fontWeight:700, color:"#174f35"}}>アウトバウンドアポ実績</span>
-          </div>
-          <div style={{display:"flex", gap:20, alignItems:"baseline"}}>
-            <span style={{fontSize:13, color:"#6a9a7a"}}>獲得数：<strong style={{fontSize:22, color:"#8b5cf6"}}>{totalApoCount}</strong><span style={{fontSize:12, color:"#6a9a7a"}}>件</span></span>
-            <span style={{fontSize:13, color:"#6a9a7a"}}>単価合計：<strong style={{fontSize:22, color:"#059669"}}>¥{totalApoPrice.toLocaleString()}</strong></span>
-          </div>
-        </div>
-
-        <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:10}}>
-          {/* ランク別 */}
-          <div>
-            <div style={{fontSize:12, fontWeight:700, color:"#6a9a7a", marginBottom:6}}>ランク別</div>
-            <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:5}}>
-              {RANK_ITEMS.map(({ rank, color }) => (
-                <div key={rank} style={{background:color+"18", border:`1.5px solid ${color}44`, borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-                  <span style={{fontSize:12, color, fontWeight:700}}>ランク {rank}</span>
-                  <div style={{display:"flex", alignItems:"baseline", gap:8}}>
-                    <span style={{fontSize:18, fontWeight:900, color}}>{rankCounts[rank]}<span style={{fontSize:12, fontWeight:600}}> 件</span></span>
-                    <span style={{fontSize:12, color:color+"bb", fontWeight:600}}>
-                      {rankPrices[rank] > 0 ? "¥" + rankPrices[rank].toLocaleString() : "—"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* アポ種別 */}
-          <div>
-            <div style={{fontSize:12, fontWeight:700, color:"#6a9a7a", marginBottom:6}}>アポ種別</div>
-            <div style={{display:"flex", flexDirection:"column", gap:5}}>
-              {APPOINT_TYPE_ITEMS.map(({ type, color }) => (
-                <div key={type} style={{background:color+"18", border:`1.5px solid ${color}44`, borderRadius:10, padding:"7px 10px", display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-                  <span style={{fontSize:12, color, fontWeight:700}}>{type}</span>
-                  <div style={{display:"flex", alignItems:"baseline", gap:8}}>
-                    <span style={{fontSize:18, fontWeight:900, color}}>{typeCounts[type]}<span style={{fontSize:12, fontWeight:600}}> 件</span></span>
-                    <span style={{fontSize:12, color:color+"bb", fontWeight:600}}>
-                      {typePrices[type] > 0 ? "¥" + typePrices[type].toLocaleString() : "—"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ポータル課金カード */}
-      <div style={{background:"#fff", borderRadius:14, padding:"10px 14px", boxShadow:"0 2px 10px #0569690a", border:"1px solid #e2f0e8", flexShrink:0}}>
-        <div style={{fontSize:13, fontWeight:700, color:"#174f35", marginBottom:14, display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-          <div style={{display:"flex", alignItems:"center", gap:6}}>
-            <span style={{width:4, height:16, background:"#f59e0b", borderRadius:2, display:"inline-block"}} />
-            ポータルサイト 課金管理
-          </div>
-          <div style={{fontSize:13, color:"#174f35"}}>
-            合計：<strong style={{fontSize:18, color:"#f59e0b"}}>¥{cost.toLocaleString()}</strong>
-          </div>
-        </div>
-        <div style={{display:"flex", gap:8, flexWrap:"nowrap", marginBottom:0}}>
-          {getPortalSites().map(site => {
-            const sl = portal.filter(l => l.portal_site === site);
-            const sc = sl.filter(isCharged).reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0);
-            const ap = sl.filter(isAppt).length;
-            const unit = ap > 0 ? "¥"+(sc/ap).toLocaleString(undefined, {maximumFractionDigits:0}) : "—";
-            const charged = sl.filter(isCharged).length;
-            const free    = sl.filter(l => l.charge_applied).length;
-            return (
-              <div key={site} style={{flex:"1 1 120px", background:"#f8fbf9", borderRadius:10, padding:"8px 10px", border:"1px solid #d8ede1"}}>
-                <div style={{fontSize:12, fontWeight:700, color:"#174f35", marginBottom:4}}>{site}</div>
-                <div style={{fontSize:16, fontWeight:900, color:"#174f35"}}>{sl.length}<span style={{fontSize:10, color:"#6a9a7a"}}>件</span></div>
-                <div style={{fontSize:12, color:"#6a9a7a", marginTop:2}}>課金{charged} / 対象外{free}</div>
-                <div style={{fontSize:13, fontWeight:700, color:"#f59e0b", marginTop:4}}>¥{sc.toLocaleString()}</div>
-                <div style={{fontSize:10, color:"#6a9a7a", marginTop:2}}>獲得単価 {unit}</div>
+            <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '14px', border: '1px solid #a7f3d0', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CheckCircleIcon size={13} color="#059669" /> 対象外申請済
               </div>
-            );
-          })}
-          <div style={{flex:"1 1 120px", background:"#ecfdf5", borderRadius:10, padding:"8px 10px", border:"1px solid #a7f3d0"}}>
-            <div style={{fontSize:12, fontWeight:700, color:"#059669", marginBottom:6, display:"flex", alignItems:"center", gap:4}}><CheckCircleIcon size={12} color="#059669" /> 対象外申請済</div>
-            <div style={{fontSize:16, fontWeight:900, color:"#059669"}}>{applied.length}<span style={{fontSize:10}}>件</span></div>
-            <div style={{fontSize:13, fontWeight:700, color:"#10b981", marginTop:4}}>
-              節約 ¥{applied.reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0).toLocaleString()}
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#059669', lineHeight: 1 }}>{applied.length}<span style={{ fontSize: 12, marginLeft: 2 }}>件</span></div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#10b981' }}>
+                節約 ¥{applied.reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0).toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
