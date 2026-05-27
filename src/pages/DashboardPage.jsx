@@ -31,7 +31,7 @@ function HBar({ value, max, color, showPct = false, total }) {
       <div style={{ flex: 1, height: 10, background: '#f0f4f2', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: pct + '%', background: color, borderRadius: 6, transition: 'width 0.8s ease' }} />
       </div>
-      {showPct && <span style={{ fontSize: 11, color: '#9ab8a4', minWidth: 30, textAlign: 'right' }}>{pctOfTotal}%</span>}
+      {showPct && <span style={{ fontSize: 13, color: '#9ab8a4', minWidth: 30, textAlign: 'right' }}>{pctOfTotal}%</span>}
     </div>
   );
 }
@@ -141,7 +141,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <DashboardIcon size={20} color="#174f35" />
           <span style={{ fontSize: 20, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
-          <span style={{ fontSize: 12, color: '#6a9a7a', marginLeft: 4 }}>月次レポート</span>
+          <span style={{ fontSize: 13, color: '#6a9a7a', marginLeft: 4 }}>月次レポート</span>
         </div>
         <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...S.sel, fontSize: 12 }}>
           {months.length === 0 && <option value={THIS_MONTH}>{THIS_MONTH.slice(0,4)}年{parseInt(THIS_MONTH.slice(5))}月</option>}
@@ -158,7 +158,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
             onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 8px #0569690a'; }}>
             <div style={{ fontSize: 13, color: '#6a9a7a', fontWeight: 600, marginBottom: 8 }}>{k.label}</div>
             <div style={{ fontSize: 26, fontWeight: 900, color: k.color, lineHeight: 1, marginBottom: 6 }}>{k.value}</div>
-            <div style={{ fontSize: 12, color: '#9ab8a4' }}>{k.sub}</div>
+            <div style={{ fontSize: 13, color: '#9ab8a4' }}>{k.sub}</div>
             <div style={{ height: 3, background: k.color + '22', borderRadius: 2, marginTop: 12 }}>
               <div style={{ height: '100%', width: '60%', background: k.color, borderRadius: 2, opacity: 0.5 }} />
             </div>
@@ -167,7 +167,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
       </div>
 
       {/* 中段：流入元別 + ステータス分布 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 12, flexShrink: 0 }}>
 
         {/* 流入元別 */}
         <div style={card}>
@@ -175,28 +175,28 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
             <span style={{ width: 4, height: 16, background: '#10b981', borderRadius: 2, display: 'inline-block' }} />
             流入元別 商談化実績
           </div>
-          <div style={{ fontSize: 12, color: '#9ab8a4', marginBottom: 12 }}>棒グラフの長さ＝商談設定数の多さ</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 56px 56px', gap: '4px 8px', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: 11, color: '#b0c8ba' }}>流入元</span>
-            <span style={{ fontSize: 11, color: '#b0c8ba' }}>商談設定数 →</span>
-            <span style={{ fontSize: 11, color: '#b0c8ba', textAlign: 'right' }}>設定数</span>
-            <span style={{ fontSize: 11, color: '#b0c8ba', textAlign: 'right' }}>商談化率</span>
+          <div style={{ fontSize: 13, color: '#9ab8a4', marginBottom: 12 }}>棒グラフの長さ＝商談設定数の多さ</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 60px 64px', gap: '4px 10px', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 13, color: '#b0c8ba' }}>流入元</span>
+            <span style={{ fontSize: 13, color: '#b0c8ba' }}>商談設定数 →</span>
+            <span style={{ fontSize: 13, color: '#b0c8ba', textAlign: 'right' }}>設定数</span>
+            <span style={{ fontSize: 13, color: '#b0c8ba', textAlign: 'right' }}>商談化率</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {sourceData.map(({ src, color, icon, total, valid, appt, mql }) => (
               <div key={src}>
-                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 56px 56px', gap: '0 8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <SourceIconSVG iconKey={icon} size={14} />{src}
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 60px 64px', gap: '0 10px', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, color, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <SourceIconSVG iconKey={icon} size={15} />{src}
                   </span>
                   <HBar value={appt} max={maxAppt} color={color} />
-                  <span style={{ fontSize: 14, fontWeight: 700, color, textAlign: 'right' }}>{appt}件</span>
-                  <span style={{ fontSize: 13, color: '#6a9a7a', textAlign: 'right' }}>{rate(appt, valid)}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color, textAlign: 'right' }}>{appt}件</span>
+                  <span style={{ fontSize: 14, color: '#6a9a7a', textAlign: 'right' }}>{rate(appt, valid)}</span>
                 </div>
-                <div style={{ display: 'flex', gap: 12, paddingLeft: 84, marginTop: 2 }}>
-                  <span style={{ fontSize: 11, color: '#b0c8ba' }}>反響 {total}件</span>
-                  <span style={{ fontSize: 11, color: '#b0c8ba' }}>有効リード {valid}件</span>
-                  <span style={{ fontSize: 11, color: '#06b6d4' }}>MQL {mql}件</span>
+                <div style={{ display: 'flex', gap: 12, paddingLeft: 125, marginTop: 3 }}>
+                  <span style={{ fontSize: 13, color: '#b0c8ba' }}>反響 {total}件</span>
+                  <span style={{ fontSize: 13, color: '#b0c8ba' }}>有効リード {valid}件</span>
+                  <span style={{ fontSize: 13, color: '#06b6d4' }}>MQL {mql}件</span>
                 </div>
               </div>
             ))}
@@ -209,18 +209,16 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
             <span style={{ width: 4, height: 16, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} />
             ステータス分布
           </div>
-          <div style={{ fontSize: 12, color: '#9ab8a4', marginBottom: 12 }}>各ステータスのリード数と全体に占める割合</div>
+          <div style={{ fontSize: 13, color: '#9ab8a4', marginBottom: 12 }}>各ステータスのリード数と全体に占める割合</div>
           <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-            <DonutChart data={statusData} total={fl.length} size={120} />
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {statusData.filter(s => s.count > 0).map(s => (
-                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: '50%', background: s.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 13, color: '#174f35', flex: 1 }}>{s.label}</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: s.color, minWidth: 32, textAlign: 'right' }}>{s.count}</span>
-                  <span style={{ fontSize: 12, color: '#b0c8ba', minWidth: 36, textAlign: 'right' }}>{fl.length ? Math.round(s.count/fl.length*100) : 0}%</span>
-                </div>
-              ))}
+            <DonutChart data={statusData} total={fl.length} size={160} />
+            <div style={{ display: 'grid', gridTemplateColumns: '12px auto auto auto', gap: '8px 12px', alignItems: 'center' }}>
+              {statusData.filter(s => s.count > 0).flatMap(s => [
+                <span key={s.label+'-dot'} style={{ width: 10, height: 10, borderRadius: '50%', background: s.color }} />,
+                <span key={s.label+'-label'} style={{ fontSize: 13, color: '#174f35' }}>{s.label}</span>,
+                <span key={s.label+'-count'} style={{ fontSize: 15, fontWeight: 700, color: s.color, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{s.count}</span>,
+                <span key={s.label+'-pct'} style={{ fontSize: 13, color: '#b0c8ba', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fl.length ? Math.round(s.count/fl.length*100) : 0}%</span>,
+              ])}
             </div>
           </div>
         </div>
@@ -250,7 +248,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
                   <div key={rank} style={{ background: color + '10', border: `1.5px solid ${color}44`, borderRadius: 10, padding: '10px 12px' }}>
                     <div style={{ fontSize: 13, fontWeight: 800, color, marginBottom: 4 }}>ランク {rank}</div>
                     <div style={{ fontSize: 24, fontWeight: 900, color, lineHeight: 1 }}>{count}<span style={{ fontSize: 13, fontWeight: 600, marginLeft: 2 }}>件</span></div>
-                    <div style={{ fontSize: 12, color: color + 'aa', marginTop: 4 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
+                    <div style={{ fontSize: 13, color: color + 'aa', marginTop: 4 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
                   </div>
                 ))}
               </div>
@@ -263,8 +261,8 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
                   <div key={type} style={{ background: color + '10', border: `1.5px solid ${color}44`, borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color }}>{type}</span>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1 }}>{count}<span style={{ fontSize: 12, fontWeight: 600, marginLeft: 2 }}>件</span></div>
-                      <div style={{ fontSize: 12, color: color + 'aa', marginTop: 2 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
+                      <div style={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1 }}>{count}<span style={{ fontSize: 13, fontWeight: 600, marginLeft: 2 }}>件</span></div>
+                      <div style={{ fontSize: 13, color: color + 'aa', marginTop: 2 }}>{price > 0 ? '¥' + price.toLocaleString() : '—'}</div>
                     </div>
                   </div>
                 ))}
@@ -293,10 +291,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
               return (
                 <div key={site} style={{ background: '#f8fbf9', borderRadius: 10, padding: '14px', border: '1px solid #e2f0e8', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>{site}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: '#174f35', lineHeight: 1 }}>{sl.length}<span style={{ fontSize: 12, color: '#6a9a7a', marginLeft: 2 }}>件</span></div>
-                  <div style={{ fontSize: 12, color: '#b0c8ba' }}>課金{charged} / 対象外{free}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#174f35', lineHeight: 1 }}>{sl.length}<span style={{ fontSize: 13, color: '#6a9a7a', marginLeft: 2 }}>件</span></div>
+                  <div style={{ fontSize: 13, color: '#b0c8ba' }}>課金{charged} / 対象外{free}</div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: '#f59e0b' }}>¥{sc.toLocaleString()}</div>
-                  <div style={{ fontSize: 12, color: '#b0c8ba' }}>単価 {unit}</div>
+                  <div style={{ fontSize: 13, color: '#b0c8ba' }}>単価 {unit}</div>
                 </div>
               );
             })}
@@ -304,7 +302,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
               <div style={{ fontSize: 13, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <CheckCircleIcon size={13} color="#059669" /> 対象外申請済
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#059669', lineHeight: 1 }}>{applied.length}<span style={{ fontSize: 12, marginLeft: 2 }}>件</span></div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: '#059669', lineHeight: 1 }}>{applied.length}<span style={{ fontSize: 13, marginLeft: 2 }}>件</span></div>
               <div style={{ fontSize: 16, fontWeight: 700, color: '#10b981' }}>
                 節約 ¥{applied.reduce((s, l) => s + getPortalPrice(l.portal_site, l.portal_type), 0).toLocaleString()}
               </div>
