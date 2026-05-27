@@ -129,7 +129,7 @@ export function DemoApp() {
           {page === "dashboard" && (
             <DashboardPage leads={leads} currentUser={DEMO_USER}
               onNavigate={(f) => { setDashFilter(f); navigate("leads"); }}
-              masterVer={masterVer} isMobile={isMobile} />
+              masterVer={masterVer} isMobile={isMobile} isDemo={true} />
           )}
           {page === "leads" && (
             <LeadsPage leads={leads}
@@ -161,7 +161,7 @@ export function DemoApp() {
                 candidateSlots={[]} isMobile={isMobile} />
             </DemoLockedPage>
           )}
-          {page === "trend" && <Trend leads={leads} />}
+          {page === "trend" && <Trend leads={leads} isDemo={true} />}
           {page === "consultation" && (
             <ConsultationPage leads={leads}
               onOpenLead={(id) => { setAiOpenLeadId(id); navigate("leads"); }}
