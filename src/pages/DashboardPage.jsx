@@ -58,7 +58,7 @@ function DonutChart({ data, total, size = 120 }) {
   );
 }
 
-export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMobile, apoLeads = [] }) {
+export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMobile, apoLeads = [], isDemo = false }) {
   const toYM = (dateStr) => {
     if (!dateStr) return "";
     if (/^\d{4}-\d{2}/.test(dateStr)) return dateStr.slice(0, 7);
@@ -225,10 +225,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
       </div>
 
       {/* 下段：アポ実績 + ポータル課金 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isDemo ? '1fr' : '1fr 1fr', gap: 12, flexShrink: 0 }}>
 
         {/* アポ実績 */}
-        <div style={card}>
+        {!isDemo && <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 4, height: 16, background: '#8b5cf6', borderRadius: 2, display: 'inline-block' }} />
@@ -269,7 +269,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* ポータル課金 */}
         <div style={{ ...card, display: 'flex', flexDirection: 'column' }}>

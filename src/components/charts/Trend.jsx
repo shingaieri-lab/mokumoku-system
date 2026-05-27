@@ -21,7 +21,7 @@ function DiffBadge({ diff, hasPrev, suffix = "" }) {
   return <div style={{ fontSize: 10, color, marginTop: 2, fontWeight: 500, whiteSpace: "nowrap" }}>前年比：{val}</div>;
 }
 
-export function Trend({ leads, apoLeads = [] }) {
+export function Trend({ leads, apoLeads = [], isDemo = false }) {
   const currentYear = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }).slice(0, 4);
   const currentYM   = new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' }).slice(0, 7);
 
@@ -188,15 +188,15 @@ export function Trend({ leads, apoLeads = [] }) {
           <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2 }}>{totalMql}件</div>
         </td>
         {/* アポ獲得数 */}
-        <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
+        {!isDemo && <td style={{ ...tdC, borderRight: "1px solid #f0f5f2" }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: "#8b5cf6" }}>{apoMonthCount}</div>
-        </td>
+        </td>}
         {/* アポ単価合計 */}
-        <td style={{ ...tdC }}>
+        {!isDemo && <td style={{ ...tdC }}>
           <div style={{ fontSize: 17, fontWeight: 800, color: "#059669" }}>
             {apoMonthPrice > 0 ? "¥" + apoMonthPrice.toLocaleString() : "—"}
           </div>
-        </td>
+        </td>}
       </tr>
     );
 
@@ -278,9 +278,9 @@ export function Trend({ leads, apoLeads = [] }) {
       <div className="two-col trend-charts" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20, flexShrink: 0 }}>
         <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #e2f0e8" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}>
-            <InboxIcon size={14} color="#174f35" /> 反響数・商談数・アポ獲得数
+            <InboxIcon size={14} color="#174f35" /> 反響数・商談数{!isDemo && '・アポ獲得数'}
           </div>
-          <SVGBarChart data={data} keys={["反響数", "有効リード数", "商談数", "アポ獲得数"]} colors={{ "反響数": "#10b981", "有効リード数": "#6ee7b7", "商談数": "#f59e0b", "アポ獲得数": "#8b5cf6" }} height={230} />
+          <SVGBarChart data={data} keys={isDemo ? ["反響数", "有効リード数", "商談数"] : ["反響数", "有効リード数", "商談数", "アポ獲得数"]} colors={{ "反響数": "#10b981", "有効リード数": "#6ee7b7", "商談数": "#f59e0b", "アポ獲得数": "#8b5cf6" }} height={230} />
         </div>
         <div style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", border: "1px solid #e2f0e8" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "#174f35", marginBottom: 12, display: "flex", alignItems: "center", gap: 5 }}>
@@ -303,7 +303,7 @@ export function Trend({ leads, apoLeads = [] }) {
               <tr>
                 <th rowSpan={2} style={{ ...thS, textAlign: "left", paddingLeft: 16, width: 96, verticalAlign: "middle" }}>月</th>
                 <th colSpan={5} style={{ ...thGroup, background: "#1a6640", color: "#a7f3d0", borderRight: "1px solid #1e6645", borderBottom: "1px solid #1e6645" }}>インバウンド</th>
-                <th colSpan={2} style={{ ...thGroup, background: "#3b0764", color: "#e9d5ff", borderRight: "none", borderBottom: "1px solid #5b21b6" }}>アウトバウンド</th>
+                {!isDemo && <th colSpan={2} style={{ ...thGroup, background: "#3b0764", color: "#e9d5ff", borderRight: "none", borderBottom: "1px solid #5b21b6" }}>アウトバウンド</th>}
               </tr>
               {/* 列名行 */}
               <tr>
@@ -312,8 +312,8 @@ export function Trend({ leads, apoLeads = [] }) {
                 <th style={thS}>商談数</th>
                 <th style={thS}>商談化率</th>
                 <th style={thS}>MQL率</th>
-                <th style={thApo}>アポ獲得数</th>
-                <th style={{ ...thApo, borderRight: "none" }}>アポ単価合計</th>
+                {!isDemo && <th style={thApo}>アポ獲得数</th>}
+                {!isDemo && <th style={{ ...thApo, borderRight: "none" }}>アポ単価合計</th>}
               </tr>
             </thead>
             <tbody>{rows}</tbody>
