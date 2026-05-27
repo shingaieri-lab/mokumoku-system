@@ -143,7 +143,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
           <span style={{ fontSize: 20, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
           <span style={{ fontSize: 13, color: '#6a9a7a', marginLeft: 4 }}>月次レポート</span>
         </div>
-        <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...S.sel, fontSize: 12 }}>
+        <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...S.sel, fontSize: 15 }}>
           {months.length === 0 && <option value={THIS_MONTH}>{THIS_MONTH.slice(0,4)}年{parseInt(THIS_MONTH.slice(5))}月</option>}
           {months.map(m => <option key={m} value={m}>{m.slice(0,4)}年{parseInt(m.slice(5))}月</option>)}
         </select>
