@@ -227,8 +227,16 @@ router.post('/api/zoho/sync-deals', requireAuth, rateLimit, async (req, res) => 
           // ① キャッシュがなければ、Lead から Deal を逆引き
           if (!dealId) {
             const leadResp = await zohoApi('GET', `/Leads/${lead.zoho_lead_id}`);
+            // Zohoからの異常応答（空・非JSON）を検知してエラーメッセージに含める
+            if (leadResp?.code === 'NO_DATA' || leadResp?.code === 'NON_JSON_RESPONSE') {
+              return { leadId: lead.id, error: `Zoho Lead取得失敗: ${leadResp.message}` };
+            }
+            // 通常のZoho APIエラー（INVALID_DATA等）はcodeが返る
+            if (leadResp?.code && !leadResp.data) {
+              return { leadId: lead.id, error: `Zoho Lead取得エラー(${leadResp.code}): ${leadResp.message || ''}` };
+            }
             const leadRec = leadResp.data?.[0];
-            if (!leadRec) return { leadId: lead.id, error: 'Zohoリードが見つかりません' };
+            if (!leadRec) return { leadId: lead.id, error: `Zohoリードが見つかりません（ID: ${lead.zoho_lead_id}）` };
             if (!leadRec.$converted) return { leadId: lead.id, error: 'Zoho側でまだ商談化されていません' };
             // $converted_detail.Deals に Deal ID が入る（V2 API）
             dealId = leadRec.$converted_detail?.Deals;
@@ -237,8 +245,14 @@ router.post('/api/zoho/sync-deals', requireAuth, rateLimit, async (req, res) => 
 
           // ② Deal情報を取得して営業確度・ステージを抜き出す
           const dealResp = await zohoApi('GET', `/Deals/${dealId}`);
+          if (dealResp?.code === 'NO_DATA' || dealResp?.code === 'NON_JSON_RESPONSE') {
+            return { leadId: lead.id, error: `Zoho Deal取得失敗: ${dealResp.message}` };
+          }
+          if (dealResp?.code && !dealResp.data) {
+            return { leadId: lead.id, error: `Zoho Deal取得エラー(${dealResp.code}): ${dealResp.message || ''}` };
+          }
           const deal = dealResp.data?.[0];
-          if (!deal) return { leadId: lead.id, error: 'Zoho商談が見つかりません' };
+          if (!deal) return { leadId: lead.id, error: `Zoho商談が見つかりません（ID: ${dealId}）` };
 
           return {
             leadId:          lead.id,
