@@ -19,7 +19,86 @@
 - `vercel` / `vercel --prod` コマンドで直接デプロイしない（Gitと乖離するため）
 - 本番環境へのデプロイは人間の指示があるまで実行しない
 
-# 現在の作業（2026-05-27）
+# 現在の作業（2026-05-29）
+
+3つのブランチをすべて main にマージ済み。インバウンドのアポ品質分析機能を3段階に分けて実装。
+
+## マージ済みPR
+- **PR #300**（`feature/inbound-apo-analysis`）：インバウンドアポ分析機能の基盤＋ダッシュボード4段構成リデザイン
+- **PR #301**（`feature/zoho-deal-sync` 一部）：Zohoフィールド確認用デバッグ画面の追加（API名取得用）
+- **PR #302**（`feature/zoho-deal-sync` 残り）：Zoho Deal同期API実装＋アポ一覧に同期バー＋既存データ対応
+
+## 完了した作業
+
+### Phase 1: インバウンドアポ分析機能の基盤（PR #300）
+- リード管理に「アポ一覧」タブを追加（status==='商談確定'のリードを表形式で表示、role==='outbound' は非表示）
+- アポ一覧コンポーネント `src/components/leads/InboundAppointmentList.jsx` 新規作成
+- ダッシュボードを4段構成にリデザイン：
+  1. KPIカード5枚（スリム版）
+  2. 流入元別商談化実績 + ステータス分布（2列）
+  3. インバウンドアポ実績 + IS確度 vs 営業確度クロス集計（2列）
+  4. 受注・失注集計 + アウトバウンドアポ実績 + ポータル課金（3列）
+- 共通カードスタイル `src/components/dashboard/cardStyle.js` を新設
+- 共通ロジック `src/lib/salesAnalytics.js` を新設（ACCURACY_COLORS / extractAccuracyRank / categorizeStage 等）
+- 新規パネル：`InboundApoPanel` / `AccuracyCrossPanel` / `DealStagePanel`
+
+### Phase 2準備: フィールド名取得（PR #301）
+- 設定→Zoho CRM連携タブに「【開発用】Zoho フィールド一覧の確認」セクション追加
+- `GET /api/zoho/module-fields` エンドポイント追加（管理者のみ）
+- OAuth スコープに `ZohoCRM.settings.ALL` を追加（要再認証）
+- **判明したAPI名**：
+  - 営業確度（初回商談時） → `field46`
+  - ステージ → `Stage`
+
+### Phase 2本実装: Zoho Deal同期（PR #302）
+- `POST /api/zoho/sync-deals` エンドポイント追加
+  - 商談確定リードの zoho_lead_id を起点に Zoho の Deal情報（field46 / Stage）を取得
+  - `zoho_url` のパスを見て「Leads/Deals/Potentials」を判別（既存データのDeal URL対応）
+  - Lead が `$converted` 済みなら `$converted_detail.Deals` から Deal IDを引く
+  - Lead取得失敗時のフォールバック（同じIDを Deal として試す）
+  - outboundロールは権限なしで弾く / エラーメッセージ日本語化
+- アポ一覧に手動同期バー（`InboundApoSyncBar`）を追加
+  - 手動同期ボタン + 30分クールダウン付き自動同期（タブ表示時）
+  - タッチターゲット44px、UX_RULES準拠
+- URL判別の共通関数を `src/lib/zoho.js` に追加（`parseZohoUrl` / `getZohoCrmDomain` / `buildZohoUrl`）
+- LeadForm / ActionHistoryPanel で Zoho URL/ID入力時の判別UI（Leads/Deals/Potentials すべて対応）
+- 不正な URL/ID 入力時のエラー表示
+- `App.jsx` に `replaceLeadsFromServer` 追加（サーバー側で保存済みのリードを効率反映）
+
+## 動作確認状況（2026-05-29時点）
+- 本番にデプロイ完了、マージ済み
+- まだ「動いた！」の確認は取れていない。**次回ユーザーが本番で同期ボタンを押した結果を見て、想定通りなら完了**
+
+## 残タスク（次回続きから）
+1. **本番で同期ボタンを押してエラーがないか確認**
+   - アポ一覧で「Zohoから営業確度・ステージを同期」ボタン
+   - 営業確度・ステージ列が表示されるか
+   - ダッシュボードの「IS確度 vs 営業確度クロス集計」「受注・失注集計」が反映されるか
+2. **デバッグ画面（ZohoFieldsDebug）の削除**
+   - `src/components/settings/ZohoFieldsDebug.jsx` を削除
+   - `GET /api/zoho/module-fields` エンドポイントも不要なら削除
+   - `ZohoCrmSettings.jsx` から呼び出し箇所も削除
+3. ダッシュボードのランク別・アポ種別セクションが見にくい（旧 TODO、もしかしたら今回の4段リデザインで解消されたかも）
+
+## 関連ファイル（次回のコンテキスト把握用）
+- `routes/zoho.js` — Zoho APIエンドポイント
+- `lib/zoho.js`（サーバー側）— zohoApi 共通関数（応答エラーハンドリング強化済）
+- `src/lib/zoho.js`（クライアント側）— fetch ラッパー + URL判別共通関数
+- `src/lib/salesAnalytics.js` — 営業確度・ステージの共通ロジック
+- `src/components/leads/InboundAppointmentList.jsx` — アポ一覧
+- `src/components/leads/InboundApoSyncBar.jsx` — 同期バー
+- `src/components/dashboard/{InboundApoPanel,AccuracyCrossPanel,DealStagePanel,cardStyle}.{jsx,js}`
+- `src/components/settings/ZohoFieldsDebug.jsx` — 開発用（次回削除予定）
+
+## 学び（このシリーズで判明したZohoの罠）
+- Zohoの画面URLは商談が `/Potentials/` パス（Deals ではない）。API名は Deals のまま
+- 新しいZohoのURLは `/crm/org{組織ID}/tab/{モジュール}/{ID}` 形式（旧形式は `/crm/tab/...`）
+- Zoho V2 API は対象が見つからないとき 204 No Content を返すことがある（404ではない）
+- リードを Deal にコンバートすると Lead側に `$converted: true` と `$converted_detail.Deals` に Deal IDが入る
+
+---
+
+# 過去の作業（2026-05-27）
 
 ブランチ: `feature/apo-list-alerts`（PR #297）
 
@@ -32,19 +111,6 @@
 - Gmail下書きボタンをZoom設定済みリードのみ表示（架電リスト・メール未送信タブ）
 - タブ切替時に架電リストのデータを自動再フェッチ（アポ一覧での変更をリアルタイム反映）
 - Gmail下書きボタンの保存済み表示を「✓ Gmail下書き済」に変更
-
-## TODO・課題メモ
-- ダッシュボードのランク別・アポ種別セクションが見にくい（要改善）
-
----
-
-# 過去の作業（2026-05-26）
-
-ブランチ: `feature/outbound-apo-dashboard`（マージ済み）
-
-## 完了した作業
-- ダッシュボードの最小フォントサイズ13px統一・月選択プルダウン15px
-- デモモードでアウトバウンド関連セクションを非表示
 
 ---
 
