@@ -6,6 +6,7 @@ import { TODAY } from '../../lib/holidays.js';
 import { CalendarNavIcon } from '../ui/Icons.jsx';
 import { normalizeDate } from '../../lib/date.js';
 import { uid } from '../../constants/index.js';
+import { parseZohoUrl } from '../../lib/zoho.js';
 import {
   getSources, getStatuses, getISMembers, getSalesMembers,
   getPortalTypes, getPortalSitesForSource, sourceHasPortal, getPortalPrice,
@@ -175,9 +176,33 @@ export function LeadForm({ initial, onSave, onClose }) {
             <input value={d.zoho_url} onChange={e => {
               const url = e.target.value;
               set("zoho_url", url);
-              const id = url.match(/\/(\d+)\/?$/)?.[1];
-              if (id) set("zoho_lead_id", id);
-            }} placeholder="https://crm.zoho.com/crm/..." style={S.inp} />
+              // URLが空になったら、保存済みの Lead/Deal ID もクリア（混乱防止）
+              if (!url.trim()) {
+                set("zoho_lead_id", "");
+                set("zoho_deal_id", "");
+                return;
+              }
+              // URLが Lead画面 / Deal画面のどちらかを判別して、適切なフィールドに保存する
+              // 例：/Leads/12345 → zoho_lead_id に保存
+              //     /Deals/67890 → zoho_deal_id に保存
+              const parsed = parseZohoUrl(url);
+              if (parsed?.type === 'Lead') set("zoho_lead_id", parsed.id);
+              else if (parsed?.type === 'Deal') set("zoho_deal_id", parsed.id);
+            }} placeholder="https://crm.zoho.jp/crm/tab/Leads/... または /Deals/..."
+            style={{
+              ...S.inp,
+              // 入力されているのに Lead/Deal どちらにも判別できなかった場合は赤枠
+              borderColor: d.zoho_url && !parseZohoUrl(d.zoho_url) ? "#dc2626" : "#c0dece",
+            }} />
+            {d.zoho_url && !parseZohoUrl(d.zoho_url) ? (
+              <div style={{ fontSize: 11, color: '#dc2626', marginTop: 2 }}>
+                URLまたはIDが正しくありません。Zoho の「リード画面」または「商談画面」のURLを貼り付けてください
+              </div>
+            ) : (
+              <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>
+                リード画面・商談画面どちらのURLでもOK。URLから自動で判別します。
+              </div>
+            )}
           </div>
           <div style={{marginTop:10}}>
             <label style={S.lbl}>HP URL</label>

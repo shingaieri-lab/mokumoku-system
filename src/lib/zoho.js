@@ -1,5 +1,41 @@
 // Zoho連携API
 
+// ZohoのURLや生IDから、Lead/Dealの種別とIDを抽出する
+// 受け付ける形式：
+//   - "https://crm.zoho.jp/crm/tab/Leads/1234567890" → { type: 'Lead', id: '1234567890' }
+//   - "https://crm.zoho.jp/crm/tab/Deals/9876543210" → { type: 'Deal', id: '9876543210' }
+//   - "1234567890" (生ID) → { type: null, id: '1234567890' }（種別は呼び出し側で判断）
+//   - その他不正な値 → null
+export function parseZohoUrl(input) {
+  if (!input) return null;
+  const trimmed = String(input).trim();
+  // URL形式：/Leads/<id> または /Deals/<id>
+  const urlMatch = trimmed.match(/\/(Leads|Deals)\/(\d+)/);
+  if (urlMatch) {
+    const [, mod, id] = urlMatch;
+    return { type: mod === 'Leads' ? 'Lead' : 'Deal', id };
+  }
+  // 生ID（数字のみ）
+  if (/^\d+$/.test(trimmed)) {
+    return { type: null, id: trimmed };
+  }
+  return null;
+}
+
+// データセンター(jp/com)に応じた ZohoのCRMドメインを返す
+export function getZohoCrmDomain() {
+  const dc = window.__appData?.zohoConfig?.dataCenter || 'jp';
+  return dc === 'com' ? 'zoho.com' : 'zoho.jp';
+}
+
+// Lead/Deal IDから Zoho の画面URLを組み立てる
+export function buildZohoUrl(type, id) {
+  const domain = getZohoCrmDomain();
+  const path = type === 'Deal' ? 'Deals' : 'Leads';
+  return `https://crm.${domain}/crm/tab/${path}/${id}`;
+}
+
+
 export async function createZohoDeal(lead) {
   const res = await fetch('/api/zoho/create-deal', {
     method: 'POST',

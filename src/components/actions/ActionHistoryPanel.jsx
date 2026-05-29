@@ -11,7 +11,7 @@ import { getStatusColor, getSourceColor } from '../../lib/master.js';
 import { isOverdue, isDueToday, isDueSoon } from '../../lib/holidays.js';
 import { acquireCalendarToken } from '../../lib/oauth.js';
 import { loadGCalConfig, createMeetingEvent } from '../../lib/gcal.js';
-import { pushZohoAction } from '../../lib/zoho.js';
+import { pushZohoAction, parseZohoUrl, buildZohoUrl } from '../../lib/zoho.js';
 import { loadAccounts } from '../../lib/accounts.js';
 
 export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDeleteAction, onEdit, onDelete, currentUser, readOnly, hideConsultInfo = false }) {
@@ -26,7 +26,9 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
   const [calMsg, setCalMsg] = useState(null);
   const [calLoading, setCalLoading] = useState(false);
   const [editingZohoId, setEditingZohoId] = useState(false);
-  const [zohoIdInput, setZohoIdInput] = useState(lead.zoho_lead_id || '');
+  const [zohoIdInput, setZohoIdInput] = useState(lead.zoho_lead_id || lead.zoho_deal_id || '');
+  // Zoho ID編集UIでのバリデーションエラー（不正なURL/ID入力時）
+  const [zohoIdErr, setZohoIdErr] = useState('');
   const actions = lead.actions || [];
 
   const zohoAuthenticated = window.__appData?.zohoAuthenticated || false;
@@ -233,35 +235,65 @@ export function ActionHistoryPanel({ lead, onClose, onUpdate, onEditAction, onDe
               <GlobeIcon size={10} color="#15803d" /> HP
             </a>
           )}
-          {!readOnly && !editingZohoId && !lead.zoho_lead_id && (
-            <button onClick={() => setEditingZohoId(true)}
+          {/* Zoho ID追加：Lead/Deal どちらのIDもない時のみ表示 */}
+          {!readOnly && !editingZohoId && !lead.zoho_lead_id && !lead.zoho_deal_id && (
+            <button onClick={() => { setZohoIdInput(''); setZohoIdErr(''); setEditingZohoId(true); }}
               style={{ fontSize: 10, padding: "2px 8px", background: "none", border: "1px solid #0284c766", borderRadius: 6, cursor: "pointer", color: "#0284c7", fontWeight: 600 }}>
               + Zoho ID
             </button>
           )}
-          {!readOnly && !editingZohoId && lead.zoho_lead_id && (
-            <button onClick={() => { setZohoIdInput(lead.zoho_lead_id); setEditingZohoId(true); }}
+          {/* Zoho ID編集：Lead/Deal どちらかのIDがある時に表示 */}
+          {!readOnly && !editingZohoId && (lead.zoho_lead_id || lead.zoho_deal_id) && (
+            <button onClick={() => { setZohoIdInput(lead.zoho_lead_id || lead.zoho_deal_id); setZohoIdErr(''); setEditingZohoId(true); }}
               style={{ fontSize: 10, padding: "2px 8px", background: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: 6, cursor: "pointer", color: "#64748b", fontWeight: 600, display:"flex", alignItems:"center", gap:3 }}>
               <PencilIcon size={9} color="#64748b" /> Zoho ID
             </button>
           )}
           {!readOnly && editingZohoId && (
-            <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-              <input
-                value={zohoIdInput}
-                onChange={e => setZohoIdInput(e.target.value.trim())}
-                placeholder="Zoho Lead ID（URLの数字）"
-                style={{ ...S.inp, fontSize: 11, padding: "2px 6px", width: 160 }}
-              />
-              <button onClick={() => setEditingZohoId(false)} style={S.btnCancelXs}>✕</button>
+            <div style={{ display:"flex", alignItems:"flex-start", gap:4, flexWrap:"wrap" }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+                <input
+                  value={zohoIdInput}
+                  onChange={e => { setZohoIdInput(e.target.value.trim()); setZohoIdErr(''); }}
+                  placeholder="Zoho URL または リードID"
+                  style={{
+                    ...S.inp,
+                    fontSize: 11,
+                    padding: "4px 8px",
+                    width: 220,
+                    borderColor: zohoIdErr ? "#dc2626" : "#c0dece",
+                  }}
+                />
+                {zohoIdErr && (
+                  <span style={{ fontSize: 10, color: "#dc2626", fontWeight: 600 }}>{zohoIdErr}</span>
+                )}
+              </div>
+              <button
+                onClick={() => { setEditingZohoId(false); setZohoIdErr(''); }}
+                style={{ ...S.btnCancelXs, padding: "5px 10px", minHeight: 28 }}>
+                ✕
+              </button>
               <button onClick={() => {
-                if (!zohoIdInput) return;
-                const dc = window.__appData?.zohoConfig?.dataCenter || 'jp';
-                const domain = dc === 'com' ? 'zoho.com' : 'zoho.jp';
-                const zohoUrl = `https://crm.${domain}/crm/tab/Leads/${zohoIdInput}`;
-                onUpdate({ zoho_lead_id: zohoIdInput, zoho_url: lead.zoho_url || zohoUrl });
+                if (!zohoIdInput) { setZohoIdErr('URLまたはIDを入力してください'); return; }
+                // URL貼り付け（/Leads/<id> or /Deals/<id>）と生IDの両対応
+                // URLなら種別判別、生IDなら従来通りリードID扱い
+                const parsed = parseZohoUrl(zohoIdInput);
+                if (!parsed) {
+                  setZohoIdErr('URLまたはIDが正しくありません');
+                  return;
+                }
+                if (parsed.type === 'Deal') {
+                  // Deal画面のURLを貼られた場合：zoho_deal_id に保存、URLも商談画面のものにする
+                  onUpdate({ zoho_deal_id: parsed.id, zoho_url: buildZohoUrl('Deal', parsed.id) });
+                } else {
+                  // Lead画面のURL or 生ID：zoho_lead_id に保存
+                  onUpdate({ zoho_lead_id: parsed.id, zoho_url: lead.zoho_url || buildZohoUrl('Lead', parsed.id) });
+                }
                 setEditingZohoId(false);
-              }} style={{ ...S.btnDelXs, background: "#0284c7" }}>保存</button>
+                setZohoIdErr('');
+              }} style={{ ...S.btnDelXs, background: "#0284c7", padding: "5px 14px", minHeight: 28, fontWeight: 700 }}>
+                保存
+              </button>
             </div>
           )}
         </div>
