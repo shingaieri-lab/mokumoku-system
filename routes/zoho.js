@@ -46,6 +46,7 @@ router.get('/api/zoho/auth', async (req, res) => {
   const scopes = [
     'ZohoCRM.modules.ALL',
     'ZohoCRM.users.ALL',
+    'ZohoCRM.settings.ALL',  // フィールド設定情報の読み取り（フィールド一覧取得に必要）
   ].join(',');
 
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -183,6 +184,41 @@ router.get('/api/zoho/users', requireAuth, rateLimit, async (req, res) => {
       email: u.email,
     }));
     res.json({ ok: true, users });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// 【開発用】Zohoの指定モジュールのフィールド一覧を取得
+// 営業確度・ステージなど、ZohoのAPI名（半角英数字）を確認するためのデバッグ用
+// 管理者のみ実行可能
+router.get('/api/zoho/module-fields', requireAuth, rateLimit, async (req, res) => {
+  const accounts = (await readData('accounts')) || [];
+  const account = accounts.find(a => a.id === req.accountId);
+  if (!account || account.role !== 'admin') {
+    return res.status(403).json({ error: '管理者のみ実行できます' });
+  }
+  const module = (req.query.module || 'Deals').toString();
+  // SSRF対策：許可された英数字のみを通す
+  if (!/^[A-Za-z0-9_]+$/.test(module)) {
+    return res.status(400).json({ error: '不正なモジュール名です' });
+  }
+  try {
+    const data = await zohoApi('GET', `/settings/fields?module=${module}`);
+    if (data.code) {
+      return res.status(400).json({ error: `Zoho APIエラー: ${data.code} ${data.message || ''}` });
+    }
+    const fields = (data.fields || []).map(f => ({
+      label:    f.field_label,
+      apiName:  f.api_name,
+      dataType: f.data_type,
+      isCustom: !!f.custom_field,
+      // 選択肢フィールドの場合、選択肢一覧も返す
+      pickList: Array.isArray(f.pick_list_values)
+        ? f.pick_list_values.map(p => p.display_value)
+        : null,
+    }));
+    res.json({ ok: true, module, fields });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

@@ -55,3 +55,12 @@ export async function updateZohoLeadStatus(zohoLeadId, localStatus) {
     body: JSON.stringify({ zohoLeadId, localStatus }),
   }).catch(() => {});
 }
+
+// 【開発用】Zohoの指定モジュール（Deals等）のフィールド一覧を取得
+// 営業確度・ステージなどのAPI名（半角英数字）を確認するための開発者向け関数
+export async function fetchZohoModuleFields(module = 'Deals') {
+  const res = await fetch('/api/zoho/module-fields?module=' + encodeURIComponent(module));
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'フィールド取得失敗');
+  return data.fields;
+}
