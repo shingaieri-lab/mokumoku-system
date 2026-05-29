@@ -224,23 +224,36 @@ router.post('/api/zoho/sync-deals', requireAuth, rateLimit, async (req, res) => 
         try {
           let dealId = lead.zoho_deal_id;
 
-          // ① キャッシュがなければ、Lead から Deal を逆引き
+          // ① キャッシュがなければ、まず zoho_url を見て Deal URL かどうか判定する
+          // 過去にユーザーが Deal URL（Potentials画面）を貼ったケースでは、
+          // 末尾の数字が zoho_lead_id フィールドに入っているが、これは実は Deal IDなので Deals APIに渡せばOK
           if (!dealId) {
-            const leadResp = await zohoApi('GET', `/Leads/${lead.zoho_lead_id}`);
-            // Zohoからの異常応答（空・非JSON）を検知してエラーメッセージに含める
-            if (leadResp?.code === 'NO_DATA' || leadResp?.code === 'NON_JSON_RESPONSE') {
-              return { leadId: lead.id, error: `Zoho Lead取得失敗: ${leadResp.message}` };
+            const urlMatch = (lead.zoho_url || '').match(/\/(Leads|Deals|Potentials)\/(\d+)/);
+            if (urlMatch && urlMatch[1] !== 'Leads') {
+              // Deal/Potentials URLが保存されていた → 末尾の数字を Deal IDとして使う
+              dealId = urlMatch[2];
+            } else {
+              // Lead URL or 不明 → 通常通り Lead API で取得し、コンバート済みなら Deal IDを引く
+              const leadResp = await zohoApi('GET', `/Leads/${lead.zoho_lead_id}`);
+              if (leadResp?.code === 'NO_DATA' || leadResp?.code === 'NON_JSON_RESPONSE') {
+                // Lead で見つからない場合のフォールバック：同じIDを Deal として試す
+                // （古いデータで Deal IDが zoho_lead_id に保存されているケース）
+                dealId = lead.zoho_lead_id;
+              } else if (leadResp?.code && !leadResp.data) {
+                return { leadId: lead.id, error: `Zoho Lead取得エラー(${leadResp.code}): ${leadResp.message || ''}` };
+              } else {
+                const leadRec = leadResp.data?.[0];
+                if (!leadRec) {
+                  // 念のためのフォールバック：Lead として見つからなければ Deal として試す
+                  dealId = lead.zoho_lead_id;
+                } else if (!leadRec.$converted) {
+                  return { leadId: lead.id, error: 'Zoho側でまだ商談化されていません' };
+                } else {
+                  dealId = leadRec.$converted_detail?.Deals;
+                  if (!dealId) return { leadId: lead.id, error: '商談情報の取得に失敗しました' };
+                }
+              }
             }
-            // 通常のZoho APIエラー（INVALID_DATA等）はcodeが返る
-            if (leadResp?.code && !leadResp.data) {
-              return { leadId: lead.id, error: `Zoho Lead取得エラー(${leadResp.code}): ${leadResp.message || ''}` };
-            }
-            const leadRec = leadResp.data?.[0];
-            if (!leadRec) return { leadId: lead.id, error: `Zohoリードが見つかりません（ID: ${lead.zoho_lead_id}）` };
-            if (!leadRec.$converted) return { leadId: lead.id, error: 'Zoho側でまだ商談化されていません' };
-            // $converted_detail.Deals に Deal ID が入る（V2 API）
-            dealId = leadRec.$converted_detail?.Deals;
-            if (!dealId) return { leadId: lead.id, error: '商談情報の取得に失敗しました' };
           }
 
           // ② Deal情報を取得して営業確度・ステージを抜き出す
