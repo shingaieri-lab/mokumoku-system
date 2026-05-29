@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { getISMembers } from '../../lib/master.js';
 import { saveZohoConfig, fetchZohoUsers } from '../../lib/zoho.js';
 import { ExternalLinkIcon, CheckCircleIcon, AlertIcon, PinIcon, SpinnerIcon } from '../ui/Icons.jsx';
+import { ZohoFieldsDebug } from './ZohoFieldsDebug.jsx';
 
 export function ZohoCrmSettings() {
   const stored = window.__appData?.zohoConfig || {};
@@ -208,6 +209,13 @@ export function ZohoCrmSettings() {
       <div style={{display:'flex',gap:8}}>
         <button onClick={save} style={btnP}>設定を保存</button>
       </div>
+
+      {/* 【開発用】Zoho フィールド一覧確認（営業確度・ステージなどのAPI名を取得するため） */}
+      {authenticated && (
+        <div style={{ marginTop: 16 }}>
+          <ZohoFieldsDebug />
+        </div>
+      )}
 
       {/* Webhook情報 */}
       <div style={{marginTop:16,padding:'12px 14px',background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8}}>
