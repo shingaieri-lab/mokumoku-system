@@ -139,10 +139,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   const card = DASHBOARD_CARD;
 
   // height: 100% で親 main の全高を使う。calc(100vh - 60px) では存在しないトップバー分を引いてしまい下部に余白が生まれていた。
-  // さらに本番でコンテンツが微妙に超過してスクロールバーが出ていたため、padding を絞り overflow: hidden を指定して
-  // スクロールバー自体を出さない構造に変更（モバイルは従来通り auto-height で縦スクロール許可）
+  // padding を絞ってコンテンツが画面に収まりやすくしている。
+  // overflow: auto なので通常時はスクロールバーは出ないが、画面が低い等で収まらない場合は必要に応じて表示される
   return (
-    <div style={{ padding: '16px 20px', height: isMobile ? 'auto' : '100%', display: 'flex', flexDirection: 'column', gap: 8, overflow: isMobile ? 'visible' : 'hidden', boxSizing: 'border-box' }}>
+    <div style={{ padding: '16px 20px', height: isMobile ? 'auto' : '100%', display: 'flex', flexDirection: 'column', gap: 8, overflowY: isMobile ? 'visible' : 'auto', boxSizing: 'border-box' }}>
 
       {/* ヘッダー：他ページ（月別推移・設定・相談ボード等）と同じ fontSize:22 / iconSize:20 に統一
           ヘッダー下の余白も少し詰めて KPI を上に寄せる（スクロールバー回避のため） */}
