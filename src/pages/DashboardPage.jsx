@@ -138,13 +138,15 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   // パネル共通スタイル（cardStyle.js から取得）
   const card = DASHBOARD_CARD;
 
-  // height: 100% で親 main の全高を使う。calc(100vh - 60px) では存在しないトップバー分を引いてしまい下部に余白が生まれていた
+  // height: 100% で親 main の全高を使う。calc(100vh - 60px) では存在しないトップバー分を引いてしまい下部に余白が生まれていた。
+  // さらに本番でコンテンツが微妙に超過してスクロールバーが出ていたため、padding を絞り overflow: hidden を指定して
+  // スクロールバー自体を出さない構造に変更（モバイルは従来通り auto-height で縦スクロール許可）
   return (
-    <div style={{ padding: '24px 20px', height: isMobile ? 'auto' : '100%', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', boxSizing: 'border-box' }}>
+    <div style={{ padding: '16px 20px', height: isMobile ? 'auto' : '100%', display: 'flex', flexDirection: 'column', gap: 8, overflow: isMobile ? 'visible' : 'hidden', boxSizing: 'border-box' }}>
 
       {/* ヘッダー：他ページ（月別推移・設定・相談ボード等）と同じ fontSize:22 / iconSize:20 に統一
-          月別推移と同じくヘッダー下に marginBottom:16 で間を取り、KPIカードがグラフと同じ高さに並ぶように */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 16 }}>
+          ヘッダー下の余白も少し詰めて KPI を上に寄せる（スクロールバー回避のため） */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <DashboardIcon size={20} color="#174f35" />
           <span style={{ fontSize: 22, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
