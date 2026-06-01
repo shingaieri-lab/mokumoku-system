@@ -3,7 +3,7 @@
 export const DASHBOARD_CARD = {
   background: '#fff',
   borderRadius: 14,
-  padding: '12px 14px',
+  padding: '10px 14px',
   boxShadow: '0 1px 8px #0569690a',
   border: '1px solid #e8f0ea',
 };
