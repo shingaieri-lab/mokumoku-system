@@ -261,6 +261,12 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
             />
           ) : (
             <>
+              {/* ページネーション（上）：リスト件数が多いときに上からも操作できるよう、下と同じ状態を共有して表示 */}
+              <Pagination
+                page={page} totalPages={totalPages} total={list.length} pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={n => { setPageSize(n); setPage(1); }}
+              />
               <div style={{display:"flex", flexDirection:"column", gap:10}}>
                 {list.length === 0 && <div style={{...S.empty, padding:"32px"}}>リードがありません</div>}
                 {paged.map(lead => (

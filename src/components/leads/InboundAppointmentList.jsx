@@ -1,10 +1,11 @@
 // インバウンドアポ一覧（status==='商談確定'のリードを表形式で表示）
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { S } from '../../styles/index.js';
 import { IS_COLORS, getSourceIcon, getSourceColor } from '../../lib/master.js';
 import { SourceIconSVG } from '../ui/SourceIconSVG.jsx';
 import { ACCURACY_COLORS, extractAccuracyRank, categorizeStage, STAGE_CATEGORIES } from '../../lib/salesAnalytics.js';
 import { InboundApoSyncBar } from './InboundApoSyncBar.jsx';
+import { Pagination } from '../ui/Pagination.jsx';
 
 // 親コンポーネント（LeadsPage）から status==='商談確定' に絞り込み済みの leads を受け取る
 // onSyncResult: Zoho同期完了時に呼ばれる。更新後のリード配列が渡される
@@ -16,6 +17,9 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
   const [fMonth, setFMonth]   = useState('');
   const [fQ, setFQ]           = useState('');
   const [sortDir, setSortDir] = useState('desc'); // 商談日：新しい順
+  // ページネーション状態：全リストと同じく初期表示は30件/ページ
+  const [page, setPage]         = useState(1);
+  const [pageSize, setPageSize] = useState(30);
 
   // フィルター + ソート適用
   const filtered = useMemo(() => {
@@ -31,6 +35,16 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
         return sortDir === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
       });
   }, [apoLeads, fIS, fSource, fRank, fMonth, fQ, sortDir]);
+
+  // フィルター・ソート変更時はページを1に戻す（範囲外ページの空白表示を防ぐ）
+  useEffect(() => { setPage(1); }, [fIS, fSource, fRank, fMonth, fQ, sortDir]);
+
+  // ページ分割：現在のページに含まれるリードのみ抜き出す
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paged = useMemo(
+    () => filtered.slice((page - 1) * pageSize, page * pageSize),
+    [filtered, page, pageSize],
+  );
 
   // 集計（ランク別件数）
   const stats = useMemo(() => {
@@ -134,6 +148,13 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
           </select>
         </div>
 
+        {/* ページネーション（上）：固定セクション内に置くことでスクロール時も常に表示される */}
+        <Pagination
+          page={page} totalPages={totalPages} total={filtered.length} pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={n => { setPageSize(n); setPage(1); }}
+        />
+
         {/* テーブルヘッダー：固定セクション内の最下段。下のデータ行コンテナと連結して見えるように
             border-bottom は付けず、データ行側の border-top を使う */}
         <div style={{
@@ -171,15 +192,15 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
         {filtered.length === 0 ? (
           <div style={{ ...S.empty, padding: 32, borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>該当するアポはありません</div>
         ) : (
-          filtered.map((lead, idx) => {
+          paged.map((lead, idx) => {
             const isOpen = openId === lead.id;
             const rank = extractAccuracyRank(lead.is_accuracy);
             const rankColor = rank ? ACCURACY_COLORS[rank] : '#9ca3af';
             const srcColor = getSourceColor(lead.source, 0);
             const isColor = IS_COLORS[lead.is_member]?.bg || '#3d7a5e';
             const iconKey = getSourceIcon(lead.source) || 'document';
-            // 最終行は下角を丸めて、親の border-radius と一致させる（親は overflow:hidden を外したため）
-            const isLast = idx === filtered.length - 1;
+            // 現在ページの最終行は下角を丸めて、親の border-radius と一致させる
+            const isLast = idx === paged.length - 1;
             return (
               <div
                 key={lead.id}
@@ -299,6 +320,13 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
           })
         )}
       </div>
+
+      {/* ページネーション（下）：データ行セクションの直下に配置。上のページネーションと状態を共有 */}
+      <Pagination
+        page={page} totalPages={totalPages} total={filtered.length} pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={n => { setPageSize(n); setPage(1); }}
+      />
     </div>
   );
 }
