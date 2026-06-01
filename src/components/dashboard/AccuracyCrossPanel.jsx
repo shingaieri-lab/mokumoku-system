@@ -72,11 +72,16 @@ export function AccuracyCrossPanel({ filteredLeads }) {
 
   return (
     <div style={card}>
-      {/* ヘッダー：完全一致率＋±1段までの許容一致率を併記 */}
+      {/* ヘッダー：完全一致率＋±1段までの許容一致率を併記
+          タイトルに「(縦) / (横)」を併記して、どちらの軸が何か明示する */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ width: 4, height: 16, background: '#3b82f6', borderRadius: 2 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>IS確度 vs 営業確度</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>
+            IS確度<span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, marginLeft: 2 }}>(縦)</span>
+            {' × '}
+            営業確度<span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 500, marginLeft: 2 }}>(横)</span>
+          </span>
         </div>
         <div style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
           <span style={{ fontSize: 12, color: '#6a9a7a' }}>
@@ -98,7 +103,16 @@ export function AccuracyCrossPanel({ filteredLeads }) {
         </div>
       ) : (
         <>
-          {/* マトリックス */}
+          {/* マトリックス：左上は空に戻して、軸ラベル（営業確度）は上に独立して表示。
+              IS確度ラベルは行ヘッダーの「A B C D」自体が IS確度であることが、タイトルの (縦) 表記で伝わる */}
+          {/* 営業確度のラベル：列ヘッダー（A〜E）の上に「営業確度 →」を表示 */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'auto repeat(5, 1fr)', gap: 3,
+            fontSize: 10, color: '#9ab8a4', fontWeight: 600, marginBottom: 2,
+          }}>
+            <span></span>
+            <span style={{ gridColumn: 'span 5', textAlign: 'center' }}>営業確度</span>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto repeat(5, 1fr)', gap: 3 }}>
             {/* 1行目：見出し（左上は空、上は営業ランク） */}
             <span style={{ fontSize: 10, color: '#b0c8ba', textAlign: 'center' }}></span>
