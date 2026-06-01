@@ -138,14 +138,16 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
   // パネル共通スタイル（cardStyle.js から取得）
   const card = DASHBOARD_CARD;
 
+  // height: 100% で親 main の全高を使う。calc(100vh - 60px) では存在しないトップバー分を引いてしまい下部に余白が生まれていた
   return (
-    <div style={{ padding: '16px 20px', height: isMobile ? 'auto' : 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
+    <div style={{ padding: '24px 20px', height: isMobile ? 'auto' : '100%', display: 'flex', flexDirection: 'column', gap: 8, overflowY: 'auto', boxSizing: 'border-box' }}>
 
-      {/* ヘッダー */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+      {/* ヘッダー：他ページ（月別推移・設定・相談ボード等）と同じ fontSize:22 / iconSize:20 に統一
+          月別推移と同じくヘッダー下に marginBottom:16 で間を取り、KPIカードがグラフと同じ高さに並ぶように */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <DashboardIcon size={18} color="#174f35" />
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
+          <DashboardIcon size={20} color="#174f35" />
+          <span style={{ fontSize: 22, fontWeight: 800, color: '#174f35', letterSpacing: '-0.02em' }}>ダッシュボード</span>
           <span style={{ fontSize: 12, color: '#6a9a7a', marginLeft: 4 }}>月次レポート</span>
         </div>
         <select value={month} onChange={e => setMonth(e.target.value)} style={{ ...S.sel, fontSize: 14, padding: '6px 10px' }}>
@@ -155,10 +157,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
       </div>
 
       {/* KPIカード行（スリム版） */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, flexShrink: 0 }}>
         {kpiItems.map((k, i) => (
           <div key={i} onClick={() => onNavigate && onNavigate(k.filter)}
-            style={{ ...card, cursor: 'pointer', padding: '12px 14px', transition: 'transform 0.1s, box-shadow 0.1s', position: 'relative', overflow: 'hidden' }}
+            style={{ ...card, cursor: 'pointer', padding: '10px 14px', transition: 'transform 0.1s, box-shadow 0.1s', position: 'relative', overflow: 'hidden' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 20px ${k.color}33`; }}
             onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 8px #0569690a'; }}>
             {/* 左の縦アクセントバー */}
@@ -171,10 +173,10 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
       </div>
 
       {/* 段2：流入元別 + ステータス分布（流入分析） */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 8, flexShrink: 0 }}>
 
         {/* 流入元別 */}
-        <div style={{ ...card, padding: '12px 14px' }}>
+        <div style={{ ...card, padding: '10px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 4, height: 16, background: '#10b981', borderRadius: 2 }} />
@@ -210,7 +212,7 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
         </div>
 
         {/* ステータス分布 */}
-        <div style={{ ...card, padding: '12px 14px' }}>
+        <div style={{ ...card, padding: '10px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <span style={{ width: 4, height: 16, background: '#8b5cf6', borderRadius: 2 }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: '#174f35' }}>ステータス分布</span>
@@ -231,14 +233,14 @@ export function DashboardPage({ leads, currentUser, onNavigate, masterVer, isMob
       </div>
 
       {/* 段3：アポ品質分析（インバウンドアポ実績 + IS確度 vs 営業確度クロス集計） */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flexShrink: 0 }}>
         <InboundApoPanel filteredLeads={fl} />
         <AccuracyCrossPanel filteredLeads={fl} />
       </div>
 
       {/* 段4：結果・コスト（受注失注 + アウトバウンドアポ + ポータル課金） */}
       {/* デモモードはアウトバウンド非表示なので 2列、それ以外は 3列 */}
-      <div style={{ display: 'grid', gridTemplateColumns: isDemo ? '1fr 1.5fr' : '1fr 1fr 1.4fr', gap: 10, flexShrink: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isDemo ? '1fr 1.5fr' : '1fr 1fr 1.4fr', gap: 8, flexShrink: 0 }}>
 
         {/* 受注・失注集計 */}
         <DealStagePanel filteredLeads={fl} />
