@@ -80,16 +80,20 @@ export function InboundAppointmentList({ leads: apoLeads, openId, setOpenId, isM
 
   return (
     // 外側コンテナ：sticky セクションとデータ行セクションを縦に並べる。gap=0 で隙間なく密着させる。
-    <div style={{ paddingTop: 4, display: 'flex', flexDirection: 'column', gap: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
       {/* 固定セクション：サマリー・同期バー・フィルター・テーブルヘッダーまでスクロール時に上部固定
           - position: sticky の親（overflowY:auto を持つ LeadsPage の div）が固定の基準になる
           - background は親ページの背景色 #f0f5f2 と合わせて、スクロールするデータ行が透けないようにする
-          - 内部 gap: 12 で要素間の元の余白を保つ */}
+          - 内部 gap: 12 で要素間の元の余白を保つ
+          - transform: translateZ(0) と willChange でGPU合成レイヤーを強制し、スクロール開始時の sticky 切替時に発生する微小なちらつき（揺れ）を防ぐ */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 5,
         background: '#f0f5f2',
         display: 'flex', flexDirection: 'column', gap: 12,
+        paddingTop: 4,
         paddingBottom: 0,
+        transform: 'translateZ(0)',
+        willChange: 'transform',
       }}>
         {/* サマリーバー：合計＋ランク別件数 */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

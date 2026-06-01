@@ -151,7 +151,10 @@ export function LeadsPage({ leads, onAdd, onUpdate, onDelete, onAddAction, onBul
 
   return (
     <div className="lead-list-container" style={{paddingLeft:28, paddingRight:28, height: isMobile ? "auto" : "100%", overflow: isMobile ? "visible" : "hidden", display:"flex", flexDirection:"column", minHeight: isMobile ? "calc(100vh - 130px)" : undefined}}>
-      <div className="page-pad" style={{flexShrink:0, background:"#f0f5f2", paddingTop:24, paddingBottom:8, marginLeft:-28, marginRight:-28, paddingLeft:28, paddingRight:28, borderBottom:"1px solid #d8ede1"}}>
+      {/* page-pad: ヘッダー＋タブ＋（全リストのみ）フィルターバーを内包する固定上部領域。
+          アポ一覧ビューはタブの border-bottom が下線として機能するため、page-pad の border-bottom を出すと二重線になる。
+          そのため view が 'appointments' のときは下線を非表示にする。 */}
+      <div className="page-pad" style={{flexShrink:0, background:"#f0f5f2", paddingTop:24, paddingBottom:8, marginLeft:-28, marginRight:-28, paddingLeft:28, paddingRight:28, borderBottom: view === 'appointments' ? 'none' : '1px solid #d8ede1'}}>
         <Header
           title={
             <span style={{display:"flex",alignItems:"center",gap:7}}>
