@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>メールキャンペーン機能 — 画面案</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: #1a3a2a;
+    background: #f7fbf8;
+  }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 40px 40px 80px; }
+
+  /* ── ヘッダー ── */
+  .hero {
+    background: linear-gradient(135deg, #174f35 0%, #059669 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 40px 44px;
+    margin-bottom: 36px;
+  }
+  .hero .tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+  .hero h1 { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+  .hero p { font-size: 14px; opacity: 0.9; max-width: 720px; }
+
+  /* ── セクション見出し ── */
+  .section { margin-bottom: 56px; }
+  .section-head { margin-bottom: 18px; }
+  .section-head .step {
+    display: inline-block;
+    background: #059669;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 12px;
+    border-radius: 12px;
+    margin-right: 10px;
+    letter-spacing: 0.04em;
+  }
+  .section-head h2 { font-size: 20px; font-weight: 800; color: #174f35; display: inline; }
+  .section-head .desc { color: #4a6f5d; font-size: 13px; margin-top: 8px; }
+
+  /* ── フロー図 ── */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 40px;
+  }
+  .flow-step {
+    text-align: center;
+    position: relative;
+    padding: 12px 8px;
+  }
+  .flow-step .num {
+    width: 28px; height: 28px; line-height: 28px;
+    background: #059669; color: #fff;
+    border-radius: 50%;
+    font-weight: 800; font-size: 13px;
+    margin: 0 auto 8px;
+  }
+  .flow-step .label { font-weight: 700; font-size: 13px; color: #174f35; }
+  .flow-step .sub { font-size: 11px; color: #6b8c7c; margin-top: 4px; }
+  .flow-step:not(:last-child)::after {
+    content: '▶';
+    position: absolute;
+    right: -8px; top: 32px;
+    color: #c8e8d4;
+    font-size: 14px;
+  }
+
+  /* ── 画面モック（ブラウザ風） ── */
+  .mock {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(23, 79, 53, 0.06);
+    margin-bottom: 24px;
+  }
+  .mock-bar {
+    background: #f0f7f3;
+    border-bottom: 1px solid #c8e8d4;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .mock-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: #d0e2d8; }
+  .mock-bar .url {
+    flex: 1; background: #fff;
+    border: 1px solid #d8e8de;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #4a6f5d;
+    margin-left: 10px;
+  }
+  .mock-body { padding: 24px 28px; }
+
+  /* ── システム内画面（左ナビあり） ── */
+  .app {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: 480px;
+  }
+  .app-nav {
+    background: #f3f9f5;
+    border-right: 1px solid #c8e8d4;
+    padding: 18px 0;
+  }
+  .app-nav .nav-item {
+    padding: 10px 20px;
+    font-size: 13px;
+    color: #4a6f5d;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+  }
+  .app-nav .nav-item.active {
+    background: #fff;
+    border-left-color: #059669;
+    color: #174f35;
+    font-weight: 700;
+  }
+  .app-main { padding: 24px 28px; background: #fff; }
+  .app-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #174f35;
+    margin-bottom: 4px;
+  }
+  .app-title-sub { font-size: 12px; color: #6b8c7c; margin-bottom: 20px; }
+
+  /* ── 共通パーツ ── */
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .btn-primary { background: #059669; color: #fff; }
+  .btn-outline { background: #fff; color: #059669; border-color: #059669; }
+  .btn-ghost { background: #f0f7f3; color: #174f35; }
+
+  table.tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.tbl th {
+    text-align: left;
+    background: #f3f9f5;
+    color: #174f35;
+    padding: 10px 12px;
+    border-bottom: 1px solid #c8e8d4;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  table.tbl td {
+    padding: 12px;
+    border-bottom: 1px solid #e8f1eb;
+    color: #2a4a3a;
+  }
+  table.tbl tr:hover td { background: #fafdfb; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-draft { background: #f0f0f0; color: #555; }
+  .badge-sending { background: #fff5d6; color: #8a6b00; }
+  .badge-done { background: #e0f4e8; color: #066c43; }
+  .badge-interested { background: #d6efff; color: #1a5a8a; }
+  .badge-no { background: #f5e0e0; color: #8a3030; }
+  .badge-pending { background: #f5f5f5; color: #888; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #f9fcfa;
+    border: 1px solid #d8e8de;
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: #6b8c7c; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 800; color: #059669; }
+  .stat-sub { font-size: 11px; color: #6b8c7c; margin-top: 2px; }
+
+  .form-row { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #174f35;
+    margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #c8e8d4;
+    border-radius: 6px;
+    font-size: 13px;
+    background: #fff;
+  }
+  textarea.form-input { min-height: 120px; font-family: inherit; }
+
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .alert-info { background: #e3f2ff; color: #1a4a78; border-left: 3px solid #4090d4; }
+  .alert-warn { background: #fff5d6; color: #6b5300; border-left: 3px solid #d4a040; }
+  .alert-ok { background: #d8efe2; color: #0a5a3a; border-left: 3px solid #059669; }
+
+  /* ── 配信先LP ── */
+  .lp {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 40px 30px;
+    text-align: center;
+  }
+  .lp h2 { font-size: 22px; color: #174f35; margin-bottom: 12px; }
+  .lp p { font-size: 14px; color: #4a6f5d; margin-bottom: 28px; line-height: 1.8; }
+  .lp .choice {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .lp-btn {
+    padding: 18px;
+    border: 2px solid #c8e8d4;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .lp-btn.yes { border-color: #059669; color: #059669; background: #f0fbf5; }
+  .lp-btn.no { color: #888; }
+
+  /* ── データ構造図 ── */
+  .data-model {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .entity {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .entity-head {
+    background: #059669;
+    color: #fff;
+    padding: 10px 14px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .entity-body { padding: 12px 14px; font-size: 12px; color: #2a4a3a; }
+  .entity-body .field { padding: 4px 0; border-bottom: 1px dashed #e8f1eb; }
+  .entity-body .field:last-child { border-bottom: none; }
+  .entity-body .field .name { font-weight: 700; color: #174f35; }
+  .entity-body .field .type { color: #6b8c7c; font-size: 11px; }
+
+  /* ── ステッパー ── */
+  .stepper {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding: 0 20px;
+  }
+  .stepper .step-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+    color: #999;
+    font-size: 12px;
+  }
+  .stepper .step-item .num {
+    width: 32px; height: 32px; line-height: 32px;
+    background: #e0e0e0; color: #fff;
+    border-radius: 50%;
+    margin: 0 auto 6px;
+    font-weight: 700;
+  }
+  .stepper .step-item.active .num { background: #059669; }
+  .stepper .step-item.active { color: #174f35; font-weight: 700; }
+  .stepper .step-item.done .num { background: #c8e8d4; color: #059669; }
+  .stepper .step-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 16px; left: 60%; right: -40%;
+    height: 2px; background: #e0e0e0;
+  }
+  .stepper .step-item.done:not(:last-child)::after { background: #c8e8d4; }
+
+  .note { font-size: 12px; color: #6b8c7c; margin-top: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .preview-mail {
+    background: #fafdfb;
+    border: 1px solid #d8e8de;
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .preview-mail .link { color: #059669; text-decoration: underline; }
+
+  /* ── リスク一覧 ── */
+  .risk-list { display: flex; flex-direction: column; gap: 14px; }
+  .risk-item {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 10px;
+    padding: 18px 22px;
+    border-left-width: 5px;
+    border-left-style: solid;
+  }
+  .risk-high { border-left-color: #d9534f; }
+  .risk-medium { border-left-color: #f0ad4e; }
+  .risk-low { border-left-color: #5cb85c; }
+  .risk-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .risk-head h3 { font-size: 15px; color: #174f35; font-weight: 700; }
+  .risk-level { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px; }
+  .risk-level.lv-high { background: #fce4e4; color: #a02020; }
+  .risk-level.lv-medium { background: #fff0d4; color: #8a5a00; }
+  .risk-level.lv-low { background: #e0f4e8; color: #066c43; }
+  .risk-body p { font-size: 13px; color: #2a4a3a; margin-bottom: 6px; line-height: 1.7; }
+  .risk-body p strong { color: #174f35; }
+
+  /* ── チェックリスト ── */
+  .checklist {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 12px;
+    padding: 20px 28px;
+  }
+  .checklist h4 {
+    font-size: 13px;
+    color: #fff;
+    background: #059669;
+    margin-top: 18px;
+    margin-bottom: 10px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+  .checklist h4:first-child { margin-top: 0; }
+  .checklist ul { list-style: none; padding-left: 0; }
+  .checklist li {
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #2a4a3a;
+    background: #fafdfb;
+    border-left: 3px solid #c8e8d4;
+    margin-bottom: 5px;
+    border-radius: 0 4px 4px 0;
+  }
+  .checklist li strong { color: #174f35; }
+
+  /* ── ガントチャート ── */
+  .gantt {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 10px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+  .gantt-row.header {
+    border-bottom: 2px solid #c8e8d4;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    font-weight: 700;
+    color: #174f35;
+  }
+  .gantt-label { font-weight: 700; color: #174f35; font-size: 12px; }
+  .gantt-label .sub { font-weight: 400; color: #6b8c7c; font-size: 11px; }
+  .gantt-bar-area {
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    gap: 2px;
+    background: #fafdfb;
+    border-radius: 4px;
+    padding: 3px;
+    min-height: 22px;
+    position: relative;
+  }
+  .gantt-bar-area .day-marker {
+    position: absolute;
+    bottom: -16px;
+    font-size: 10px;
+    color: #6b8c7c;
+  }
+  .gantt-bar {
+    border-radius: 3px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .bar-phase1 { background: #1a5a8a; }
+  .bar-phase2 { background: #059669; }
+  .bar-phase3 { background: #8b5cf6; }
+  .bar-phase4 { background: #e0884a; }
+  .bar-phase5 { background: #a0a0a0; }
+  .bar-prep { background: #6b8c7c; }
+  .bar-buffer { background: #d4a040; opacity: 0.7; }
+  .bar-external { background: #fff; border: 2px dashed #6b8c7c; color: #6b8c7c; }
+
+  /* ── タスクカード ── */
+  .phase-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .phase-card {
+    background: #fff;
+    border: 1px solid #c8e8d4;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .phase-card-head {
+    padding: 12px 18px;
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .phase-card-head.p1 { background: #1a5a8a; }
+  .phase-card-head.p2 { background: #059669; }
+  .phase-card-head.p3 { background: #8b5cf6; }
+  .phase-card-head.p4 { background: #e0884a; }
+  .phase-card-head.p5 { background: #a0a0a0; }
+  .phase-card-head .days {
+    background: rgba(255,255,255,0.25);
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 12px;
+  }
+  .phase-card-body { padding: 14px 18px; }
+  .phase-card-body ol { padding-left: 18px; font-size: 12.5px; color: #2a4a3a; }
+  .phase-card-body li { padding: 4px 0; }
+  .phase-card-body li strong { color: #174f35; }
+  .phase-card-foot {
+    padding: 8px 18px;
+    background: #fafdfb;
+    border-top: 1px solid #e8f1eb;
+    font-size: 11px;
+    color: #6b8c7c;
+  }
+
+  /* ── サマリーボックス ── */
+  .summary-box {
+    background: linear-gradient(135deg, #f0fbf5 0%, #e0f4e8 100%);
+    border: 1px solid #c8e8d4;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .summary-item { text-align: center; }
+  .summary-item .num {
+    font-size: 36px;
+    font-weight: 800;
+    color: #059669;
+    line-height: 1;
+  }
+  .summary-item .unit { font-size: 13px; color: #6b8c7c; margin-top: 2px; }
+  .summary-item .label {
+    font-size: 12px;
+    color: #174f35;
+    font-weight: 700;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── ヒーロー ── -->
+  <div class="hero">
+    <span class="tag">FEATURE PROPOSAL</span>
+    <h1>メールキャンペーン機能 — 画面イメージ案</h1>
+    <p>数千件のリストに一斉メール → フォームで「興味あり/なし」を絞り込み → 興味ありの人を自動で架電リストに流す機能。既存システムへの統合方針を画面ベースで提案します。</p>
+  </div>
+
+  <!-- ── 全体フロー ── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>全体フロー</h2>
+      <div class="desc">5ステップで「リスト読込 → 配信 → 反応収集 → 架電」までつながります。</div>
+    </div>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="num">1</div>
+        <div class="label">CSV取込</div>
+        <div class="sub">数千件のリスト</div>
+      </div>
+      <div class="flow-step">
+        <div class="num">2</div>
+        <div class="label">キャンペーン作成</div>
+        <div class="sub">件名・本文</div>
+      </div>
+      <div class="flow-step">
+        <div class="num">3</div>
+        <div class="label">一斉送信</div>
+        <div class="sub">配信プロバイダー</div>
+      </div>
+      <div class="flow-step">
+        <div class="num">4</div>
+        <div class="label">フォーム応答</div>
+        <div class="sub">興味あり/なし</div>
+      </div>
+      <div class="flow-step">
+        <div class="num">5</div>
+        <div class="label">架電リスト</div>
+        <div class="sub">興味ありに電話</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画面1：左ナビに追加 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 1</span><h2>キャンペーン一覧（システム内・新メニュー）</h2>
+      <div class="desc">既存の左ナビに「メールキャンペーン」を追加。過去配信の状況がひと目で分かる。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/campaigns</div>
+      </div>
+      <div class="app">
+        <div class="app-nav">
+          <div class="nav-item">ダッシュボード</div>
+          <div class="nav-item">リード管理</div>
+          <div class="nav-item active">メールキャンペーン ✨NEW</div>
+          <div class="nav-item">AIアシスタント</div>
+          <div class="nav-item">候補日検索</div>
+          <div class="nav-item">メールテンプレート</div>
+          <div class="nav-item">設定</div>
+        </div>
+        <div class="app-main">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:20px;">
+            <div>
+              <div class="app-title">メールキャンペーン</div>
+              <div class="app-title-sub">一斉メール配信で架電対象を絞り込む</div>
+            </div>
+            <a class="btn btn-primary">＋ 新規キャンペーン</a>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label">実施キャンペーン</div>
+              <div class="stat-value">12</div>
+              <div class="stat-sub">過去90日</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">配信総数</div>
+              <div class="stat-value">38,420</div>
+              <div class="stat-sub">通</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">興味あり応答</div>
+              <div class="stat-value">524</div>
+              <div class="stat-sub">応答率 1.36%</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">架電完了</div>
+              <div class="stat-value">312</div>
+              <div class="stat-sub">商談化 47件</div>
+            </div>
+          </div>
+
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>キャンペーン名</th>
+                <th>配信日</th>
+                <th>状態</th>
+                <th>配信数</th>
+                <th>興味あり</th>
+                <th>応答率</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>6月キャンペーン（不動産業向け）</strong></td>
+                <td>2026-06-04</td>
+                <td><span class="badge badge-sending">配信中</span></td>
+                <td>3,210</td>
+                <td>—</td>
+                <td>—</td>
+                <td><a class="btn btn-ghost">詳細</a></td>
+              </tr>
+              <tr>
+                <td><strong>5月キャンペーン（IT業界）</strong></td>
+                <td>2026-05-21</td>
+                <td><span class="badge badge-done">完了</span></td>
+                <td>2,840</td>
+                <td>38</td>
+                <td>1.34%</td>
+                <td><a class="btn btn-ghost">詳細</a></td>
+              </tr>
+              <tr>
+                <td><strong>新サービス案内（テスト配信）</strong></td>
+                <td>—</td>
+                <td><span class="badge badge-draft">下書き</span></td>
+                <td>120</td>
+                <td>—</td>
+                <td>—</td>
+                <td><a class="btn btn-ghost">編集</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画面2：CSVインポート ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 2</span><h2>新規キャンペーン作成 — Step 1: CSV取込</h2>
+      <div class="desc">数千件のリストをアップロード。プレビューと自動チェック（重複・無効メール・配信停止リスト）。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/campaigns/new</div>
+      </div>
+      <div class="mock-body">
+        <div class="stepper">
+          <div class="step-item active"><div class="num">1</div>CSV取込</div>
+          <div class="step-item"><div class="num">2</div>配信先確認</div>
+          <div class="step-item"><div class="num">3</div>メール作成</div>
+          <div class="step-item"><div class="num">4</div>テスト送信</div>
+          <div class="step-item"><div class="num">5</div>本番配信</div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">キャンペーン名</label>
+          <input class="form-input" value="6月キャンペーン（不動産業向け）" />
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">CSVファイル</label>
+          <div style="border: 2px dashed #c8e8d4; border-radius: 10px; padding: 30px; text-align: center; background: #fafdfb;">
+            <div style="font-size:32px; margin-bottom:8px;">📄</div>
+            <div style="font-weight:700; color:#174f35;">leads-2026-06.csv をアップロード済み</div>
+            <div style="font-size:12px; color:#6b8c7c; margin-top:4px;">3,420 件 ／ 218KB</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label class="form-label">カラムマッピング</label>
+          <table class="tbl">
+            <thead><tr><th>CSVカラム</th><th>→</th><th>システム項目</th></tr></thead>
+            <tbody>
+              <tr><td>company</td><td>→</td><td><strong>会社名</strong>（必須）</td></tr>
+              <tr><td>name</td><td>→</td><td>担当者名</td></tr>
+              <tr><td>email</td><td>→</td><td><strong>メールアドレス</strong>（必須）</td></tr>
+              <tr><td>tel</td><td>→</td><td>電話番号</td></tr>
+              <tr><td>industry</td><td>→</td><td>業種（タグ）</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-ok">
+          ✓ チェック結果：3,420件中 <strong>3,210件が配信可能</strong>。除外：重複 84件・無効メール 12件・配信停止リスト 114件
+        </div>
+
+        <div style="text-align:right;">
+          <a class="btn btn-ghost">戻る</a>
+          <a class="btn btn-primary">次へ：配信先を確認</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画面3：メール作成 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 3</span><h2>新規キャンペーン作成 — Step 3: メール作成</h2>
+      <div class="desc">既存のメールテンプレートを流用。本文末尾には応答リンクと配信停止リンクが自動で入る。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/campaigns/new</div>
+      </div>
+      <div class="mock-body">
+        <div class="stepper">
+          <div class="step-item done"><div class="num">✓</div>CSV取込</div>
+          <div class="step-item done"><div class="num">✓</div>配信先確認</div>
+          <div class="step-item active"><div class="num">3</div>メール作成</div>
+          <div class="step-item"><div class="num">4</div>テスト送信</div>
+          <div class="step-item"><div class="num">5</div>本番配信</div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <div class="form-row">
+              <label class="form-label">差出人</label>
+              <input class="form-input" value="株式会社〇〇 営業担当 ＜info@example.co.jp＞" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">件名</label>
+              <input class="form-input" value="【{{会社名}}様】業務効率化のご提案" />
+            </div>
+            <div class="form-row">
+              <label class="form-label">本文（差し込み変数使用可）</label>
+              <textarea class="form-input">{{担当者名}}様
+
+突然のご連絡失礼いたします。
+〇〇株式会社の△△と申します。
+
+御社の業務効率化に関するご提案がございまして、
+ご興味があればお話しさせていただければと存じます。
+
+▼ ご興味の有無を教えてください
+{{応答リンク}}
+
+────────────────────
+{{送信者署名}}
+配信停止：{{配信停止リンク}}</textarea>
+            </div>
+            <div class="note">※ 「応答リンク」「配信停止リンク」「送信者署名」は受信者ごとに自動で差し込まれます</div>
+          </div>
+
+          <div>
+            <label class="form-label">プレビュー（実際の受信メール）</label>
+            <div class="preview-mail">
+              <div style="border-bottom:1px solid #e8f1eb; padding-bottom:8px; margin-bottom:12px;">
+                <div><strong>From：</strong> 株式会社〇〇 営業担当</div>
+                <div><strong>To：</strong> tanaka@sample-corp.jp</div>
+                <div><strong>件名：</strong> 【サンプル株式会社様】業務効率化のご提案</div>
+              </div>
+              田中様<br><br>
+              突然のご連絡失礼いたします。<br>
+              〇〇株式会社の△△と申します。<br><br>
+              御社の業務効率化に関するご提案がございまして、<br>
+              ご興味があればお話しさせていただければと存じます。<br><br>
+              <strong>▼ ご興味の有無を教えてください</strong><br>
+              <a class="link">https://〇〇.vercel.app/r/k3f9ax8q...</a><br><br>
+              ────────────────────<br>
+              株式会社〇〇<br>
+              東京都〇〇区〇〇 1-2-3<br>
+              TEL: 03-0000-0000<br>
+              <span style="font-size:11px; color:#888;">配信停止：<a class="link">こちら</a></span>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:right; margin-top:20px;">
+          <a class="btn btn-ghost">戻る</a>
+          <a class="btn btn-primary">次へ：テスト送信</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画面4：受信者向けLP ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 4</span><h2>受信者向けランディングページ（フォーム本体）</h2>
+      <div class="desc">メールのリンクから飛ぶページ。極限までシンプルにして応答率を最大化。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/r/k3f9ax8qpL2mNvR7zT4...</div>
+      </div>
+      <div class="mock-body" style="background:#f7fbf8;">
+        <div class="lp">
+          <h2>業務効率化のご提案</h2>
+          <p>田中様、ご覧いただきありがとうございます。<br>ご興味の有無を1秒で教えてください。</p>
+
+          <div class="choice">
+            <button class="lp-btn yes">✓ 興味あり<br><span style="font-size:11px; font-weight:400;">担当より電話します</span></button>
+            <button class="lp-btn no">— 興味なし<br><span style="font-size:11px; font-weight:400;">今後の配信を停止</span></button>
+          </div>
+
+          <div style="text-align:left; margin-top:24px;">
+            <label class="form-label">ご希望・ご質問（任意）</label>
+            <textarea class="form-input" placeholder="ご都合の良い時間帯などあればご記入ください"></textarea>
+          </div>
+
+          <button class="btn btn-primary" style="margin-top:20px; padding: 12px 40px; font-size:14px;">回答を送信</button>
+
+          <div class="note" style="margin-top:30px;">株式会社〇〇 ｜ 東京都〇〇区〇〇 1-2-3 ｜ <a style="color:#059669;">プライバシーポリシー</a></div>
+        </div>
+      </div>
+    </div>
+    <div class="alert alert-info" style="margin-top:14px;">
+      💡 <strong>設計の意図：</strong>「興味あり」を押した瞬間にDBに記録される（送信ボタン待ちにしない）。自由記述は任意・後追い可能。一切のログインなし。
+    </div>
+  </div>
+
+  <!-- ── 画面5：キャンペーン詳細 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 5</span><h2>キャンペーン詳細・配信状況</h2>
+      <div class="desc">配信後の応答状況をリアルタイムで確認。「興味あり」をクリックして該当架電リストへ。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/campaigns/c-12345</div>
+      </div>
+      <div class="app">
+        <div class="app-nav">
+          <div class="nav-item">ダッシュボード</div>
+          <div class="nav-item">リード管理</div>
+          <div class="nav-item active">メールキャンペーン</div>
+          <div class="nav-item">AIアシスタント</div>
+          <div class="nav-item">候補日検索</div>
+        </div>
+        <div class="app-main">
+          <div class="app-title">5月キャンペーン（IT業界）</div>
+          <div class="app-title-sub">配信日：2026-05-21 ／ 完了</div>
+
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-label">配信成功</div>
+              <div class="stat-value">2,802</div>
+              <div class="stat-sub">／ 2,840（98.7%）</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">フォーム到達</div>
+              <div class="stat-value">186</div>
+              <div class="stat-sub">到達率 6.6%</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">興味あり</div>
+              <div class="stat-value" style="color:#1a5a8a;">38</div>
+              <div class="stat-sub">応答率 1.34%</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">配信停止</div>
+              <div class="stat-value" style="color:#8a3030;">23</div>
+              <div class="stat-sub">0.82%</div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-bottom:14px;">
+            <a class="btn btn-primary">興味あり38件を架電リストへ送る →</a>
+            <a class="btn btn-outline">CSV書き出し</a>
+          </div>
+
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>会社名</th>
+                <th>担当者</th>
+                <th>送信</th>
+                <th>応答</th>
+                <th>自由記述</th>
+                <th>架電状況</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>サンプル株式会社</td>
+                <td>田中 太郎</td>
+                <td>05-21 09:00</td>
+                <td><span class="badge badge-interested">興味あり</span></td>
+                <td>午後の時間が希望</td>
+                <td>架電待ち</td>
+              </tr>
+              <tr>
+                <td>テスト商事</td>
+                <td>佐藤 花子</td>
+                <td>05-21 09:00</td>
+                <td><span class="badge badge-interested">興味あり</span></td>
+                <td>—</td>
+                <td>架電済（商談確定）</td>
+              </tr>
+              <tr>
+                <td>例示工業</td>
+                <td>鈴木 一郎</td>
+                <td>05-21 09:00</td>
+                <td><span class="badge badge-no">興味なし</span></td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td>デモ建設</td>
+                <td>—</td>
+                <td>05-21 09:00</td>
+                <td><span class="badge badge-pending">未応答</span></td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 画面6：架電リスト統合 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">画面 6</span><h2>既存「架電リスト」への統合</h2>
+      <div class="desc">興味あり応答者は流入元="メールキャンペーン"のリードとして自動で架電リストに追加。</div>
+    </div>
+    <div class="mock">
+      <div class="mock-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <div class="url">https://〇〇.vercel.app/leads（既存画面）</div>
+      </div>
+      <div class="mock-body">
+        <div class="alert alert-info">
+          💡 <strong>キャンペーンからの流入：38件</strong>がリードとして自動登録されました。ステータス＝「架電待ち」、流入元＝「メールキャンペーン」
+        </div>
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>会社名</th>
+              <th>担当者</th>
+              <th>電話番号</th>
+              <th>流入元</th>
+              <th>ステータス</th>
+              <th>メモ</th>
+              <th>次回アクション</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#fffce8;">
+              <td>サンプル株式会社</td>
+              <td>田中 太郎</td>
+              <td>03-1234-5678</td>
+              <td><span class="badge" style="background:#d6efff; color:#1a5a8a;">📧 メールキャンペーン</span></td>
+              <td><span class="badge badge-sending">架電待ち</span></td>
+              <td>午後の時間が希望（応答自由記述より）</td>
+              <td>本日</td>
+            </tr>
+            <tr style="background:#fffce8;">
+              <td>テスト商事</td>
+              <td>佐藤 花子</td>
+              <td>06-9876-5432</td>
+              <td><span class="badge" style="background:#d6efff; color:#1a5a8a;">📧 メールキャンペーン</span></td>
+              <td><span class="badge badge-sending">架電待ち</span></td>
+              <td>—</td>
+              <td>本日</td>
+            </tr>
+            <tr>
+              <td>既存のリード（インバウンド）</td>
+              <td>山田 二郎</td>
+              <td>03-5555-1111</td>
+              <td><span class="badge" style="background:#f0f7f3; color:#174f35;">問い合わせフォーム</span></td>
+              <td><span class="badge badge-done">商談確定</span></td>
+              <td>—</td>
+              <td>明日 14:00</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="note" style="margin-top:14px;">※ メールキャンペーン経由のリードは黄色ハイライトで一目で識別可能</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── データ構造 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">参考</span><h2>データ構造（既存システムへの追加分）</h2>
+      <div class="desc">既存の lead テーブルは触らず、3つの新エンティティを追加。反応者だけ lead に昇格。</div>
+    </div>
+    <div class="data-model">
+      <div class="entity">
+        <div class="entity-head">campaign（キャンペーン）</div>
+        <div class="entity-body">
+          <div class="field"><span class="name">id</span> <span class="type">／ string</span></div>
+          <div class="field"><span class="name">name</span> <span class="type">／ string</span></div>
+          <div class="field"><span class="name">subject</span> <span class="type">／ string</span></div>
+          <div class="field"><span class="name">body</span> <span class="type">／ text</span></div>
+          <div class="field"><span class="name">status</span> <span class="type">／ draft/sending/done</span></div>
+          <div class="field"><span class="name">sent / responded / interested</span> <span class="type">／ number</span></div>
+          <div class="field"><span class="name">created_at</span> <span class="type">／ datetime</span></div>
+        </div>
+      </div>
+      <div class="entity">
+        <div class="entity-head">recipient（配信先）</div>
+        <div class="entity-body">
+          <div class="field"><span class="name">id</span> <span class="type">／ string</span></div>
+          <div class="field"><span class="name">campaign_id</span> <span class="type">／ FK</span></div>
+          <div class="field"><span class="name">token</span> <span class="type">／ unique (URL用)</span></div>
+          <div class="field"><span class="name">company / contact / email / phone</span></div>
+          <div class="field"><span class="name">sent_at / responded_at</span></div>
+          <div class="field"><span class="name">response</span> <span class="type">／ interested / no / null</span></div>
+          <div class="field"><span class="name">free_text</span> <span class="type">／ string</span></div>
+          <div class="field"><span class="name">promoted_lead_id</span> <span class="type">／ 昇格時のlead ID</span></div>
+        </div>
+      </div>
+      <div class="entity">
+        <div class="entity-head">unsubscribe（配信停止）</div>
+        <div class="entity-body">
+          <div class="field"><span class="name">email</span> <span class="type">／ PK</span></div>
+          <div class="field"><span class="name">unsubscribed_at</span> <span class="type">／ datetime</span></div>
+          <div class="field"><span class="name">source_campaign_id</span> <span class="type">／ FK</span></div>
+          <div class="field" style="color:#6b8c7c; padding-top:8px;">※ 以降の全キャンペーンから自動除外</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 実装スケジュール ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">実装計画</span><h2>実装期間の見積もり</h2>
+      <div class="desc">前提：1名（Claude支援あり）で実装。本番稼働まで約3週間が目安。</div>
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-item">
+        <div class="num">9<span class="unit"> 営業日</span></div>
+        <div class="label">MVPコア（Phase 1〜4）</div>
+        <div style="font-size:11px; color:#6b8c7c; margin-top:4px;">配信機能まで一通り動く</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">12<span class="unit"> 営業日</span></div>
+        <div class="label">フル機能（Phase 1〜5）</div>
+        <div style="font-size:11px; color:#6b8c7c; margin-top:4px;">追跡・分析機能込み</div>
+      </div>
+      <div class="summary-item">
+        <div class="num">15<span class="unit"> 営業日</span></div>
+        <div class="label">本番稼働まで（テスト・検証込み）</div>
+        <div style="font-size:11px; color:#6b8c7c; margin-top:4px;">＝約3週間</div>
+      </div>
+    </div>
+
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th style="width:60px;">Phase</th>
+          <th>内容</th>
+          <th style="width:80px;">工数</th>
+          <th style="width:110px;">配信PV依存</th>
+          <th>主要画面</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1</strong></td>
+          <td>CSVインポート ／ キャンペーン管理画面 ／ データモデル</td>
+          <td><strong>3日</strong></td>
+          <td>不要</td>
+          <td>画面1, 2</td>
+        </tr>
+        <tr>
+          <td><strong>2</strong></td>
+          <td>応答LP ／ 配信停止ページ ／ 興味あり→架電リスト自動連携</td>
+          <td><strong>2日</strong></td>
+          <td>不要</td>
+          <td>画面4, 6</td>
+        </tr>
+        <tr>
+          <td><strong>3</strong></td>
+          <td>メール本文編集 ／ テスト送信（Gmail APIで代用可）</td>
+          <td><strong>1日</strong></td>
+          <td>不要（テストのみ）</td>
+          <td>画面3</td>
+        </tr>
+        <tr>
+          <td><strong>4</strong></td>
+          <td>本番一斉配信 ／ 配信状況ダッシュボード</td>
+          <td><strong>3日</strong></td>
+          <td><strong>必要</strong></td>
+          <td>画面5</td>
+        </tr>
+        <tr>
+          <td><strong>5</strong></td>
+          <td>開封・クリック追跡 ／ バウンス自動処理 ／ 効果分析パネル</td>
+          <td><strong>3日</strong></td>
+          <td>必要</td>
+          <td>—</td>
+        </tr>
+        <tr style="background:#fff5d6;">
+          <td><strong>+</strong></td>
+          <td>テスト・本番検証・微調整バッファ</td>
+          <td><strong>3日</strong></td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+        <tr style="background:#e0f4e8; font-weight:700;">
+          <td colspan="2">合計（本番稼働まで）</td>
+          <td><strong>15日</strong></td>
+          <td colspan="2">＝約3週間</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── ガントチャート ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">スケジュール</span><h2>実装スケジュール（並行作業含む）</h2>
+      <div class="desc">業務側の準備（DNS設定・法務確認）を並行で進めれば、Phase 4 を待たせずに済みます。</div>
+    </div>
+    <div class="gantt">
+
+      <div class="gantt-row header">
+        <div>タスク</div>
+        <div class="gantt-bar-area" style="background:transparent;">
+          <span style="position:absolute; left:0; font-size:11px; color:#6b8c7c;">Day 1</span>
+          <span style="position:absolute; left:25%; font-size:11px; color:#6b8c7c;">Day 5</span>
+          <span style="position:absolute; left:50%; font-size:11px; color:#6b8c7c;">Day 10</span>
+          <span style="position:absolute; left:75%; font-size:11px; color:#6b8c7c;">Day 15</span>
+          <span style="position:absolute; right:0; font-size:11px; color:#6b8c7c;">Day 20</span>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">事前準備（並行）<br><span class="sub">DNS / 法務 / 配信契約</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-external" style="grid-column: 1 / 4;">事前準備</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Phase 1<br><span class="sub">CSV取込・キャンペーン管理</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-phase1" style="grid-column: 1 / 4;">3日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Phase 2<br><span class="sub">応答LP・架電リスト連携</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-phase2" style="grid-column: 4 / 6;">2日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Phase 3<br><span class="sub">メール本文・テスト送信</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-phase3" style="grid-column: 6 / 7;">1日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Phase 4<br><span class="sub">本番配信・配信状況</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-phase4" style="grid-column: 7 / 10;">3日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">Phase 5<br><span class="sub">追跡・バウンス・分析</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-phase5" style="grid-column: 10 / 13;">3日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label">テスト・検証<br><span class="sub">本番投入前確認</span></div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar bar-buffer" style="grid-column: 13 / 16;">3日</div>
+        </div>
+      </div>
+
+      <div class="gantt-row">
+        <div class="gantt-label" style="color:#059669;">★ 本番稼働</div>
+        <div class="gantt-bar-area">
+          <div class="gantt-bar" style="grid-column: 16 / 17; background:#059669;">GO</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="alert alert-info" style="margin-top:14px;">
+      💡 <strong>事前準備（業務側タスク）を並行することが期間短縮の鍵：</strong>DNS設定（DKIM/SPF/DMARC）／配信プロバイダー契約／法務によるリスト同意根拠の確認 ── これらを開発と並行で進めると Phase 4 で詰まりません。
+    </div>
+  </div>
+
+  <!-- ── 各Phaseの詳細タスク ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">タスク詳細</span><h2>各Phaseの実装フロー</h2>
+      <div class="desc">各Phaseで具体的に何を作るか・どの順番で進めるか。</div>
+    </div>
+
+    <div class="phase-grid">
+
+      <div class="phase-card">
+        <div class="phase-card-head p1">
+          <span>Phase 1 ｜ 基盤構築</span>
+          <span class="days">3日</span>
+        </div>
+        <div class="phase-card-body">
+          <ol>
+            <li><strong>Day 1：</strong>データモデル設計／KVキー設計／<code>lib/campaigns.js</code> 新設</li>
+            <li><strong>Day 1：</strong>API実装（<code>POST/GET/PATCH /api/campaigns</code>）</li>
+            <li><strong>Day 2：</strong>キャンペーン一覧画面（<code>CampaignList.jsx</code>）</li>
+            <li><strong>Day 2：</strong>左ナビに「メールキャンペーン」を追加</li>
+            <li><strong>Day 3：</strong>CSVインポートウィザード（パース・バリデーション・プレビュー）</li>
+            <li><strong>Day 3：</strong>recipient一括保存API（バッチ処理）</li>
+          </ol>
+        </div>
+        <div class="phase-card-foot">📂 主な新規ファイル：<code>routes/campaigns.js</code>, <code>src/components/campaigns/*.jsx</code></div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-card-head p2">
+          <span>Phase 2 ｜ 反応収集</span>
+          <span class="days">2日</span>
+        </div>
+        <div class="phase-card-body">
+          <ol>
+            <li><strong>Day 1：</strong>公開ルート <code>/r/:token</code>（認証なし）</li>
+            <li><strong>Day 1：</strong>応答APIの実装（<code>POST /api/respond/:token</code>）</li>
+            <li><strong>Day 1：</strong>興味あり → リード自動生成 → 架電リスト追加のロジック</li>
+            <li><strong>Day 2：</strong>配信停止ページ <code>/unsubscribe/:token</code></li>
+            <li><strong>Day 2：</strong>キャンペーン詳細画面（応答状況の表示）</li>
+            <li><strong>Day 2：</strong>架電リストで「キャンペーン経由」を視覚的に区別</li>
+          </ol>
+        </div>
+        <div class="phase-card-foot">📂 主な新規ファイル：<code>src/pages/ResponseLP.jsx</code>, <code>src/pages/Unsubscribe.jsx</code></div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-card-head p3">
+          <span>Phase 3 ｜ メール作成</span>
+          <span class="days">1日</span>
+        </div>
+        <div class="phase-card-body">
+          <ol>
+            <li><strong>Day 1（前半）：</strong>既存メールテンプレ機能を流用したエディタ実装</li>
+            <li><strong>Day 1（前半）：</strong>差し込み変数の追加（<code>{{応答リンク}}</code> / <code>{{配信停止リンク}}</code>）</li>
+            <li><strong>Day 1（後半）：</strong>受信メールプレビュー機能</li>
+            <li><strong>Day 1（後半）：</strong>Gmail APIでテスト送信（自分宛1通）</li>
+          </ol>
+        </div>
+        <div class="phase-card-foot">📂 既存の <code>src/components/email-templates/*</code> を拡張</div>
+      </div>
+
+      <div class="phase-card">
+        <div class="phase-card-head p4">
+          <span>Phase 4 ｜ 本番配信</span>
+          <span class="days">3日</span>
+        </div>
+        <div class="phase-card-body">
+          <ol>
+            <li><strong>Day 1：</strong>配信プロバイダー（Resend想定）契約・APIキー設定</li>
+            <li><strong>Day 1：</strong>DNS設定（DKIM/SPF/DMARC）反映確認</li>
+            <li><strong>Day 2：</strong><code>lib/mailSender.js</code> 実装（差し替え可能な抽象化）</li>
+            <li><strong>Day 2：</strong>一斉配信API（バッチ処理・冪等性・<code>sent_at</code>更新）</li>
+            <li><strong>Day 3：</strong>配信状況ダッシュボード（リアルタイム）</li>
+            <li><strong>Day 3：</strong>失敗時の再送ロジック</li>
+          </ol>
+        </div>
+        <div class="phase-card-foot">⚠ DNS反映に時間がかかる場合あり（最大48時間）</div>
+      </div>
+
+      <div class="phase-card" style="grid-column: span 2;">
+        <div class="phase-card-head p5">
+          <span>Phase 5 ｜ 運用最適化（オプション）</span>
+          <span class="days">3日</span>
+        </div>
+        <div class="phase-card-body">
+          <ol>
+            <li><strong>Day 1：</strong>Resend Webhook 受信エンドポイント（<code>POST /api/webhooks/resend</code>）</li>
+            <li><strong>Day 1：</strong>開封・クリック追跡（recipient へ <code>opened_at</code> / <code>clicked_at</code> 記録）</li>
+            <li><strong>Day 2：</strong>バウンスメールの自動配信停止リスト登録</li>
+            <li><strong>Day 2：</strong>ダッシュボードに「キャンペーン実績パネル」追加</li>
+            <li><strong>Day 3：</strong>キャンペーン別の架電→商談化率の集計</li>
+            <li><strong>Day 3：</strong>recipient の6か月自動アーカイブバッチ</li>
+          </ol>
+        </div>
+        <div class="phase-card-foot">💡 Phase 4 まで動けば運用は始められる。Phase 5 は本格運用後に追加もアリ。</div>
+      </div>
+
+    </div>
+
+    <div class="alert alert-warn" style="margin-top:20px;">
+      ⚠ <strong>法令対応（必須）：</strong>特定電子メール法により「送信者情報」「配信停止リンク」「広告表示」は本文に必須。Phase 2 で配信停止ページと自動フッターを実装することで担保します。
+    </div>
+  </div>
+
+  <!-- ── クリティカルパス ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">注意</span><h2>遅延リスクと前倒し可能なこと</h2>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr><th style="width:30%;">項目</th><th>影響</th><th>前倒しできる？</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>配信プロバイダーの選定・契約</strong></td>
+          <td>Phase 4 開始の前提</td>
+          <td>✅ 今すぐ Resend アカウント開設可能（無料枠）</td>
+        </tr>
+        <tr>
+          <td><strong>送信ドメインのDNS設定</strong></td>
+          <td>反映に最大48時間。Phase 4 後半で詰まる</td>
+          <td>✅ Phase 1 開始と同時に着手すべき</td>
+        </tr>
+        <tr>
+          <td><strong>リスト入手元の同意根拠確認</strong></td>
+          <td>確認結果次第で配信できないリストも</td>
+          <td>✅ 業務側で並行進行可能</td>
+        </tr>
+        <tr>
+          <td><strong>本文の文面・送信者情報</strong></td>
+          <td>Phase 3 で必要</td>
+          <td>✅ 営業・法務と並行で固められる</td>
+        </tr>
+        <tr>
+          <td><strong>サブドメイン取得</strong></td>
+          <td>Phase 4 の前提</td>
+          <td>✅ Phase 1 と同時開始可能</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 配信方法の選択肢 ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">配信</span><h2>メール配信手段の選択肢（一番大きな分岐）</h2>
+      <div class="desc">数千件の一斉配信は既存の Gmail API では不可能。専用の配信サービス（メール配信プロバイダー）を導入する必要があります。</div>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>サービス</th>
+          <th>配信可能数</th>
+          <th>料金（目安）</th>
+          <th>追跡機能</th>
+          <th>バウンス処理</th>
+          <th>推奨度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Gmail API</strong>（既存利用中）</td>
+          <td>500通/日（個人）<br>2,000通/日（Workspace）</td>
+          <td>無料</td>
+          <td>✗</td>
+          <td>✗</td>
+          <td><span class="badge badge-no">✗ 不適</span></td>
+        </tr>
+        <tr style="background:#f9fcfa;">
+          <td><strong>Resend</strong></td>
+          <td>制限ほぼなし</td>
+          <td>無料：月3,000通<br>$20/月：月50,000通</td>
+          <td>✓ 開封・クリック</td>
+          <td>✓ 自動</td>
+          <td><span class="badge badge-done">◎ 推奨</span></td>
+        </tr>
+        <tr>
+          <td><strong>SendGrid</strong></td>
+          <td>制限ほぼなし</td>
+          <td>無料：100通/日<br>$19.95/月：50,000通</td>
+          <td>✓ 開封・クリック</td>
+          <td>✓ 自動</td>
+          <td><span class="badge badge-interested">○ 候補</span></td>
+        </tr>
+        <tr>
+          <td><strong>Amazon SES</strong></td>
+          <td>制限ほぼなし</td>
+          <td>$0.10 / 1,000通（激安）</td>
+          <td>△ 別途実装</td>
+          <td>△ SNS連携</td>
+          <td><span class="badge badge-interested">△ 慎重</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="alert alert-ok" style="margin-top:14px;">
+      💡 <strong>第一候補：Resend</strong>。理由 ── Vercel との統合が公式提供されている／無料枠で十分テストできる／DKIM・SPF・DMARC（送信元の正当性を証明する仕組み）を自動で設定してくれる／API設計がシンプル。
+    </div>
+    <div class="alert alert-warn">
+      ⚠ <strong>どの配信サービスを選んでも必要なこと：</strong>専用の送信ドメイン（または既存ドメインのサブドメイン、例：<code>news.dandori-work.com</code>）を準備し、DKIM/SPF/DMARC を設定する。これを省略すると <strong>全件スパム判定される</strong> 可能性が高いです。
+    </div>
+  </div>
+
+  <!-- ── 懸念点・リスク ── -->
+  <div class="section">
+    <div class="section-head">
+      <span class="step">リスク</span><h2>懸念点・リスク整理</h2>
+      <div class="desc">実装着手前に必ず方針を決めておきたい7つのリスク。重要度順。</div>
+    </div>
+
+    <div class="risk-list">
+
+      <div class="risk-item risk-high">
+        <div class="risk-head">
+          <span class="risk-level lv-high">🔴 高</span>
+          <h3>1. リストの入手元・オプトインの法的扱い</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>特定電子メール法では、原則「事前に同意を得た人」にしか広告メールを送れません（オプトイン規制）。名刺交換・問い合わせ等の例外もありますが、購入リスト・スクレイピングリストは違法の可能性が高いです。</p>
+          <p><strong>確認したい：</strong>送信するリストはどこで入手したものか？同意取得の根拠は何か？</p>
+          <p><strong>対策案：</strong>リストの入手経路（名刺交換・展示会・問い合わせ等）を CSV インポート時に必須入力にする。同意根拠が無いリストは配信できない仕様にする。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-high">
+        <div class="risk-head">
+          <span class="risk-level lv-high">🔴 高</span>
+          <h3>2. スパム判定によるドメイン全体への悪影響</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>大量配信でスパム報告が一定数を超えると、送信ドメイン全体の評判が落ち、通常の業務メール（取引先・顧客連絡）まで届かなくなります。</p>
+          <p><strong>対策案：</strong>キャンペーン専用のサブドメイン（例：<code>news.dandori-work.com</code>）を新規取得して切り離す。本社メインのドメインを守る。配信ペースもいきなり数千件ではなく徐々に増やす（ウォームアップ）。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-high">
+        <div class="risk-head">
+          <span class="risk-level lv-high">🔴 高</span>
+          <h3>3. 「興味あり」応答者の対応遅延リスク</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>「興味あり」と回答した人を放置すると、印象が逆に悪化します（「興味あると押したのに連絡来ない」というクレームに直結）。</p>
+          <p><strong>対策案：</strong>架電リスト追加時に担当ISへメール／Slack通知。応答から24時間以内の架電をSLAとして設定。ダッシュボードで未対応件数を可視化。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-medium">
+        <div class="risk-head">
+          <span class="risk-level lv-medium">🟡 中</span>
+          <h3>4. 数千件CSVインポート時の処理時間</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>Vercel Function のタイムアウトは現在300秒。数千件のCSVをパース＋重複チェック＋KV保存をシリアル処理すると、件数次第で詰まる可能性。</p>
+          <p><strong>対策案：</strong>バッチ処理（100件ずつ非同期で保存）。インポート画面に進捗バー表示。10,000件超なら分割アップロードを推奨。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-medium">
+        <div class="risk-head">
+          <span class="risk-level lv-medium">🟡 中</span>
+          <h3>5. 配信途中での失敗・重複送信</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>3,000件配信中に1,000件目でエラー停止した場合、どこから再送するか管理が必要。重複送信は信頼失墜に直結。</p>
+          <p><strong>対策案：</strong>recipient ごとに <code>sent_at</code> を都度記録。再送ボタンは <code>sent_at が null</code> のものだけを対象。冪等（べきとう）性を担保する。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-low">
+        <div class="risk-head">
+          <span class="risk-level lv-low">🟢 低</span>
+          <h3>6. Vercel KV のデータ容量</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>キャンペーン×数千件×蓄積で、半年で数万レコードに膨らむ可能性。</p>
+          <p><strong>対策案：</strong>recipient データは6か月で自動アーカイブ（または手動エクスポート後削除）。応答者は lead 側に保存済みなので recipient 側を消してOK。</p>
+        </div>
+      </div>
+
+      <div class="risk-item risk-low">
+        <div class="risk-head">
+          <span class="risk-level lv-low">🟢 低</span>
+          <h3>7. フォーム応答の不正回答（連打・なりすまし）</h3>
+        </div>
+        <div class="risk-body">
+          <p><strong>何が問題か：</strong>トークンURLが第三者に流出すると、なりすまし回答が可能。「興味あり」のいたずら回答もあり得る。</p>
+          <p><strong>対策案：</strong>応答は1回まで（上書き不可）。IPアドレス単位のレート制限。トークンは推測不可能な十分な長さ（24文字以上のランダム文字列）。</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 確認チェックリスト ── -->
+  <div class="section">
+    <div class="section-head">
+      <h2>確認チェックリスト（実装着手前に決めること）</h2>
+      <div class="desc">この17項目が固まれば、Phase 1 から着手できます。</div>
+    </div>
+
+    <div class="checklist">
+
+      <h4>🔧 技術選定（3項目）</h4>
+      <ul>
+        <li>□ <strong>配信プロバイダー</strong>：Resend / SendGrid / Amazon SES のどれを使うか</li>
+        <li>□ <strong>送信元ドメイン</strong>：既存ドメインのサブドメイン or 専用ドメイン新規取得</li>
+        <li>□ <strong>DKIM/SPF/DMARC 設定</strong>：誰がいつ実施するか（DNS設定変更が必要）</li>
+      </ul>
+
+      <h4>📊 規模感（3項目）</h4>
+      <ul>
+        <li>□ <strong>月間配信回数</strong>：月1回？週1回？</li>
+        <li>□ <strong>1回あたりの配信件数</strong>：数千件想定でOK？それ以上はあり得るか</li>
+        <li>□ <strong>月額予算上限</strong>（配信サービス料＋ドメイン代）</li>
+      </ul>
+
+      <h4>⚖️ コンプライアンス（3項目）</h4>
+      <ul>
+        <li>□ <strong>配信リストの入手経路</strong>と同意根拠の明確化</li>
+        <li>□ <strong>本文に明示する送信者情報</strong>（社名・住所・連絡先）</li>
+        <li>□ <strong>プライバシーポリシー</strong>の掲載先URL</li>
+      </ul>
+
+      <h4>📝 機能仕様（4項目）</h4>
+      <ul>
+        <li>□ <strong>CSV項目</strong>：最小は会社名・メール。電話番号は必須？任意？業種タグは要る？</li>
+        <li>□ <strong>質問パターン</strong>：二択（興味あり/なし）のみ？／日時希望や資料請求の分岐は要る？</li>
+        <li>□ <strong>応答後のサンクスメール</strong>：送る？送らない？送る場合の内容は？</li>
+        <li>□ <strong>テスト配信の挙動</strong>：自分だけに1通？最大何通までテスト可？</li>
+      </ul>
+
+      <h4>🔄 運用（4項目）</h4>
+      <ul>
+        <li>□ <strong>担当者割り当てロジック</strong>：自動（ラウンドロビン）／手動／指定なし</li>
+        <li>□ <strong>応答から架電までの目標時間</strong>（SLA）：24時間以内？48時間以内？</li>
+        <li>□ <strong>キャンペーン作成権限</strong>：管理者のみ？ISメンバーも？</li>
+        <li>□ <strong>recipient データの保持期間</strong>：6か月？1年？永続？</li>
+      </ul>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
