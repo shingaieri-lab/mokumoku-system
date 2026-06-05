@@ -107,14 +107,24 @@ export function SettingsPage({ aiConfig, onSave, currentUser, onUpdateProfile, i
                   style={{width:"100%",padding:"10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#3d7a5e",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#f0f5f2",cursor:"not-allowed"}} />
               </div>
               <div style={{marginBottom:16}}>
-                <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>パスワード</label>
+                <label style={{fontSize:11,fontWeight:700,color:"#6a9a7a",display:"block",marginBottom:4}}>
+                  パスワード
+                  <span style={{fontWeight:400,color:"#9ca3af",marginLeft:6}}>（変更する場合のみ入力）</span>
+                </label>
                 <div style={{position:"relative"}}>
                   <input type={showPassword ? "text" : "password"} value={profileForm.password||""} onChange={e=>setProfileForm(p=>({...p,password:e.target.value}))}
+                    placeholder="●●●●●●●●（変更しない場合は空欄のまま）"
+                    autoComplete="new-password"
                     style={{width:"100%",padding:"10px 40px 10px 14px",borderRadius:7,border:"1px solid #c0dece",fontSize:13,color:"#174f35",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff"}} />
                   <button type="button" onClick={()=>setShowPassword(v=>!v)}
+                    title={showPassword ? "入力中のパスワードを隠す" : "入力中のパスワードを表示"}
                     style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",display:"flex",alignItems:"center",padding:0}}>
                     {showPassword ? <EyeOffIcon size={18} color="#6a9a7a" /> : <EyeIcon size={18} color="#6a9a7a" />}
                   </button>
+                </div>
+                {/* セキュリティ上、現在のパスワードはサーバーから取得できないため表示できない旨を明示 */}
+                <div style={{fontSize:11,color:"#9ca3af",marginTop:4}}>
+                  ※ セキュリティ上、現在のパスワードは表示されません。変更する場合のみ新しいパスワードを入力してください。
                 </div>
               </div>
               {[["表示名","name","text"],["メールアドレス","email","email"]].map(([lbl,key,type])=>(
