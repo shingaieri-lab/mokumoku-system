@@ -242,7 +242,7 @@ export function OutboundPage({ currentUser }) {
         「flex:1, overflowY:auto」の div（タイトル＋タブの下のスクロール領域）。
         top:0 でスクロール領域の上端に張り付く（タイトル＋タブはスクロール領域の外なので独立）。
       */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4, transform: 'translateZ(0)', willChange: 'transform' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4 }}>
         <OutboundListHeader
           lists={callableLists}
           currentListId={currentListId}

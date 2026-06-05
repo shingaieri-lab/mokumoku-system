@@ -477,7 +477,7 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
         最近接のスクロールコンテナは OutboundPage 内の「flex:1, overflowY:auto」の div。
         top:0 でそのスクロール領域の上端に張り付く（タイトル＋タブはこの領域の外）。
       */}
-      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4, transform: 'translateZ(0)', willChange: 'transform' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4 }}>
       {/* 検索バー */}
       <div style={{ marginBottom: 10 }}>
         <input
