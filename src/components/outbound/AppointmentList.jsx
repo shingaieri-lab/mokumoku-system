@@ -472,6 +472,12 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
 
   return (
     <div>
+      {/*
+        スクロール時に「検索〜ページネーション上〜列見出し」までを画面上部に固定する。
+        最近接のスクロールコンテナは OutboundPage 内の「flex:1, overflowY:auto」の div。
+        top:0 でそのスクロール領域の上端に張り付く（タイトル＋タブはこの領域の外）。
+      */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4, transform: 'translateZ(0)', willChange: 'transform' }}>
       {/* 検索バー */}
       <div style={{ marginBottom: 10 }}>
         <input
@@ -566,253 +572,257 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       {/* ページネーション（上） */}
       {paginationBar}
 
-      <div style={{ overflowX: 'auto' }}>
-        {/*
-          tableLayout: 'fixed' + colgroup で各列の幅を明示的に固定する。
-          これをしないと並び替えで表示行が変わるたびに「最長コンテンツ」が変わって列幅が伸縮する。
-          幅の合計は約1600px。画面が狭い場合はラッパー側の overflowX: 'auto' で横スクロールになる。
-        */}
-        <table style={{ width: '100%', minWidth: 1600, borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
-          <colgroup>
-            {canDelete && <col style={{ width: 36 }} />}
-            <col style={{ width: 200 }} />  {/* 会社名 */}
-            <col style={{ width: 220 }} />  {/* 役職 / 名前 */}
-            <col style={{ width: 90 }}  />  {/* 商談担当 */}
-            <col style={{ width: 60 }}  />  {/* ランク */}
-            <col style={{ width: 130 }} />  {/* ステータス */}
-            <col style={{ width: 130 }} />  {/* アポ獲得日 */}
-            <col style={{ width: 170 }} />  {/* 商談開始日 */}
-            <col style={{ width: 80 }}  />  {/* 前確認 */}
-            <col style={{ width: 100 }} />  {/* 案内メール */}
-            <col style={{ width: 110 }} />  {/* アポ種別 */}
-            <col style={{ width: 90 }}  />  {/* アポ単価 */}
-            <col style={{ width: 220 }} />  {/* リスト */}
-          </colgroup>
-          <thead>
-            <tr style={{ background: '#f0f5f2', borderBottom: '2px solid #c0dece' }}>
-              {/* 全選択チェックボックス列（ISのみ） */}
+      {/*
+        列見出し（リード管理のアポ一覧と同じ感じ）
+        gridTemplateColumns はチェックボックス列の有無で2パターン。
+        各列は minmax(最小px, fr) で「最小幅を確保しつつ余った空間は比率で分配」。
+        - canDelete=true（IS/通常タブ）：チェックボックス列ありの13列
+        - canDelete=false（mailPendingOnly）：12列
+        ※ データ行と同じ gridTemplateColumns を使うこと。下の行マップでも同じ定数を参照。
+      */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: canDelete
+          ? '32px minmax(110px,1.5fr) minmax(120px,1.8fr) minmax(60px,0.7fr) minmax(36px,0.5fr) minmax(90px,1fr) minmax(95px,1fr) minmax(110px,1.3fr) minmax(50px,0.6fr) minmax(80px,0.9fr) minmax(80px,1fr) minmax(60px,0.8fr) minmax(110px,1.8fr)'
+          : 'minmax(110px,1.5fr) minmax(120px,1.8fr) minmax(60px,0.7fr) minmax(36px,0.5fr) minmax(90px,1fr) minmax(95px,1fr) minmax(110px,1.3fr) minmax(50px,0.6fr) minmax(80px,0.9fr) minmax(80px,1fr) minmax(60px,0.8fr) minmax(110px,1.8fr)',
+        background: '#f8fbf9',
+        border: '1px solid #e2f0e8',
+        borderTopLeftRadius: 12, borderTopRightRadius: 12,
+        fontSize: 11,
+      }}>
+        {canDelete && (
+          <div style={{ padding: '10px 6px 10px 12px', textAlign: 'center' }}>
+            <input
+              type="checkbox"
+              aria-label="表示中の全行を選択"
+              checked={pageSelectionState === 'all'}
+              ref={el => { if (el) el.indeterminate = pageSelectionState === 'some'; }}
+              onChange={toggleSelectPage}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#10b981' }}
+            />
+          </div>
+        )}
+        {[
+          { label: '会社名',      key: 'company' },
+          { label: '役職 / 名前', key: 'contact' },
+          { label: '商談担当',    key: 'salesPerson' },
+          { label: 'ランク',      key: 'rank',         center: true },
+          { label: 'ステータス',  key: 'dealStatus' },
+          { label: 'アポ獲得日',  key: 'confirmedDate' },
+          { label: '商談開始日',  key: 'meetingDate' },
+          { label: '前確認',      key: 'preConfirm',   center: true },
+          { label: '案内メール',  key: 'gmail',        center: true },
+          { label: 'アポ種別',    key: 'appointType' },
+          { label: 'アポ単価',    key: 'appointPrice' },
+          { label: 'リスト',      key: 'listName' },
+        ].map(({ label, key, center }) => {
+          const active = sortKey === key;
+          const indicator = active ? (sortOrder === 'asc' ? '▲' : '▼') : '';
+          return (
+            <div
+              key={key}
+              onClick={() => handleSortClick(key)}
+              title={`「${label}」で並び替え`}
+              style={{
+                padding: '10px 12px',
+                textAlign: center ? 'center' : 'left',
+                fontWeight: active ? 800 : 700,
+                color: active ? '#10b981' : '#3d7a5e',
+                cursor: 'pointer',
+                userSelect: 'none',
+              }}
+            >
+              {label}{indicator && <span style={{ fontSize: 9, marginLeft: 3 }}>{indicator}</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      </div>
+      {/* sticky ラッパー end */}
+
+      {/* データ行領域：sticky 領域の直下に密着。border-top は出さない（ヘッダー側の bottom と二重線回避） */}
+      <div style={{
+        background: '#fff',
+        border: '1px solid #e2f0e8',
+        borderTop: 'none',
+        borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
+      }}>
+        {pagedRows.map(({ lead, listId, listName, leads }, idx) => {
+          const ai = lead.appointmentInfo || {};
+          const ds = ai.dealStatus || '商談確定';
+          const dsStyle = DEAL_STATUS_STYLE[ds] || DEAL_STATUS_STYLE['商談確定'];
+          const preConfirmAlert = isOutbound && needsPreConfirmAlert(ai, listName);
+          const gmailAlert      = isIS && needsGmailAlert(ai, listName);
+          const hasAlert        = preConfirmAlert || gmailAlert;
+          const isSelected      = selectedIds.has(lead.id);
+          const isLast          = idx === pagedRows.length - 1;
+
+          return (
+            <div
+              key={lead.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: canDelete
+                  ? '36px minmax(140px,1.5fr) minmax(160px,1.8fr) minmax(70px,0.7fr) minmax(50px,0.5fr) minmax(110px,1fr) minmax(110px,1fr) minmax(140px,1.3fr) minmax(60px,0.6fr) minmax(90px,0.9fr) minmax(100px,1fr) minmax(80px,0.8fr) minmax(160px,1.8fr)'
+                  : 'minmax(140px,1.5fr) minmax(160px,1.8fr) minmax(70px,0.7fr) minmax(50px,0.5fr) minmax(110px,1fr) minmax(110px,1fr) minmax(140px,1.3fr) minmax(60px,0.6fr) minmax(90px,0.9fr) minmax(100px,1fr) minmax(80px,0.8fr) minmax(160px,1.8fr)',
+                alignItems: 'center',
+                borderBottom: isLast ? 'none' : '1px solid #f0f5f2',
+                background: isSelected ? '#fef2f2' : (hasAlert ? '#fffbeb' : 'transparent'),
+                fontSize: 13,
+              }}
+            >
+              {/* 選択チェックボックス */}
               {canDelete && (
-                <th style={{ padding: '9px 6px 9px 12px', textAlign: 'center', width: 36 }}>
+                <div style={{ padding: '10px 6px 10px 12px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
-                    aria-label="表示中の全行を選択"
-                    checked={pageSelectionState === 'all'}
-                    // indeterminate は input.indeterminate プロパティ経由でのみ設定可
-                    ref={el => { if (el) el.indeterminate = pageSelectionState === 'some'; }}
-                    onChange={toggleSelectPage}
-                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#10b981' }}
+                    aria-label={`${lead.company} を選択`}
+                    checked={isSelected}
+                    onChange={() => toggleSelectOne(lead.id)}
+                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#ef4444' }}
                   />
-                </th>
+                </div>
               )}
-              {[
-                { label: '会社名',      key: 'company' },
-                { label: '役職 / 名前', key: 'contact' },
-                { label: '商談担当',    key: 'salesPerson' },
-                { label: 'ランク',      key: 'rank' },
-                { label: 'ステータス',  key: 'dealStatus' },
-                { label: 'アポ獲得日',  key: 'confirmedDate' },
-                { label: '商談開始日',  key: 'meetingDate' },
-                { label: '前確認',      key: 'preConfirm',   center: true },
-                { label: '案内メール',  key: 'gmail',        center: true },
-                { label: 'アポ種別',    key: 'appointType' },
-                { label: 'アポ単価',    key: 'appointPrice' },
-                { label: 'リスト',      key: 'listName' },
-              ].map(({ label, key, center }) => {
-                const active = sortKey === key;
-                const indicator = active ? (sortOrder === 'asc' ? '▲' : '▼') : '';
-                return (
-                  <th
-                    key={key}
-                    onClick={() => handleSortClick(key)}
-                    title={`「${label}」で並び替え`}
-                    style={{
-                      padding: '9px 12px',
-                      textAlign: center ? 'center' : 'left',
-                      fontSize: 11,
-                      fontWeight: active ? 800 : 700,
-                      color: active ? '#10b981' : '#3d7a5e',
-                      whiteSpace: 'nowrap',
-                      cursor: 'pointer',
-                      userSelect: 'none',
-                    }}
+
+              {/* 会社名 */}
+              <div style={{ padding: '10px 12px', fontWeight: 700, color: '#174f35', wordBreak: 'break-word' }}>
+                {lead.company}
+              </div>
+
+              {/* 役職 / 名前 */}
+              <div style={{ padding: '10px 12px', color: '#3d7a5e', wordBreak: 'break-word' }}>
+                {[lead.position, lead.contact].filter(Boolean).join(' / ') || '—'}
+              </div>
+
+              {/* 商談担当 */}
+              <div style={{ padding: '10px 12px', color: '#3d7a5e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ai.salesPerson || '—'}
+              </div>
+
+              {/* ランク */}
+              <div style={{ padding: '10px 12px', textAlign: 'center' }}>
+                {ai.rank
+                  ? <span style={{ fontWeight: 800, color: '#174f35', fontSize: 14 }}>{ai.rank}</span>
+                  : <span style={{ color: '#c0dece' }}>—</span>}
+              </div>
+
+              {/* 商談ステータス */}
+              <div style={{ padding: '10px 12px' }}>
+                {isIS && !mailPendingOnly ? (
+                  <select
+                    value={ds}
+                    onChange={e => handleUpdate(listId, {
+                      ...lead,
+                      appointmentInfo: { ...ai, dealStatus: e.target.value },
+                    }, leads)}
+                    style={{ background: dsStyle.bg, color: dsStyle.color, border: `1px solid ${dsStyle.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', width: '100%' }}
                   >
-                    {label}{indicator && <span style={{ fontSize: 9, marginLeft: 3 }}>{indicator}</span>}
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {pagedRows.map(({ lead, listId, listName, leads }) => {
-              const ai = lead.appointmentInfo || {};
-              const ds = ai.dealStatus || '商談確定';
-              const dsStyle = DEAL_STATUS_STYLE[ds] || DEAL_STATUS_STYLE['商談確定'];
-              const preConfirmAlert = isOutbound && needsPreConfirmAlert(ai, listName);
-              const gmailAlert      = isIS && needsGmailAlert(ai, listName);
-              const hasAlert        = preConfirmAlert || gmailAlert;
+                    {DEAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                ) : (
+                  <span style={{ background: dsStyle.bg, color: dsStyle.color, border: `1px solid ${dsStyle.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 700, display: 'inline-block' }}>
+                    {ds}
+                  </span>
+                )}
+              </div>
 
-              const isSelected = selectedIds.has(lead.id);
+              {/* アポ獲得日 */}
+              <div style={{ padding: '10px 8px', color: '#3d7a5e', fontSize: 12, whiteSpace: 'nowrap' }}>
+                {formatDate(ai.confirmedDate)}
+              </div>
 
-              return (
-                <tr key={lead.id} style={{ borderBottom: '1px solid #e2f0e8', background: isSelected ? '#fef2f2' : (hasAlert ? '#fffbeb' : undefined) }}>
+              {/* 商談開始日 */}
+              <div style={{ padding: '10px 8px', color: '#3d7a5e', fontSize: 12, whiteSpace: 'nowrap' }}>
+                {ai.meetingDate ? `${formatDate(ai.meetingDate)}${ai.meetingTime ? ' ' + ai.meetingTime : ''}` : '—'}
+              </div>
 
-                  {/* 選択チェックボックス（ISのみ） */}
-                  {canDelete && (
-                    <td style={{ padding: '10px 6px 10px 12px', textAlign: 'center', width: 36 }}>
-                      <input
-                        type="checkbox"
-                        aria-label={`${lead.company} を選択`}
-                        checked={isSelected}
-                        onChange={() => toggleSelectOne(lead.id)}
-                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#ef4444' }}
-                      />
-                    </td>
-                  )}
+              {/* 前確認 */}
+              <div style={{ padding: '10px 12px', background: preConfirmAlert ? '#fef3c7' : undefined, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                {isOutbound ? (
+                  <input
+                    type="checkbox"
+                    checked={!!ai.preConfirm}
+                    onChange={e => handleUpdate(listId, {
+                      ...lead,
+                      appointmentInfo: { ...ai, preConfirm: e.target.checked },
+                    }, leads)}
+                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#059669' }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 16, color: ai.preConfirm ? '#059669' : '#d1d5db' }}>
+                    {ai.preConfirm ? '✓' : '—'}
+                  </span>
+                )}
+                {preConfirmAlert && (
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', whiteSpace: 'nowrap' }}>⚠ 要確認</span>
+                )}
+              </div>
 
-                  {/* 会社名 */}
-                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#174f35', minWidth: 140 }}>
-                    {lead.company}
-                  </td>
-
-                  {/* 役職 / 名前（長文は折り返し許可・列幅固定で隣に被らないよう nowrap は外す） */}
-                  <td style={{ padding: '10px 12px', color: '#3d7a5e', wordBreak: 'break-word' }}>
-                    {[lead.position, lead.contact].filter(Boolean).join(' / ') || '—'}
-                  </td>
-
-                  {/* 商談担当 */}
-                  <td style={{ padding: '10px 12px', color: '#3d7a5e', whiteSpace: 'nowrap' }}>
-                    {ai.salesPerson || '—'}
-                  </td>
-
-                  {/* ランク */}
-                  <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                    {ai.rank
-                      ? <span style={{ fontWeight: 800, color: '#174f35', fontSize: 14 }}>{ai.rank}</span>
-                      : <span style={{ color: '#c0dece' }}>—</span>}
-                  </td>
-
-                  {/* 商談ステータス（ISのみ編集・mailPendingOnly時は読み取り専用） */}
-                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
-                    {isIS && !mailPendingOnly ? (
-                      <select
-                        value={ds}
-                        onChange={e => handleUpdate(listId, {
-                          ...lead,
-                          appointmentInfo: { ...ai, dealStatus: e.target.value },
-                        }, leads)}
-                        style={{ background: dsStyle.bg, color: dsStyle.color, border: `1px solid ${dsStyle.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
-                      >
-                        {DEAL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    ) : (
-                      <span style={{ background: dsStyle.bg, color: dsStyle.color, border: `1px solid ${dsStyle.border}`, borderRadius: 6, padding: '4px 8px', fontSize: 12, fontWeight: 700 }}>
-                        {ds}
-                      </span>
+              {/* 案内メール */}
+              <div style={{ padding: '10px 12px', background: gmailAlert ? '#fef3c7' : undefined, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                {mailPendingOnly ? (
+                  ai.zoomText ? (
+                    <button
+                      onClick={() => handleOpenGmailPreview({ lead, listId, listName, leads })}
+                      disabled={gmailSending}
+                      style={{ background: ai.gmailDraftedAt ? '#d1fae5' : '#fef2f2', color: ai.gmailDraftedAt ? '#059669' : '#ea4335', border: `1px solid ${ai.gmailDraftedAt ? '#6ee7b7' : '#fca5a5'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                    >
+                      {ai.gmailDraftedAt ? '✓ 下書き済' : 'Gmail下書き'}
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#d1d5db' }}>—</span>
+                  )
+                ) : (
+                  <>
+                    <span style={{ fontSize: 16, color: ai.gmailDraftedAt ? '#059669' : '#d1d5db' }} title={ai.gmailDraftedAt ? `${ai.gmailDraftedAt.slice(0, 10)} 送信済み` : '未送信'}>
+                      {ai.gmailDraftedAt ? '✓' : '—'}
+                    </span>
+                    {gmailAlert && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', whiteSpace: 'nowrap' }}>⚠ 未送信</span>
                     )}
-                  </td>
+                  </>
+                )}
+              </div>
 
-                  {/* アポ獲得日 */}
-                  <td style={{ padding: '10px 8px', color: '#3d7a5e', whiteSpace: 'nowrap', fontSize: 12 }}>
-                    {formatDate(ai.confirmedDate)}
-                  </td>
+              {/* アポ種別 */}
+              <div style={{ padding: '10px 12px' }}>
+                {isIS && !mailPendingOnly ? (
+                  <select
+                    value={ai.appointType || ''}
+                    onChange={e => {
+                      const newType = e.target.value;
+                      handleUpdate(listId, {
+                        ...lead,
+                        appointmentInfo: {
+                          ...ai,
+                          appointType:  newType,
+                          appointPrice: APPOINT_PRICE_MAP[newType] || '',
+                        },
+                      }, leads);
+                    }}
+                    style={{ border: '1px solid #c0dece', borderRadius: 6, padding: '4px 8px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', background: '#fff', color: '#174f35', width: '100%' }}
+                  >
+                    <option value="">—</option>
+                    {APPOINT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                ) : (
+                  <span style={{ fontSize: 12, color: '#3d7a5e' }}>{ai.appointType || '—'}</span>
+                )}
+              </div>
 
-                  {/* 商談開始日 */}
-                  <td style={{ padding: '10px 8px', color: '#3d7a5e', whiteSpace: 'nowrap', fontSize: 12 }}>
-                    {ai.meetingDate ? `${formatDate(ai.meetingDate)}${ai.meetingTime ? ' ' + ai.meetingTime : ''}` : '—'}
-                  </td>
+              {/* アポ単価 */}
+              <div style={{ padding: '10px 12px', fontSize: 12, color: '#3d7a5e', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {APPOINT_PRICE_MAP[ai.appointType] || '—'}
+              </div>
 
-                  {/* 前確認（業務委託のみ編集） */}
-                  <td style={{ padding: '10px 12px', background: preConfirmAlert ? '#fef3c7' : undefined }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                      {isOutbound ? (
-                        <input
-                          type="checkbox"
-                          checked={!!ai.preConfirm}
-                          onChange={e => handleUpdate(listId, {
-                            ...lead,
-                            appointmentInfo: { ...ai, preConfirm: e.target.checked },
-                          }, leads)}
-                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#059669' }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: 16, color: ai.preConfirm ? '#059669' : '#d1d5db' }}>
-                          {ai.preConfirm ? '✓' : '—'}
-                        </span>
-                      )}
-                      {preConfirmAlert && (
-                        <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', whiteSpace: 'nowrap' }}>⚠ 要確認</span>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* 案内メール */}
-                  <td style={{ padding: '10px 12px', background: gmailAlert ? '#fef3c7' : undefined }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      {mailPendingOnly ? (
-                        ai.zoomText ? (
-                          <button
-                            onClick={() => handleOpenGmailPreview({ lead, listId, listName, leads })}
-                            disabled={gmailSending}
-                            style={{ background: ai.gmailDraftedAt ? '#d1fae5' : '#fef2f2', color: ai.gmailDraftedAt ? '#059669' : '#ea4335', border: `1px solid ${ai.gmailDraftedAt ? '#6ee7b7' : '#fca5a5'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                          >
-                            {ai.gmailDraftedAt ? '✓ 下書き済' : 'Gmail下書き'}
-                          </button>
-                        ) : (
-                          <span style={{ fontSize: 12, color: '#d1d5db' }}>—</span>
-                        )
-                      ) : (
-                        <>
-                          <span style={{ fontSize: 16, color: ai.gmailDraftedAt ? '#059669' : '#d1d5db' }} title={ai.gmailDraftedAt ? `${ai.gmailDraftedAt.slice(0, 10)} 送信済み` : '未送信'}>
-                            {ai.gmailDraftedAt ? '✓' : '—'}
-                          </span>
-                          {gmailAlert && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: '#d97706', whiteSpace: 'nowrap' }}>⚠ 未送信</span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* アポ種別（ISのみ編集・mailPendingOnly時は読み取り専用） */}
-                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
-                    {isIS && !mailPendingOnly ? (
-                      <select
-                        value={ai.appointType || ''}
-                        onChange={e => {
-                          const newType = e.target.value;
-                          handleUpdate(listId, {
-                            ...lead,
-                            appointmentInfo: {
-                              ...ai,
-                              appointType:  newType,
-                              appointPrice: APPOINT_PRICE_MAP[newType] || '',
-                            },
-                          }, leads);
-                        }}
-                        style={{ border: '1px solid #c0dece', borderRadius: 6, padding: '4px 8px', fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', outline: 'none', background: '#fff', color: '#174f35' }}
-                      >
-                        <option value="">—</option>
-                        {APPOINT_TYPES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    ) : (
-                      <span style={{ fontSize: 12, color: '#3d7a5e' }}>{ai.appointType || '—'}</span>
-                    )}
-                  </td>
-
-                  {/* アポ単価（アポ種別から自動算出・編集不可） */}
-                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap', fontSize: 12, color: '#3d7a5e', fontWeight: 600 }}>
-                    {APPOINT_PRICE_MAP[ai.appointType] || '—'}
-                  </td>
-
-                  {/* リスト名（長文は折り返し） */}
-                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#6a9a7a', wordBreak: 'break-word' }}>
-                    {listName}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              {/* リスト名 */}
+              <div style={{ padding: '10px 12px', fontSize: 12, color: '#6a9a7a', wordBreak: 'break-word' }}>
+                {listName}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ページネーション（下） */}

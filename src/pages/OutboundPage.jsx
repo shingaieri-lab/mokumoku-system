@@ -1,5 +1,5 @@
 // アウトバウンド管理ページ（リスト管理・架電記録・アポ獲得報告）
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { S } from '../styles/index.js';
 import { OutboundListHeader } from '../components/outbound/OutboundListHeader.jsx';
 import { OutboundLeadRow }    from '../components/outbound/OutboundLeadRow.jsx';
@@ -28,12 +28,23 @@ export function OutboundPage({ currentUser }) {
   const isIS      = currentUser?.role === 'admin' || currentUser?.role === 'member';
   const prevViewRef = useRef(view);
 
+  // 架電リスト画面で「リスト選択」に出すリスト一覧
+  // 過去アポ取込（リスト名「過去アポ取込_」で始まる）はアポ一覧専用なので
+  // 架電リスト UI からは除外する（スプシからの過去データ移行用で、もう架電しないため）
+  // ※ アポ一覧側は AppointmentList が独自に fetchOutboundLists するので影響なし
+  const callableLists = useMemo(
+    () => lists.filter(l => !(l.name || '').startsWith('過去アポ取込_')),
+    [lists]
+  );
+
   // リスト一覧をロード
   useEffect(() => {
     fetchOutboundLists()
       .then(data => {
         setLists(data);
-        if (data.length > 0 && !currentListId) setCurrentListId(data[0].id);
+        // 初期選択は「架電可能なリスト」の先頭から選ぶ（過去アポ取込が先頭でも飛ばす）
+        const firstCallable = data.find(l => !(l.name || '').startsWith('過去アポ取込_'));
+        if (firstCallable && !currentListId) setCurrentListId(firstCallable.id);
       })
       .catch(e => console.error(e));
   }, []);
@@ -159,35 +170,59 @@ export function OutboundPage({ currentUser }) {
   );
 
   return (
-    <div style={S.page}>
-      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: '#174f35', margin: 0 }}>アウトバウンド管理</h1>
-          <p style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4 }}>
-            {canWrite ? '架電・メール結果を記録し、アポ獲得時はChatworkに送信できます。' : '架電リストと進捗を閲覧できます（書き込みは業務委託先のみ）。'}
-          </p>
+    /*
+      LeadsPage と同じフルハイト構造：
+      - ページ全体は overflow:hidden の縦flex
+      - タイトル＋タブは flexShrink:0 で固定サイズ（スクロール領域の外なので絶対に動かない）
+      - 各 view は flex:1 + overflowY:auto で独自スクロール領域を持つ
+      - AppointmentList / 架電リスト内の sticky は、その独自スクロール領域内で top:0 として動く
+    */
+    <div style={{
+      paddingLeft: 28, paddingRight: 28, height: '100%', overflow: 'hidden',
+      display: 'flex', flexDirection: 'column',
+    }}>
+      {/* タイトル＋タブ：flexShrink:0 で固定サイズ。背景は親領域の色と合わせる */}
+      <div style={{
+        flexShrink: 0, background: '#f0f5f2',
+        paddingTop: 24, paddingBottom: 8,
+        marginLeft: -28, marginRight: -28, paddingLeft: 28, paddingRight: 28,
+      }}>
+        <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#174f35', margin: 0 }}>アウトバウンド管理</h1>
+            <p style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4 }}>
+              {canWrite ? '架電・メール結果を記録し、アポ獲得時はChatworkに送信できます。' : '架電リストと進捗を閲覧できます（書き込みは業務委託先のみ）。'}
+            </p>
+          </div>
+          {isIS && (
+            <button onClick={() => setShowSignature(true)}
+              style={{ background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>
+              ✏️ メールテンプレート編集
+            </button>
+          )}
         </div>
-        {isIS && (
-          <button onClick={() => setShowSignature(true)}
-            style={{ background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap' }}>
-            ✏️ メールテンプレート編集
-          </button>
-        )}
+
+        {/* タブ切替 */}
+        <div style={{ display: 'flex', gap: 4, borderBottom: '2px solid #e2f0e8', marginBottom: 0 }}>
+          {[
+            { key: 'list',         label: '架電リスト' },
+            { key: 'appointments', label: 'アポ一覧' },
+            ...(isIS ? [{ key: 'mail-pending', label: 'メール未送信' }] : []),
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setView(key)}
+              style={{ padding: '8px 20px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none', borderBottom: view === key ? '2px solid #059669' : '2px solid transparent', background: 'none', color: view === key ? '#059669' : '#6a9a7a', marginBottom: -2, transition: 'color 0.15s' }}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* タブ切替 */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '2px solid #e2f0e8' }}>
-        {[
-          { key: 'list',         label: '架電リスト' },
-          { key: 'appointments', label: 'アポ一覧' },
-          ...(isIS ? [{ key: 'mail-pending', label: 'メール未送信' }] : []),
-        ].map(({ key, label }) => (
-          <button key={key} onClick={() => setView(key)}
-            style={{ padding: '8px 20px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', border: 'none', borderBottom: view === key ? '2px solid #059669' : '2px solid transparent', background: 'none', color: view === key ? '#059669' : '#6a9a7a', marginBottom: -2, transition: 'color 0.15s' }}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* スクロール領域：このコンテナがスクロールコンテナとなり、内部の sticky 要素は
+          このコンテナの top に対して張り付く（外側のページ全体ではスクロールしない）。
+          paddingTop は付けない：sticky 要素を scroll コンテナの top:0 にぴったり密着させ、
+          padding 領域をデータ行が通過してチラ見えするのを防ぐため。
+          上部の余白は sticky 領域内（paddingTop:16 等）で確保する。 */}
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'auto', marginLeft: -28, marginRight: -28, paddingLeft: 28, paddingRight: 28 }}>
 
       {/* アポ一覧ビュー */}
       {view === 'appointments' && (
@@ -201,19 +236,84 @@ export function OutboundPage({ currentUser }) {
 
       {/* 架電リストビュー */}
       {view === 'list' && <>
-      <OutboundListHeader
-        lists={lists}
-        currentListId={currentListId}
-        leads={leads}
-        currentUser={currentUser}
-        onSelectList={setCurrentListId}
-        onCreateList={handleCreateList}
-        onDeleteList={handleDeleteList}
-        filterStatus={filterStatus}
-        onFilterStatus={handleFilterStatus}
-        searchQuery={searchQuery}
-        onSearchChange={v => { setSearchQuery(v); setPage(1); }}
-      />
+      {/*
+        架電リストの「ヘッダー領域（リスト選択・絞り込み・選択ツールバー・ページネーション上）」を
+        スクロール領域の上部に固定する。最近接のスクロールコンテナはこのコンポーネント内の
+        「flex:1, overflowY:auto」の div（タイトル＋タブの下のスクロール領域）。
+        top:0 でスクロール領域の上端に張り付く（タイトル＋タブはスクロール領域の外なので独立）。
+      */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 3, background: '#f0f5f2', paddingTop: 16, paddingBottom: 4, transform: 'translateZ(0)', willChange: 'transform' }}>
+        <OutboundListHeader
+          lists={callableLists}
+          currentListId={currentListId}
+          leads={leads}
+          currentUser={currentUser}
+          onSelectList={setCurrentListId}
+          onCreateList={handleCreateList}
+          onDeleteList={handleDeleteList}
+          filterStatus={filterStatus}
+          onFilterStatus={handleFilterStatus}
+          searchQuery={searchQuery}
+          onSearchChange={v => { setSearchQuery(v); setPage(1); }}
+        />
+
+        {currentListId && !loading && leads.length > 0 && (
+          <>
+            {/* 選択操作ツールバー（内容がある時のみ表示） */}
+            {(isIS || filterStatus || selectedIds.size > 0) && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              {isIS && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === leads.length}
+                    ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < leads.length; }}
+                    onChange={handleSelectAll}
+                    style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#059669' }}
+                  />
+                  全選択
+                </label>
+              )}
+              {filterStatus && (
+                <span style={{ fontSize: 12, color: '#6a9a7a' }}>
+                  <span style={{ fontWeight: 700, color: '#174f35' }}>{filteredLeads.length}件</span>
+                  {filteredLeads.length !== leads.length && <span style={{ marginLeft: 4 }}>/ 全{leads.length}件</span>}
+                </span>
+              )}
+              {selectedIds.size > 0 && (
+                <>
+                  <span style={{ fontSize: 13, color: '#174f35', fontWeight: 700 }}>{selectedIds.size}件選択中</span>
+                  {!confirmDelete ? (
+                    <button onClick={() => setConfirmDelete(true)}
+                      style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      削除
+                    </button>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: 13, color: '#ef4444' }}>本当に削除しますか？</span>
+                      <button onClick={handleDeleteSelected}
+                        style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        削除する
+                      </button>
+                      <button onClick={() => setConfirmDelete(false)}
+                        style={{ background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 6, padding: '4px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        キャンセル
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => { setSelectedIds(new Set()); setConfirmDelete(false); }}
+                    style={{ background: 'none', color: '#9ca3af', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    選択解除
+                  </button>
+                </>
+              )}
+            </div>}
+
+            {/* ページネーション（上） */}
+            {paginationBar}
+          </>
+        )}
+      </div>
+      {/* sticky ラッパー end */}
 
       {!currentListId && (
         <div style={S.empty}>リストをインポートして架電を開始してください。</div>
@@ -229,58 +329,6 @@ export function OutboundPage({ currentUser }) {
 
       {currentListId && !loading && leads.length > 0 && (
         <div>
-          {/* 選択操作ツールバー（内容がある時のみ表示） */}
-          {(isIS || filterStatus || selectedIds.size > 0) && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            {isIS && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6a9a7a', cursor: 'pointer', userSelect: 'none' }}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === leads.length}
-                  ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < leads.length; }}
-                  onChange={handleSelectAll}
-                  style={{ width: 15, height: 15, cursor: 'pointer', accentColor: '#059669' }}
-                />
-                全選択
-              </label>
-            )}
-            {filterStatus && (
-              <span style={{ fontSize: 12, color: '#6a9a7a' }}>
-                <span style={{ fontWeight: 700, color: '#174f35' }}>{filteredLeads.length}件</span>
-                {filteredLeads.length !== leads.length && <span style={{ marginLeft: 4 }}>/ 全{leads.length}件</span>}
-              </span>
-            )}
-            {selectedIds.size > 0 && (
-              <>
-                <span style={{ fontSize: 13, color: '#174f35', fontWeight: 700 }}>{selectedIds.size}件選択中</span>
-                {!confirmDelete ? (
-                  <button onClick={() => setConfirmDelete(true)}
-                    style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #ef444433', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    削除
-                  </button>
-                ) : (
-                  <>
-                    <span style={{ fontSize: 13, color: '#ef4444' }}>本当に削除しますか？</span>
-                    <button onClick={handleDeleteSelected}
-                      style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      削除する
-                    </button>
-                    <button onClick={() => setConfirmDelete(false)}
-                      style={{ background: 'none', color: '#6a9a7a', border: '1px solid #c0dece', borderRadius: 6, padding: '4px 12px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      キャンセル
-                    </button>
-                  </>
-                )}
-                <button onClick={() => { setSelectedIds(new Set()); setConfirmDelete(false); }}
-                  style={{ background: 'none', color: '#9ca3af', border: 'none', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  選択解除
-                </button>
-              </>
-            )}
-          </div>}
-
-          {/* ページネーション（上） */}
-          {paginationBar}
-
           {pagedLeads.map(lead => (
             <OutboundLeadRow
               key={lead.id}
@@ -300,6 +348,9 @@ export function OutboundPage({ currentUser }) {
         </div>
       )}
       </>}
+
+      </div>
+      {/* スクロール領域 end */}
 
       {showSignature && (
         <SignatureEditModal onClose={() => setShowSignature(false)} />
