@@ -1,10 +1,11 @@
 // アポ獲得一覧（全リストのアポ獲得リードをまとめて表示）
 import { useState, useEffect, useCallback } from 'react';
-import { fetchOutboundLists, fetchOutboundLeads, saveOutboundLeads } from '../../lib/outboundApi.js';
+import { fetchOutboundLists, fetchOutboundLeads, saveOutboundLeads, createOutboundList } from '../../lib/outboundApi.js';
 import { acquireGmailToken, buildGmailDraftRaw, postGmailDraft } from '../../lib/oauth.js';
 import { getEffectiveAiConfig } from '../../lib/accounts.js';
 import { getMaster } from '../../lib/master.js';
 import { GmailDraftModal } from './GmailDraftModal.jsx';
+import { AppointmentImportModal } from './AppointmentImportModal.jsx';
 import { Pagination } from '../ui/Pagination.jsx';
 
 function applyTplVars(tpl, vars) {
@@ -109,36 +110,70 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   const [gmailPreview, setGmailPreview] = useState(null); // { subject, body, to, row }
   const [gmailToken,   setGmailToken]   = useState(null);
   const [gmailSending, setGmailSending] = useState(false);
+  const [importOpen,   setImportOpen]   = useState(false);
 
   const isIS       = currentUser?.role === 'admin' || currentUser?.role === 'member';
   const isOutbound = currentUser?.role === 'outbound';
 
-  // 全リストのアポ獲得リードをロード
-  useEffect(() => {
-    (async () => {
-      try {
-        const lists = await fetchOutboundLists();
-        const all = [];
-        await Promise.all(lists.map(async list => {
-          const leads = await fetchOutboundLeads(list.id);
-          leads
-            .filter(l => l.status === 'アポ獲得')
-            .forEach(lead => all.push({ lead, listId: list.id, listName: list.name, leads }));
-        }));
-        // アポ獲得日の新しい順にソート
-        all.sort((a, b) => {
-          const da = a.lead.appointmentInfo?.confirmedDate || '';
-          const db = b.lead.appointmentInfo?.confirmedDate || '';
-          return db.localeCompare(da);
-        });
-        setRows(all);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  // 全リストのアポ獲得リードをロード（取込後の再読み込みでも呼ぶ）
+  const loadRows = useCallback(async () => {
+    setLoading(true);
+    try {
+      const lists = await fetchOutboundLists();
+      const all = [];
+      await Promise.all(lists.map(async list => {
+        const leads = await fetchOutboundLeads(list.id);
+        leads
+          .filter(l => l.status === 'アポ獲得')
+          .forEach(lead => all.push({ lead, listId: list.id, listName: list.name, leads }));
+      }));
+      // アポ獲得日の新しい順にソート
+      all.sort((a, b) => {
+        const da = a.lead.appointmentInfo?.confirmedDate || '';
+        const db = b.lead.appointmentInfo?.confirmedDate || '';
+        return db.localeCompare(da);
+      });
+      setRows(all);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { loadRows(); }, [loadRows]);
+
+  // 過去アポデータの取込
+  // 1. 空のリストを「過去アポ取込_YYYY-MM-DD」として作成
+  // 2. PUT /api/outbound/leads/:listId で status='アポ獲得' + appointmentInfo を埋めたリードを上書き保存
+  // 3. アポ一覧を再ロード（取込結果を即反映）
+  const handleImportAppointments = useCallback(async (parsedLeads, listName) => {
+    // ① 空のリストを作成（POSTは leads が空でも通る）
+    const { listId } = await createOutboundList(listName, []);
+
+    // ② サーバー側で createOutboundList が status='未架電' で書き込んでいるので、
+    //    こちらで「アポ獲得」状態のリードに差し替える形で上書き保存する
+    const leadsWithMeta = parsedLeads.map((l, i) => ({
+      id: `ol_${listId}_${i}`,
+      listId,
+      company:  l.company,
+      contact:  l.contact || '',
+      position: l.position || '',
+      phone:    '',
+      mobile:   '',
+      email:    '',
+      industry: '',
+      address:  '',
+      memo:     '',
+      status: 'アポ獲得',
+      callHistory: [],
+      appointmentInfo: l.appointmentInfo,
+    }));
+    await saveOutboundLeads(listId, leadsWithMeta);
+
+    // ③ アポ一覧を再ロード
+    await loadRows();
+  }, [loadRows]);
 
   // リード更新（楽観的更新 + 保存）
   const handleUpdate = useCallback(async (listId, updatedLead, allLeads) => {
@@ -202,7 +237,29 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   };
 
   if (loading) return <div style={{ fontSize: 13, color: '#6a9a7a', padding: '40px 0', textAlign: 'center' }}>読み込み中...</div>;
-  if (rows.length === 0) return <div style={{ fontSize: 13, color: '#6a9a7a', padding: '40px 0', textAlign: 'center' }}>アポ獲得のデータがありません。</div>;
+
+  // データが0件のときも取込ボタンへ辿り着けるようにする（初回利用時のため）
+  if (rows.length === 0) {
+    return (
+      <div style={{ padding: '40px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: 13, color: '#6a9a7a', marginBottom: 14 }}>アポ獲得のデータがありません。</div>
+        {isIS && !mailPendingOnly && (
+          <button
+            onClick={() => setImportOpen(true)}
+            style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #10b98155', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', minHeight: 44 }}
+          >
+            📤 過去アポデータを取込む
+          </button>
+        )}
+        {importOpen && (
+          <AppointmentImportModal
+            onClose={() => setImportOpen(false)}
+            onImport={handleImportAppointments}
+          />
+        )}
+      </div>
+    );
+  }
 
   // 商談開始日のある月一覧（降順）をデータから生成
   const months = [...new Set(
@@ -284,6 +341,15 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
         >
           ⬇ CSV書き出し
         </button>
+        {/* 取込はISチーム（admin/member）のみ。outboundは閲覧のみ */}
+        {isIS && !mailPendingOnly && (
+          <button
+            onClick={() => setImportOpen(true)}
+            style={{ background: '#ecfdf5', color: '#059669', border: '1px solid #10b98155', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+          >
+            📤 Excel取込
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -489,6 +555,13 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
           initialBody={gmailPreview.body}
           onSend={handleSendGmailDraft}
           onClose={() => setGmailPreview(null)}
+        />
+      )}
+
+      {importOpen && (
+        <AppointmentImportModal
+          onClose={() => setImportOpen(false)}
+          onImport={handleImportAppointments}
         />
       )}
     </div>
