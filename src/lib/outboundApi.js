@@ -179,6 +179,161 @@ function splitCSVLine(line) {
   return cols.map(c => c.replace(/^"(.*)"$/, '$1'));
 }
 
+// =============================================================
+// 過去アポ取込用パーサー（書き出しと同じ14列フォーマット）
+// =============================================================
+// 列名（同義語OK）：会社名／役職／担当者名／商談担当／ランク／商談ステータス／
+//                  アポ獲得日／商談開始日／商談開始時刻／前確認／案内メール送信済み／
+//                  アポ種別／アポ単価／リスト名
+// アポ単価とリスト名は取込時に無視（前者は appointType から自動算出、後者は新リストに集約）
+function buildApoColMap(headers) {
+  const h = headers.map(v => String(v ?? '').trim().toLowerCase());
+  const idx = (names) => h.findIndex(v => names.includes(v));
+  return {
+    company:        idx(['会社名', 'company']),
+    position:       idx(['役職', 'position']),
+    contact:        idx(['担当者名', '担当者', 'contact']),
+    salesPerson:    idx(['商談担当', '営業担当']),
+    rank:           idx(['ランク', 'rank']),
+    dealStatus:     idx(['商談ステータス', 'ステータス']),
+    confirmedDate:  idx(['アポ獲得日']),
+    meetingDate:    idx(['商談開始日', '商談日']),
+    meetingTime:    idx(['商談開始時刻', '商談時刻']),
+    preConfirm:     idx(['前確認']),
+    gmailDrafted:   idx(['案内メール送信済み', '案内メール']),
+    appointType:    idx(['アポ種別']),
+  };
+}
+
+// 日付セル正規化（Date / 'YYYY/M/D' / 'YYYY-MM-DD' → 'YYYY-MM-DD'）
+// JST基準で日付文字列を作る（UTCに引きずられないようにする）
+function normalizeDate(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date && !isNaN(v)) {
+    return v.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
+  }
+  const s = String(v).trim();
+  // YYYY-MM-DD or YYYY/M/D
+  const m = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  if (m) {
+    const y = m[1];
+    const mo = m[2].padStart(2, '0');
+    const d = m[3].padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
+  return '';
+}
+
+// 時刻セル正規化（Date / 'HH:MM' / 'H:MM' / Excelの時刻数値 → 'HH:MM'）
+function normalizeTime(v) {
+  if (v == null || v === '') return '';
+  if (v instanceof Date && !isNaN(v)) {
+    return v.toLocaleTimeString('sv', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
+  }
+  const s = String(v).trim();
+  // 'HH:MM' or 'H:MM'
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (m) {
+    const hh = m[1].padStart(2, '0');
+    return `${hh}:${m[2]}`;
+  }
+  return '';
+}
+
+// 「済」「✓」「TRUE」等を真として扱う
+function parseBoolish(v) {
+  const s = String(v ?? '').trim().toLowerCase();
+  return s === '済' || s === '✓' || s === '○' || s === 'true' || s === '1' || s === 'yes';
+}
+
+const APO_DEAL_STATUSES = ['商談確定', '追客中', '契約', '保留/失注', '商談キャンセル'];
+const APO_TYPES         = ['決裁者アポ', '担当者アポ', '対象外'];
+const APO_PRICE_MAP     = { '決裁者アポ': '35,000円', '担当者アポ': '20,000円', '対象外': '0円' };
+
+// 1行分の生の値配列 → { lead, error|null } に変換
+function rowToApoLead(cols, colMap, rowNum) {
+  const get = (k) => colMap[k] >= 0 ? cols[colMap[k]] : '';
+  const getStr = (k) => String(get(k) ?? '').trim();
+
+  const company = getStr('company');
+  if (!company) return { lead: null, error: `${rowNum}行目: 会社名が空のためスキップ` };
+
+  const dealStatusRaw = getStr('dealStatus');
+  const dealStatus = APO_DEAL_STATUSES.includes(dealStatusRaw) ? dealStatusRaw : '商談確定';
+
+  const appointTypeRaw = getStr('appointType');
+  const appointType = APO_TYPES.includes(appointTypeRaw) ? appointTypeRaw : '';
+
+  return {
+    error: null,
+    lead: {
+      company,
+      position: getStr('position'),
+      contact:  getStr('contact'),
+      appointmentInfo: {
+        salesPerson:   getStr('salesPerson'),
+        rank:          getStr('rank'),
+        dealStatus,
+        confirmedDate: normalizeDate(get('confirmedDate')),
+        meetingDate:   normalizeDate(get('meetingDate')),
+        meetingTime:   normalizeTime(get('meetingTime')),
+        preConfirm:    parseBoolish(get('preConfirm')),
+        // 「済」だった場合は取込日時を timestamp として埋める（具体的な送信日時は失われるが既送扱いにする）
+        gmailDraftedAt: parseBoolish(get('gmailDrafted')) ? new Date().toISOString() : '',
+        appointType,
+        appointPrice:  APO_PRICE_MAP[appointType] || '',
+      },
+    },
+  };
+}
+
+// Excel パース（.xlsx / .xls）：書き出しと同じ14列フォーマット用
+export async function parseAppointmentExcel(arrayBuffer) {
+  const XLSX = await import('xlsx');
+  const wb   = XLSX.read(arrayBuffer, { type: 'array', cellText: false, cellDates: true });
+  const ws   = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+
+  const dataRows = rows.filter(r => {
+    const first = String(r[0] ?? '').trim();
+    return first !== '' && !first.startsWith('#');
+  });
+
+  if (dataRows.length < 2) return { leads: [], errors: ['ヘッダー行とデータ行が必要です'] };
+
+  const colMap = buildApoColMap(dataRows[0]);
+  if (colMap.company < 0) return { leads: [], errors: ['「会社名」列が見つかりません。書き出しと同じ列名にしてください。'] };
+
+  const errors = [];
+  const leads  = [];
+  dataRows.slice(1).forEach((row, i) => {
+    const { lead, error } = rowToApoLead(row, colMap, i + 2);
+    if (error) errors.push(error);
+    if (lead)  leads.push(lead);
+  });
+  return { leads, errors };
+}
+
+// CSV パース：書き出しと同じ14列フォーマット用
+export function parseAppointmentCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() && !l.trim().startsWith('#'));
+  if (lines.length < 2) return { leads: [], errors: ['ヘッダー行とデータ行が必要です'] };
+
+  const headers = splitCSVLine(lines[0]);
+  const colMap = buildApoColMap(headers);
+  if (colMap.company < 0) return { leads: [], errors: ['「会社名」列が見つかりません。書き出しと同じ列名にしてください。'] };
+
+  const errors = [];
+  const leads  = [];
+  lines.slice(1).forEach((line, i) => {
+    const cols = splitCSVLine(line);
+    const { lead, error } = rowToApoLead(cols, colMap, i + 2);
+    if (error) errors.push(error);
+    if (lead)  leads.push(lead);
+  });
+  return { leads, errors };
+}
+
 // 全リストのアポ獲得リード一括取得
 export async function fetchOutboundAppointments() {
   const r = await fetch('/api/outbound/appointments');
