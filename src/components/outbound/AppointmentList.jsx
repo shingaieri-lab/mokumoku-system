@@ -36,20 +36,28 @@ function todayJST() {
   return new Date().toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
 }
 
-// 商談開始日の前日になってもpreConfirmが未チェックかどうか
-// 過去取込分（importedFromHistory）は対象外
-function needsPreConfirmAlert(ai) {
-  if (ai.importedFromHistory) return false;
+// 過去取込されたリードかどうかの判定
+// - appointmentInfo.importedFromHistory フラグが立っている（取込時に付与）
+// - もしくはリスト名が「過去アポ取込_」で始まる（フラグ追加前に取込まれた既存データのフォールバック）
+// 過去取込は商談日や獲得日が既に過ぎているケースが大半で、アラートを発火させても意味がないため対象外にする
+function isImportedHistory(ai, listName) {
+  if (ai && ai.importedFromHistory) return true;
+  if (listName && listName.startsWith('過去アポ取込_')) return true;
+  return false;
+}
+
+// 商談開始日の前日になってもpreConfirmが未チェックかどうか（過去取込分は対象外）
+function needsPreConfirmAlert(ai, listName) {
+  if (isImportedHistory(ai, listName)) return false;
   if (ai.preConfirm || !ai.meetingDate) return false;
   const d = new Date(ai.meetingDate + 'T00:00:00');
   d.setDate(d.getDate() - 1);
   return todayJST() >= d.toLocaleDateString('sv', { timeZone: 'Asia/Tokyo' });
 }
 
-// アポ獲得日から3日経過しても案内メール未送信かどうか
-// 過去取込分（importedFromHistory）は対象外
-function needsGmailAlert(ai) {
-  if (ai.importedFromHistory) return false;
+// アポ獲得日から3日経過しても案内メール未送信かどうか（過去取込分は対象外）
+function needsGmailAlert(ai, listName) {
+  if (isImportedHistory(ai, listName)) return false;
   if (ai.gmailDraftedAt || !ai.confirmedDate) return false;
   const d = new Date(ai.confirmedDate + 'T00:00:00');
   d.setDate(d.getDate() + 3);
@@ -115,9 +123,18 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   const [gmailToken,   setGmailToken]   = useState(null);
   const [gmailSending, setGmailSending] = useState(false);
   const [importOpen,   setImportOpen]   = useState(false);
+  const [selectedIds,  setSelectedIds]  = useState(() => new Set()); // 選択中の lead.id
+  const [deleteOpen,   setDeleteOpen]   = useState(false);            // 削除確認モーダル
+  const [deleting,     setDeleting]     = useState(false);            // 削除中フラグ（多重クリック防止）
+  // 削除モード: 'apoOnly'（アポ情報だけクリア＝架電リストに「未架電」として残る・デフォルト）
+  //           / 'full'（架電リストからもリードごと完全削除）
+  const [deleteMode,   setDeleteMode]   = useState('apoOnly');
 
   const isIS       = currentUser?.role === 'admin' || currentUser?.role === 'member';
   const isOutbound = currentUser?.role === 'outbound';
+  // 削除UIは通常アポ一覧でのみ表示（メール未送信タブでは混乱回避のため出さない）
+  // ロール制限はかけない：IS（admin/member）・outbound 全員が削除可能
+  const canDelete  = !mailPendingOnly;
 
   // 全リストのアポ獲得リードをロード（取込後の再読み込みでも呼ぶ）
   const loadRows = useCallback(async () => {
@@ -181,6 +198,50 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
     // ③ アポ一覧を再ロード
     await loadRows();
   }, [loadRows]);
+
+  // 選択した行を一括削除
+  // selectedIds (Set<lead.id>) を listId ごとにグルーピングし、
+  // 各リストに対して deleteMode に応じた配列を作って saveOutboundLeads で上書き保存する
+  //
+  //  - 'apoOnly': 該当リードの status を '未架電' に戻し、appointmentInfo を null にする
+  //               （リード自体は架電リストに残る／通話履歴も保持）
+  //  - 'full'   : 該当リードを配列から除外（架電リストからもリードごと完全削除）
+  const handleDeleteSelected = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setDeleting(true);
+    try {
+      // listId ごとに、そのリストに属する rows を集約
+      const byList = new Map();
+      rows.forEach(r => {
+        if (!selectedIds.has(r.lead.id)) return;
+        if (!byList.has(r.listId)) {
+          byList.set(r.listId, { leads: r.leads, removeIds: new Set() });
+        }
+        byList.get(r.listId).removeIds.add(r.lead.id);
+      });
+
+      // 各リストに対して、モードに応じた配列を保存
+      await Promise.all([...byList.entries()].map(([listId, { leads, removeIds }]) => {
+        const next = deleteMode === 'full'
+          ? leads.filter(l => !removeIds.has(l.id))
+          : leads.map(l =>
+              removeIds.has(l.id)
+                ? { ...l, status: '未架電', appointmentInfo: null }
+                : l
+            );
+        return saveOutboundLeads(listId, next);
+      }));
+
+      // ローカル状態のアポ一覧から該当行を即削除（どちらのモードでもアポ獲得ではなくなるので一覧から消える）
+      setRows(prev => prev.filter(r => !selectedIds.has(r.lead.id)));
+      setSelectedIds(new Set());
+      setDeleteOpen(false);
+    } catch (e) {
+      alert('削除に失敗しました: ' + (e.message || String(e)));
+    } finally {
+      setDeleting(false);
+    }
+  }, [rows, selectedIds, deleteMode]);
 
   // リード更新（楽観的更新 + 保存）
   const handleUpdate = useCallback(async (listId, updatedLead, allLeads) => {
@@ -276,15 +337,16 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   )].sort((a, b) => b.localeCompare(a));
 
   // 絞り込み・ページネーション計算
-  const hasAlertFor = (ai) =>
-    (isOutbound && needsPreConfirmAlert(ai)) || (isIS && needsGmailAlert(ai));
+  // listName も渡すのは「過去アポ取込_」リスト名でもアラート対象外を判定できるようにするため
+  const hasAlertFor = (ai, listName) =>
+    (isOutbound && needsPreConfirmAlert(ai, listName)) || (isIS && needsGmailAlert(ai, listName));
 
   const q = searchQuery.trim().toLowerCase();
   const filtered = rows.filter(r => {
     const ai = r.lead.appointmentInfo || {};
     if (mailPendingOnly && ai.gmailDraftedAt) return false;
     if (filterMonth && !(r.lead.appointmentInfo?.meetingDate || '').startsWith(filterMonth)) return false;
-    if (filterAlert && !hasAlertFor(ai)) return false;
+    if (filterAlert && !hasAlertFor(ai, r.listName)) return false;
     if (q) {
       const hit = (r.lead.company || '').toLowerCase().includes(q) || (r.lead.contact || '').toLowerCase().includes(q);
       if (!hit) return false;
@@ -298,7 +360,7 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   const alertCount = rows.filter(r => {
     const ai = r.lead.appointmentInfo || {};
     if (filterMonth && !(r.lead.appointmentInfo?.meetingDate || '').startsWith(filterMonth)) return false;
-    return hasAlertFor(ai);
+    return hasAlertFor(ai, r.listName);
   }).length;
 
   const paginationBar = filtered.length > 0 && (
@@ -311,6 +373,41 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       onPageSizeChange={n => { setPageSize(n); setPage(1); }}
     />
   );
+
+  // ページ内の全選択状態（'all' | 'some' | 'none'）
+  // - all  : 表示中の全行が選択済み
+  // - some : 一部のみ選択 → ヘッダーチェックボックスを indeterminate にする
+  // - none : 何も選択されていない
+  const pageSelectionState = (() => {
+    if (pagedRows.length === 0) return 'none';
+    const selectedInPage = pagedRows.filter(r => selectedIds.has(r.lead.id)).length;
+    if (selectedInPage === 0) return 'none';
+    if (selectedInPage === pagedRows.length) return 'all';
+    return 'some';
+  })();
+
+  // 表示中の全行をトグル（all なら全解除、それ以外なら表示中の全行を選択に追加）
+  const toggleSelectPage = () => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (pageSelectionState === 'all') {
+        pagedRows.forEach(r => next.delete(r.lead.id));
+      } else {
+        pagedRows.forEach(r => next.add(r.lead.id));
+      }
+      return next;
+    });
+  };
+
+  // 1行単位のトグル
+  const toggleSelectOne = (leadId) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(leadId)) next.delete(leadId);
+      else next.add(leadId);
+      return next;
+    });
+  };
 
   return (
     <div>
@@ -375,6 +472,26 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
             ⚠ 要対応 {alertCount}件{filterAlert ? '（絞り込み中）' : ''}
           </button>
         )}
+        {/* 選択中の件数表示＋削除ボタン（ISのみ） */}
+        {canDelete && selectedIds.size > 0 && (
+          <>
+            <span style={{ fontSize: 12, color: '#174f35', fontWeight: 700 }}>
+              {selectedIds.size}件選択中
+            </span>
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              style={{ fontSize: 11, color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              選択解除
+            </button>
+            <button
+              onClick={() => setDeleteOpen(true)}
+              style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: '#ef4444', border: '1px solid #dc2626', borderRadius: 6, padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit', minHeight: 32 }}
+            >
+              {selectedIds.size}件を削除
+            </button>
+          </>
+        )}
       </div>
 
       {/* ページネーション（上） */}
@@ -384,6 +501,20 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: '#f0f5f2', borderBottom: '2px solid #c0dece' }}>
+              {/* 全選択チェックボックス列（ISのみ） */}
+              {canDelete && (
+                <th style={{ padding: '9px 6px 9px 12px', textAlign: 'center', width: 36 }}>
+                  <input
+                    type="checkbox"
+                    aria-label="表示中の全行を選択"
+                    checked={pageSelectionState === 'all'}
+                    // indeterminate は input.indeterminate プロパティ経由でのみ設定可
+                    ref={el => { if (el) el.indeterminate = pageSelectionState === 'some'; }}
+                    onChange={toggleSelectPage}
+                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#10b981' }}
+                  />
+                </th>
+              )}
               {[
                 { label: '会社名' }, { label: '役職 / 名前' }, { label: '商談担当' }, { label: 'ランク' },
                 { label: 'ステータス' }, { label: 'アポ獲得日' }, { label: '商談開始日' },
@@ -399,12 +530,27 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
               const ai = lead.appointmentInfo || {};
               const ds = ai.dealStatus || '商談確定';
               const dsStyle = DEAL_STATUS_STYLE[ds] || DEAL_STATUS_STYLE['商談確定'];
-              const preConfirmAlert = isOutbound && needsPreConfirmAlert(ai);
-              const gmailAlert      = isIS && needsGmailAlert(ai);
+              const preConfirmAlert = isOutbound && needsPreConfirmAlert(ai, listName);
+              const gmailAlert      = isIS && needsGmailAlert(ai, listName);
               const hasAlert        = preConfirmAlert || gmailAlert;
 
+              const isSelected = selectedIds.has(lead.id);
+
               return (
-                <tr key={lead.id} style={{ borderBottom: '1px solid #e2f0e8', background: hasAlert ? '#fffbeb' : undefined }}>
+                <tr key={lead.id} style={{ borderBottom: '1px solid #e2f0e8', background: isSelected ? '#fef2f2' : (hasAlert ? '#fffbeb' : undefined) }}>
+
+                  {/* 選択チェックボックス（ISのみ） */}
+                  {canDelete && (
+                    <td style={{ padding: '10px 6px 10px 12px', textAlign: 'center', width: 36 }}>
+                      <input
+                        type="checkbox"
+                        aria-label={`${lead.company} を選択`}
+                        checked={isSelected}
+                        onChange={() => toggleSelectOne(lead.id)}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#ef4444' }}
+                      />
+                    </td>
+                  )}
 
                   {/* 会社名 */}
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#174f35', minWidth: 140 }}>
@@ -571,6 +717,103 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
           onImport={handleImportAppointments}
         />
       )}
+
+      {/* 削除確認モーダル */}
+      {deleteOpen && (() => {
+        // ラジオボタン用の共通スタイル
+        const isApoOnly = deleteMode === 'apoOnly';
+        const optionStyle = (active, accentColor) => ({
+          display: 'block',
+          border: `2px solid ${active ? accentColor : '#e2f0e8'}`,
+          background: active ? accentColor + '11' : '#fff',
+          borderRadius: 8,
+          padding: '12px 14px',
+          cursor: 'pointer',
+          marginBottom: 8,
+          transition: 'all 0.1s',
+        });
+        return (
+          <div
+            onClick={() => !deleting && setDeleteOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15, 42, 31, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ background: '#fff', borderRadius: 12, padding: 24, maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0, 0, 0, 0.25)', fontFamily: 'inherit' }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 16, color: '#174f35', marginBottom: 8 }}>
+                アポを削除
+              </div>
+              <div style={{ fontSize: 13, color: '#3d7a5e', marginBottom: 16, lineHeight: 1.6 }}>
+                選択した <strong style={{ color: '#dc2626', fontSize: 15 }}>{selectedIds.size}件</strong> のアポをどう処理しますか？
+              </div>
+
+              {/* モード選択：アポ情報だけクリア */}
+              <label style={optionStyle(isApoOnly, '#f59e0b')}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <input
+                    type="radio"
+                    name="deleteMode"
+                    value="apoOnly"
+                    checked={isApoOnly}
+                    onChange={() => setDeleteMode('apoOnly')}
+                    disabled={deleting}
+                    style={{ marginTop: 3, cursor: 'pointer', accentColor: '#f59e0b' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e' }}>アポ情報だけクリア（推奨）</div>
+                    <div style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4, lineHeight: 1.5 }}>
+                      架電リストに「未架電」として残ります。通話履歴は保持されます。アポ間違いだった・再アプローチしたい場合はこちら。
+                    </div>
+                  </div>
+                </div>
+              </label>
+
+              {/* モード選択：完全削除 */}
+              <label style={optionStyle(!isApoOnly, '#dc2626')}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <input
+                    type="radio"
+                    name="deleteMode"
+                    value="full"
+                    checked={!isApoOnly}
+                    onChange={() => setDeleteMode('full')}
+                    disabled={deleting}
+                    style={{ marginTop: 3, cursor: 'pointer', accentColor: '#dc2626' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#991b1b' }}>架電リストからも完全削除</div>
+                    <div style={{ fontSize: 12, color: '#6a9a7a', marginTop: 4, lineHeight: 1.5 }}>
+                      リードごと架電リストからも消えます。通話履歴も含めて完全に削除されます。「過去アポ取込_」リストのクリーンアップ・誤取込の取り消しに。
+                    </div>
+                  </div>
+                </div>
+              </label>
+
+              <div style={{ fontSize: 11, color: '#9ca3af', margin: '14px 0 18px' }}>
+                ※ どちらのモードもこの操作は取り消せません。
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => setDeleteOpen(false)}
+                  disabled={deleting}
+                  style={{ background: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', minHeight: 44 }}
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleDeleteSelected}
+                  disabled={deleting}
+                  style={{ background: isApoOnly ? '#f59e0b' : '#ef4444', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', minHeight: 44, opacity: deleting ? 0.6 : 1 }}
+                >
+                  {deleting ? '処理中...' : (isApoOnly ? 'アポ情報をクリア' : '完全削除する')}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
