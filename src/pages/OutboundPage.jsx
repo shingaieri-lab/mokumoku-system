@@ -9,6 +9,17 @@ import { Pagination }         from '../components/ui/Pagination.jsx';
 import { fetchOutboundLists, createOutboundList, deleteOutboundList, fetchOutboundLeads, saveOutboundLeads } from '../lib/outboundApi.js';
 import { SignatureEditModal } from '../components/outbound/SignatureEditModal.jsx';
 
+// リストを「新しい順（インポート順で新しいものが上）」に並べ替えるヘルパー
+// 基準は createdAt（ISO文字列なので文字列比較で時系列順になる）。
+// 古いデータで createdAt が無い場合は id（'obl_' + Date.now()）にフォールバックする。
+function sortListsByNewest(lists) {
+  return [...lists].sort((a, b) => {
+    const ka = a.createdAt || a.id || '';
+    const kb = b.createdAt || b.id || '';
+    return kb.localeCompare(ka); // 降順 = 新しいものが先頭
+  });
+}
+
 export function OutboundPage({ currentUser }) {
   const [view,           setView]           = useState('list'); // 'list' | 'appointments'
   const [lists,          setLists]          = useState([]);
@@ -32,8 +43,9 @@ export function OutboundPage({ currentUser }) {
   // 過去アポ取込（リスト名「過去アポ取込_」で始まる）はアポ一覧専用なので
   // 架電リスト UI からは除外する（スプシからの過去データ移行用で、もう架電しないため）
   // ※ アポ一覧側は AppointmentList が独自に fetchOutboundLists するので影響なし
+  // 新しいものが上に来るように並べ替えてからフィルタする（プルダウンの並び順もこの順）
   const callableLists = useMemo(
-    () => lists.filter(l => !(l.name || '').startsWith('過去アポ取込_')),
+    () => sortListsByNewest(lists).filter(l => !(l.name || '').startsWith('過去アポ取込_')),
     [lists]
   );
 
@@ -42,8 +54,10 @@ export function OutboundPage({ currentUser }) {
     fetchOutboundLists()
       .then(data => {
         setLists(data);
-        // 初期選択は「架電可能なリスト」の先頭から選ぶ（過去アポ取込が先頭でも飛ばす）
-        const firstCallable = data.find(l => !(l.name || '').startsWith('過去アポ取込_'));
+        // 初期選択は「架電可能なリスト」のうち新しい順で先頭を選ぶ
+        // （アウトバウンドメニューを開いたとき、最新のリストがデフォルト表示になる）
+        const firstCallable = sortListsByNewest(data)
+          .find(l => !(l.name || '').startsWith('過去アポ取込_'));
         if (firstCallable && !currentListId) setCurrentListId(firstCallable.id);
       })
       .catch(e => console.error(e));
@@ -88,7 +102,9 @@ export function OutboundPage({ currentUser }) {
     await deleteOutboundList(listId);
     const newLists = await fetchOutboundLists();
     setLists(newLists);
-    setCurrentListId(newLists.length > 0 ? newLists[0].id : '');
+    // 削除後も「新しい順で先頭」を選ぶ（並び順の一貫性を保つ）
+    const sorted = sortListsByNewest(newLists);
+    setCurrentListId(sorted.length > 0 ? sorted[0].id : '');
   }, []);
 
   // リード更新（楽観的更新 + サーバー保存）
