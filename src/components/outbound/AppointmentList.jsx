@@ -37,7 +37,9 @@ function todayJST() {
 }
 
 // 商談開始日の前日になってもpreConfirmが未チェックかどうか
+// 過去取込分（importedFromHistory）は対象外
 function needsPreConfirmAlert(ai) {
+  if (ai.importedFromHistory) return false;
   if (ai.preConfirm || !ai.meetingDate) return false;
   const d = new Date(ai.meetingDate + 'T00:00:00');
   d.setDate(d.getDate() - 1);
@@ -45,7 +47,9 @@ function needsPreConfirmAlert(ai) {
 }
 
 // アポ獲得日から3日経過しても案内メール未送信かどうか
+// 過去取込分（importedFromHistory）は対象外
 function needsGmailAlert(ai) {
+  if (ai.importedFromHistory) return false;
   if (ai.gmailDraftedAt || !ai.confirmedDate) return false;
   const d = new Date(ai.confirmedDate + 'T00:00:00');
   d.setDate(d.getDate() + 3);
@@ -167,7 +171,10 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       memo:     '',
       status: 'アポ獲得',
       callHistory: [],
-      appointmentInfo: l.appointmentInfo,
+      // importedFromHistory: 過去取込分のマーカー
+      // → 前確認・案内メールの「⚠ 要対応」アラート判定で対象外として扱うために使う
+      //   （アポ獲得日や商談日が過去日付になっているケースが多く、無条件にアラートが大量発火するのを防ぐ）
+      appointmentInfo: { ...l.appointmentInfo, importedFromHistory: true },
     }));
     await saveOutboundLeads(listId, leadsWithMeta);
 
