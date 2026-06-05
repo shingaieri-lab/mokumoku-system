@@ -21,10 +21,12 @@ async function checkIS(req, res) {
   return true;
 }
 
-// アウトバウンド書き込み権限（outbound + admin）
+// アウトバウンドリード書き込み権限（admin / member / outbound）
+// 元は outbound + admin のみだったが、IS（member）もアポ一覧でステータス更新・前確認チェック・
+// 削除等の操作を行うため全ロール許可に拡張した
 async function checkOutboundWrite(req, res) {
   const role = await getRole(req.accountId);
-  if (role !== 'outbound' && role !== 'admin') {
+  if (role !== 'outbound' && role !== 'admin' && role !== 'member') {
     res.status(403).json({ error: '権限がありません' });
     return false;
   }
