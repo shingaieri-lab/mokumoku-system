@@ -129,6 +129,10 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   // 削除モード: 'apoOnly'（アポ情報だけクリア＝架電リストに「未架電」として残る・デフォルト）
   //           / 'full'（架電リストからもリードごと完全削除）
   const [deleteMode,   setDeleteMode]   = useState('apoOnly');
+  // 並び替え state
+  // sortKey === null のときはデフォルト順（アポ獲得日の新しい順 = loadRows の初期ソート）
+  const [sortKey,     setSortKey]     = useState(null);
+  const [sortOrder,   setSortOrder]   = useState('asc'); // 'asc' | 'desc'
 
   const isIS       = currentUser?.role === 'admin' || currentUser?.role === 'member';
   const isOutbound = currentUser?.role === 'outbound';
@@ -345,6 +349,9 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
   const filtered = rows.filter(r => {
     const ai = r.lead.appointmentInfo || {};
     if (mailPendingOnly && ai.gmailDraftedAt) return false;
+    // メール未送信タブでは過去取込分（リスト名「過去アポ取込_」or importedFromHistory フラグ）を除外する
+    // 過去取込分はそもそも Gmail 案内を送る対象ではない（過去のアポを後から取り込んだだけ）ため
+    if (mailPendingOnly && isImportedHistory(ai, r.listName)) return false;
     if (filterMonth && !(r.lead.appointmentInfo?.meetingDate || '').startsWith(filterMonth)) return false;
     if (filterAlert && !hasAlertFor(ai, r.listName)) return false;
     if (q) {
@@ -353,9 +360,63 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
     }
     return true;
   });
-  const totalPages  = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  // 並び替え（sortKey が null のときは filtered のまま＝ loadRows でのデフォルト順）
+  // 各キーは「行から比較可能な値（文字列 or 数値）を取り出す」関数で定義
+  const sortValueOf = (r, key) => {
+    const ai = r.lead.appointmentInfo || {};
+    switch (key) {
+      case 'company':       return r.lead.company || '';
+      case 'contact':       return [r.lead.position, r.lead.contact].filter(Boolean).join(' ');
+      case 'salesPerson':   return ai.salesPerson || '';
+      case 'rank':          return ai.rank || '';
+      case 'dealStatus':    return DEAL_STATUSES.indexOf(ai.dealStatus || '商談確定');
+      case 'confirmedDate': return ai.confirmedDate || '';
+      // 商談開始日は「日付＋時刻」を結合して文字列比較
+      case 'meetingDate':   return (ai.meetingDate || '') + ' ' + (ai.meetingTime || '');
+      case 'preConfirm':    return ai.preConfirm ? 1 : 0;
+      case 'gmail':         return ai.gmailDraftedAt || '';
+      // 種別・単価は APPOINT_TYPES の並び順を保ち、未指定は末尾扱い（99）
+      case 'appointType':   {
+        const i = APPOINT_TYPES.indexOf(ai.appointType);
+        return i >= 0 ? i : 99;
+      }
+      case 'appointPrice':  return parseInt((APPOINT_PRICE_MAP[ai.appointType] || '').replace(/[^\d]/g, ''), 10) || 0;
+      case 'listName':      return r.listName || '';
+      default:              return '';
+    }
+  };
+  const sorted = sortKey
+    ? [...filtered].sort((a, b) => {
+        const va = sortValueOf(a, sortKey);
+        const vb = sortValueOf(b, sortKey);
+        let cmp;
+        if (typeof va === 'number' && typeof vb === 'number') {
+          cmp = va - vb;
+        } else {
+          // 空文字は常に末尾に来るよう調整（昇順・降順どちらでも空が後ろ）
+          if (va === '' && vb !== '') return 1;
+          if (va !== '' && vb === '') return -1;
+          cmp = String(va).localeCompare(String(vb), 'ja');
+        }
+        return sortOrder === 'asc' ? cmp : -cmp;
+      })
+    : filtered;
+
+  const totalPages  = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage    = Math.min(page, totalPages);
-  const pagedRows   = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const pagedRows   = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // 列ヘッダークリック：同じキーなら昇順↔降順をトグル、別キーなら新しいキー＋昇順
+  const handleSortClick = (key) => {
+    if (sortKey === key) {
+      setSortOrder(o => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+    setPage(1);
+  };
 
   const alertCount = rows.filter(r => {
     const ai = r.lead.appointmentInfo || {};
@@ -363,11 +424,11 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
     return hasAlertFor(ai, r.listName);
   }).length;
 
-  const paginationBar = filtered.length > 0 && (
+  const paginationBar = sorted.length > 0 && (
     <Pagination
       page={safePage}
       totalPages={totalPages}
-      total={filtered.length}
+      total={sorted.length}
       pageSize={pageSize}
       onPageChange={setPage}
       onPageSizeChange={n => { setPageSize(n); setPage(1); }}
@@ -439,8 +500,8 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
           ))}
         </select>
         <button
-          onClick={() => exportToCSV(filtered, filterMonth)}
-          disabled={filtered.length === 0}
+          onClick={() => exportToCSV(sorted, filterMonth)}
+          disabled={sorted.length === 0}
           style={{ background: '#f0f5f2', color: '#3d7a5e', border: '1px solid #c0dece', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: filtered.length === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: filtered.length === 0 ? 0.5 : 1, whiteSpace: 'nowrap' }}
         >
           ⬇ CSV書き出し
@@ -465,12 +526,20 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
           )}
         </div>
         {alertCount > 0 && (
-          <button
-            onClick={() => { setFilterAlert(f => !f); setPage(1); }}
-            style={{ fontSize: 12, fontWeight: 700, color: filterAlert ? '#fff' : '#d97706', background: filterAlert ? '#d97706' : '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            ⚠ 要対応 {alertCount}件{filterAlert ? '（絞り込み中）' : ''}
-          </button>
+          <>
+            <button
+              onClick={() => { setFilterAlert(f => !f); setPage(1); }}
+              style={{ fontSize: 12, fontWeight: 700, color: filterAlert ? '#fff' : '#d97706', background: filterAlert ? '#d97706' : '#fef3c7', border: '1px solid #fcd34d', borderRadius: 6, padding: '3px 10px', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              ⚠ 要対応 {alertCount}件{filterAlert ? '（絞り込み中）' : ''}
+            </button>
+            {/* 「要対応」の定義をロール別に明示（outbound と IS で意味が違うため） */}
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>
+              {isOutbound
+                ? '（商談前日になっても「前確認」未チェック）'
+                : '（アポ獲得日から3日経過しても案内メール未送信）'}
+            </span>
+          </>
         )}
         {/* 選択中の件数表示＋削除ボタン（ISのみ） */}
         {canDelete && selectedIds.size > 0 && (
@@ -498,7 +567,27 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       {paginationBar}
 
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+        {/*
+          tableLayout: 'fixed' + colgroup で各列の幅を明示的に固定する。
+          これをしないと並び替えで表示行が変わるたびに「最長コンテンツ」が変わって列幅が伸縮する。
+          幅の合計は約1600px。画面が狭い場合はラッパー側の overflowX: 'auto' で横スクロールになる。
+        */}
+        <table style={{ width: '100%', minWidth: 1600, borderCollapse: 'collapse', fontSize: 13, tableLayout: 'fixed' }}>
+          <colgroup>
+            {canDelete && <col style={{ width: 36 }} />}
+            <col style={{ width: 200 }} />  {/* 会社名 */}
+            <col style={{ width: 220 }} />  {/* 役職 / 名前 */}
+            <col style={{ width: 90 }}  />  {/* 商談担当 */}
+            <col style={{ width: 60 }}  />  {/* ランク */}
+            <col style={{ width: 130 }} />  {/* ステータス */}
+            <col style={{ width: 130 }} />  {/* アポ獲得日 */}
+            <col style={{ width: 170 }} />  {/* 商談開始日 */}
+            <col style={{ width: 80 }}  />  {/* 前確認 */}
+            <col style={{ width: 100 }} />  {/* 案内メール */}
+            <col style={{ width: 110 }} />  {/* アポ種別 */}
+            <col style={{ width: 90 }}  />  {/* アポ単価 */}
+            <col style={{ width: 220 }} />  {/* リスト */}
+          </colgroup>
           <thead>
             <tr style={{ background: '#f0f5f2', borderBottom: '2px solid #c0dece' }}>
               {/* 全選択チェックボックス列（ISのみ） */}
@@ -516,13 +605,41 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
                 </th>
               )}
               {[
-                { label: '会社名' }, { label: '役職 / 名前' }, { label: '商談担当' }, { label: 'ランク' },
-                { label: 'ステータス' }, { label: 'アポ獲得日' }, { label: '商談開始日' },
-                { label: '前確認', center: true }, { label: '案内メール', center: true },
-                { label: 'アポ種別' }, { label: 'アポ単価' }, { label: 'リスト' },
-              ].map(({ label, center }) => (
-                <th key={label} style={{ padding: '9px 12px', textAlign: center ? 'center' : 'left', fontSize: 11, fontWeight: 700, color: '#3d7a5e', whiteSpace: 'nowrap' }}>{label}</th>
-              ))}
+                { label: '会社名',      key: 'company' },
+                { label: '役職 / 名前', key: 'contact' },
+                { label: '商談担当',    key: 'salesPerson' },
+                { label: 'ランク',      key: 'rank' },
+                { label: 'ステータス',  key: 'dealStatus' },
+                { label: 'アポ獲得日',  key: 'confirmedDate' },
+                { label: '商談開始日',  key: 'meetingDate' },
+                { label: '前確認',      key: 'preConfirm',   center: true },
+                { label: '案内メール',  key: 'gmail',        center: true },
+                { label: 'アポ種別',    key: 'appointType' },
+                { label: 'アポ単価',    key: 'appointPrice' },
+                { label: 'リスト',      key: 'listName' },
+              ].map(({ label, key, center }) => {
+                const active = sortKey === key;
+                const indicator = active ? (sortOrder === 'asc' ? '▲' : '▼') : '';
+                return (
+                  <th
+                    key={key}
+                    onClick={() => handleSortClick(key)}
+                    title={`「${label}」で並び替え`}
+                    style={{
+                      padding: '9px 12px',
+                      textAlign: center ? 'center' : 'left',
+                      fontSize: 11,
+                      fontWeight: active ? 800 : 700,
+                      color: active ? '#10b981' : '#3d7a5e',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                    }}
+                  >
+                    {label}{indicator && <span style={{ fontSize: 9, marginLeft: 3 }}>{indicator}</span>}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -557,8 +674,8 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
                     {lead.company}
                   </td>
 
-                  {/* 役職 / 名前 */}
-                  <td style={{ padding: '10px 12px', color: '#3d7a5e', whiteSpace: 'nowrap' }}>
+                  {/* 役職 / 名前（長文は折り返し許可・列幅固定で隣に被らないよう nowrap は外す） */}
+                  <td style={{ padding: '10px 12px', color: '#3d7a5e', wordBreak: 'break-word' }}>
                     {[lead.position, lead.contact].filter(Boolean).join(' / ') || '—'}
                   </td>
 
@@ -687,8 +804,8 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
                     {APPOINT_PRICE_MAP[ai.appointType] || '—'}
                   </td>
 
-                  {/* リスト名 */}
-                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#6a9a7a', minWidth: 200 }}>
+                  {/* リスト名（長文は折り返し） */}
+                  <td style={{ padding: '10px 12px', fontSize: 12, color: '#6a9a7a', wordBreak: 'break-word' }}>
                     {listName}
                   </td>
                 </tr>
