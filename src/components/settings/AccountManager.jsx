@@ -100,12 +100,15 @@ export function AccountManager({ currentUser, onClose, inline, onUpdateProfile }
           <label htmlFor="isStaffCheck" style={{fontSize:12, color:"#174f35", cursor:"pointer", userSelect:"none"}}>IS担当の選択肢に表示する</label>
         </div>
       </div>
-      <div style={{marginBottom:10}}>
-        <label style={{fontSize:11, color:"#6a9a7a", display:"flex", alignItems:"center", gap:4, marginBottom:3}}><PencilIcon size={11} color="#6a9a7a" /> メール署名</label>
-        <textarea value={form.signature||""} onChange={e => setForm(p => ({...p, signature:e.target.value}))}
-          placeholder={"例：\n---\n田中 太郎\n〇〇株式会社\nTEL: 03-xxxx-xxxx"}
-          style={{...inp, resize:"vertical", minHeight:72, lineHeight:1.5}} />
-      </div>
+      {/* アウトバウンドロールには Gmail 案内メール送信機能がないため、メール署名欄は非表示にする */}
+      {form.role !== "outbound" && (
+        <div style={{marginBottom:10}}>
+          <label style={{fontSize:11, color:"#6a9a7a", display:"flex", alignItems:"center", gap:4, marginBottom:3}}><PencilIcon size={11} color="#6a9a7a" /> メール署名</label>
+          <textarea value={form.signature||""} onChange={e => setForm(p => ({...p, signature:e.target.value}))}
+            placeholder={"例：\n---\n田中 太郎\n〇〇株式会社\nTEL: 03-xxxx-xxxx"}
+            style={{...inp, resize:"vertical", minHeight:72, lineHeight:1.5}} />
+        </div>
+      )}
       <div style={{marginBottom:12}}>
         <label style={{fontSize:11, color:"#6a9a7a", display:"block", marginBottom:5}}>アイコン色</label>
         <div style={{display:"flex", flexWrap:"wrap", gap:6}}>
