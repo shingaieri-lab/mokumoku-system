@@ -4,20 +4,31 @@ import { S } from '../../styles/index.js';
 import { InboxIcon, FolderOpenIcon, AlertIcon } from '../ui/Icons.jsx';
 import { parseOutboundCSV, parseOutboundExcel } from '../../lib/outboundApi.js';
 
+// 進捗サマリー用の4バケット。
+// 個別ステータス（9種）は OutboundLeadRow 側で持つが、ここでは
+// 「未架電 / 対応中（不在・留守・再コール）/ アポ / 終了（受付NG・本人NG・現アナ・その他）」
+// の4分類で集計し、フィルタチップに使う。
 const STATUS_GROUPS = {
-  未架電:  { color: '#6a9a7a', bg: '#f0f5f2' },
-  アポ獲得: { color: '#059669', bg: '#d1fae5' },
-  お断り:  { color: '#ef4444', bg: '#fef2f2' },
-  対応中:  { color: '#f59e0b', bg: '#fef9ec' },
+  未架電: { color: '#6a9a7a', bg: '#f0f5f2' },
+  対応中: { color: '#f59e0b', bg: '#fef9ec' },
+  アポ:   { color: '#059669', bg: '#d1fae5' },
+  終了:   { color: '#ef4444', bg: '#fef2f2' },
 };
 
+// 「対応中」＝架電継続中（不在・留守・再コール）
+const ACTIVE_STATUSES   = new Set(['不在', '留守', '再コール']);
+// 「終了」＝架電完了・以降アポにはならない（受付NG・本人NG・現アナ・その他）
+const TERMINAL_STATUSES = new Set(['受付NG', '本人NG', '現アナ', 'その他']);
+
+// 旧ステータス（'再架電' '折り返し待ち' '担当者不在' 'お断り' 'アポ獲得'）はサーバー側で
+// 新ステータスに正規化してから返すため、ここでは新ステータスのみを判定すれば足りる。
 function getSummary(leads) {
-  const counts = { 未架電: 0, アポ獲得: 0, お断り: 0, 対応中: 0 };
+  const counts = { 未架電: 0, 対応中: 0, アポ: 0, 終了: 0 };
   for (const l of leads) {
     if (l.status === '未架電') counts['未架電']++;
-    else if (l.status === 'アポ獲得') counts['アポ獲得']++;
-    else if (l.status === 'お断り') counts['お断り']++;
-    else counts['対応中']++;
+    else if (l.status === 'アポ') counts['アポ']++;
+    else if (TERMINAL_STATUSES.has(l.status)) counts['終了']++;
+    else if (ACTIVE_STATUSES.has(l.status)) counts['対応中']++;
   }
   return counts;
 }

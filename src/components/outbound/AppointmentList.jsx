@@ -149,7 +149,7 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       await Promise.all(lists.map(async list => {
         const leads = await fetchOutboundLeads(list.id);
         leads
-          .filter(l => l.status === 'アポ獲得')
+          .filter(l => l.status === 'アポ')
           .forEach(lead => all.push({ lead, listId: list.id, listName: list.name, leads }));
       }));
       // アポ獲得日の新しい順にソート
@@ -170,14 +170,14 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
 
   // 過去アポデータの取込
   // 1. 空のリストを「過去アポ取込_YYYY-MM-DD」として作成
-  // 2. PUT /api/outbound/leads/:listId で status='アポ獲得' + appointmentInfo を埋めたリードを上書き保存
+  // 2. PUT /api/outbound/leads/:listId で status='アポ' + appointmentInfo を埋めたリードを上書き保存
   // 3. アポ一覧を再ロード（取込結果を即反映）
   const handleImportAppointments = useCallback(async (parsedLeads, listName) => {
     // ① 空のリストを作成（POSTは leads が空でも通る）
     const { listId } = await createOutboundList(listName, []);
 
     // ② サーバー側で createOutboundList が status='未架電' で書き込んでいるので、
-    //    こちらで「アポ獲得」状態のリードに差し替える形で上書き保存する
+    //    こちらで「アポ」状態のリードに差し替える形で上書き保存する
     const leadsWithMeta = parsedLeads.map((l, i) => ({
       id: `ol_${listId}_${i}`,
       listId,
@@ -190,7 +190,7 @@ export function AppointmentList({ currentUser, mailPendingOnly = false }) {
       industry: '',
       address:  '',
       memo:     '',
-      status: 'アポ獲得',
+      status: 'アポ',
       callHistory: [],
       // importedFromHistory: 過去取込分のマーカー
       // → 前確認・案内メールの「⚠ 要対応」アラート判定で対象外として扱うために使う

@@ -153,11 +153,18 @@ export function OutboundPage({ currentUser }) {
   }, [leads, selectedIds, currentListId]);
 
   // フィルタ・ページネーション計算
+  // バケット定義は OutboundListHeader 側の集計と一致させる。
+  //   - 対応中: 不在 / 留守 / 再コール
+  //   - 終了  : 受付NG / 本人NG / 現アナ / その他
+  // それ以外（'未架電' / 'アポ'）は個別ステータス一致で絞り込む。
+  const ACTIVE_STATUSES   = new Set(['不在', '留守', '再コール']);
+  const TERMINAL_STATUSES = new Set(['受付NG', '本人NG', '現アナ', 'その他']);
   const q = searchQuery.trim().toLowerCase();
   const filteredLeads = leads.filter(l => {
     if (filterStatus) {
-      if (filterStatus === '対応中' && (l.status === '未架電' || l.status === 'アポ獲得' || l.status === 'お断り')) return false;
-      if (filterStatus !== '対応中' && l.status !== filterStatus) return false;
+      if (filterStatus === '対応中')    { if (!ACTIVE_STATUSES.has(l.status))   return false; }
+      else if (filterStatus === '終了') { if (!TERMINAL_STATUSES.has(l.status)) return false; }
+      else                              { if (l.status !== filterStatus)         return false; }
     }
     if (q) {
       const hit = (l.company || '').toLowerCase().includes(q) || (l.contact || '').toLowerCase().includes(q);
