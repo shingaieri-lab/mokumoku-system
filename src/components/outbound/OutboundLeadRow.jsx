@@ -13,16 +13,18 @@ function applyTplVars(tpl, vars) {
   return Object.entries(vars).reduce((s, [k, v]) => s.replaceAll(`{{${k}}}`, v || ''), tpl);
 }
 
-const STATUSES = ['未架電', '留守', '再架電', '折り返し待ち', '担当者不在', 'お断り', 'アポ獲得'];
+const STATUSES = ['未架電', '不在', '受付NG', '再コール', '留守', '本人NG', 'アポ', '現アナ', 'その他'];
 
 const STATUS_COLOR = {
-  '未架電':       { color: '#6a9a7a', bg: '#f0f5f2' },
-  '留守':         { color: '#f59e0b', bg: '#fef9ec' },
-  '再架電':       { color: '#3b82f6', bg: '#eff6ff' },
-  '折り返し待ち': { color: '#8b5cf6', bg: '#f5f3ff' },
-  '担当者不在':   { color: '#0891b2', bg: '#ecfeff' },
-  'お断り':       { color: '#ef4444', bg: '#fef2f2' },
-  'アポ獲得':     { color: '#059669', bg: '#d1fae5' },
+  '未架電':   { color: '#6a9a7a', bg: '#f0f5f2' },
+  '不在':     { color: '#f59e0b', bg: '#fef9ec' },
+  '受付NG':   { color: '#ef4444', bg: '#fef2f2' },
+  '再コール': { color: '#3b82f6', bg: '#eff6ff' },
+  '留守':     { color: '#f59e0b', bg: '#fef9ec' },
+  '本人NG':   { color: '#ea580c', bg: '#fff7ed' },
+  'アポ':     { color: '#059669', bg: '#d1fae5' },
+  '現アナ':   { color: '#64748b', bg: '#f1f5f9' },
+  'その他':   { color: '#8b5cf6', bg: '#f5f3ff' },
 };
 
 // 編集フォーム（基本情報の修正）
@@ -124,8 +126,8 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
 
   const handleStatusChange = (newStatus) => {
     const update = { ...lead, status: newStatus };
-    // アポ獲得になった時点でdealStatusを初期化
-    if (newStatus === 'アポ獲得' && !lead.appointmentInfo?.dealStatus) {
+    // アポになった時点でdealStatusを初期化
+    if (newStatus === 'アポ' && !lead.appointmentInfo?.dealStatus) {
       update.appointmentInfo = { ...(lead.appointmentInfo || {}), dealStatus: '商談確定' };
     }
     onUpdate(update);
@@ -258,7 +260,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
         )}
 
         {/* アポ情報入力ボタン（業務委託のみ） */}
-        {lead.status === 'アポ獲得' && currentUser?.role === 'outbound' && (
+        {lead.status === 'アポ' && currentUser?.role === 'outbound' && (
           <button onClick={() => onOpenAppointment(lead)}
             style={{ background: '#d1fae5', color: '#059669', border: '1px solid #10b98155', borderRadius: 7, padding: '6px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
             アポ情報入力
@@ -275,7 +277,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
                 {mode === 'record' ? '閉じる' : '記録する'}
               </button>
             )}
-            {canEdit && lead.status === 'アポ獲得' && lead.appointmentInfo?.meetingDate && (
+            {canEdit && lead.status === 'アポ' && lead.appointmentInfo?.meetingDate && (
               <button onClick={() => setMode(mode === 'zoom' ? null : 'zoom')}
                 style={{ background: mode === 'zoom' ? '#eff6ff' : '#f0f9ff', color: '#0284c7', border: '1px solid #bfdbfe', borderRadius: 6, padding: '5px 12px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 {mode === 'zoom' ? '閉じる' : 'Zoom入力'}
@@ -293,7 +295,7 @@ export function OutboundLeadRow({ lead, canWrite, canEdit, selected, onToggleSel
           </div>
           {/* 右列 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {canEdit && lead.status !== 'アポ獲得' && (
+            {canEdit && lead.status !== 'アポ' && (
               <button onClick={() => setMode(mode === 'edit' ? null : 'edit')}
                 style={{ background: 'none', border: '1px solid #c0dece', borderRadius: 6, padding: '5px 12px', fontSize: 13, color: '#6a9a7a', cursor: 'pointer', fontFamily: 'inherit' }}>
                 {mode === 'edit' ? '閉じる' : '編集'}

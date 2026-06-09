@@ -5,6 +5,24 @@ const { kv, readData, writeData, getAccounts } = require('../lib/kv');
 const { requireAuth, rateLimit } = require('../lib/auth');
 const { encrypt, decrypt } = require('../lib/encrypt');
 
+// 旧ステータス → 新ステータスへの移行マップ。
+// 既に保存済みのリードを読み出した瞬間に正規化することで、
+// クライアントの新ステータス前提のロジック（フィルタ・集計・アポ判定）と整合させる。
+// 保存データ自体は書き戻し時（PUT /api/outbound/leads/:listId）に上書きされる流れに任せ、
+// ここでは破壊的なマイグレーション（一括 update）は走らせない。
+const STATUS_MIGRATION = {
+  '再架電':       '再コール',
+  '折り返し待ち': '再コール',
+  '担当者不在':   '本人NG',
+  'お断り':       '受付NG',
+  'アポ獲得':     'アポ',
+};
+function normalizeStatus(lead) {
+  if (!lead || !lead.status) return lead;
+  const mapped = STATUS_MIGRATION[lead.status];
+  return mapped ? { ...lead, status: mapped } : lead;
+}
+
 // ロール取得ヘルパー
 async function getRole(accountId) {
   const accounts = await getAccounts();
@@ -90,9 +108,10 @@ router.delete('/api/outbound/lists/:listId', requireAuth, rateLimit, async (req,
 });
 
 // リードデータ取得（全ロール）
+// 旧ステータスを含む既存データはここで新ステータスに正規化してから返す
 router.get('/api/outbound/leads/:listId', requireAuth, rateLimit, async (req, res) => {
   const leads = (await readData(`outbound_leads:${req.params.listId}`)) || [];
-  res.json(leads);
+  res.json(leads.map(normalizeStatus));
 });
 
 // リードデータ保存（outbound + admin）
@@ -189,13 +208,15 @@ router.post('/api/outbound/config', requireAuth, rateLimit, async (req, res) => 
 });
 
 // 全リストのアポ獲得リード一括取得（全ロール）
+// 旧ステータス 'アポ獲得' で保存されているデータも拾えるよう、正規化後の status を 'アポ' で絞り込む
 router.get('/api/outbound/appointments', requireAuth, rateLimit, async (req, res) => {
   const lists = (await readData('outbound_lists')) || [];
   const allApos = [];
   for (const list of lists) {
     const leads = (await readData(`outbound_leads:${list.id}`)) || [];
     leads
-      .filter(l => l.status === 'アポ獲得' && l.appointmentInfo)
+      .map(normalizeStatus)
+      .filter(l => l.status === 'アポ' && l.appointmentInfo)
       .forEach(l => allApos.push({ ...l, listName: list.name }));
   }
   res.json(allApos);
